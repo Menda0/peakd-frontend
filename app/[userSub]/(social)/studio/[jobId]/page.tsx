@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { auth0 } from "@/lib/auth0";
 import { sessionHasPartnerRole } from "@/lib/auth0-partner";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
@@ -9,7 +10,10 @@ export default async function StudioJobPage({
 }: {
   params: Promise<{ userSub: string; jobId: string }>;
 }) {
-  await params;
+  const { userSub, jobId } = await params;
+  if (jobId === "sessions") {
+    redirect(`/${userSubToPathSegment(userSub)}/studio`);
+  }
   const session = await auth0.getSession();
   if (!session?.user?.sub) {
     return null;

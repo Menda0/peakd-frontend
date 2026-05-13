@@ -2,12 +2,12 @@ import { auth0 } from "@/lib/auth0";
 import { sessionHasPartnerRole } from "@/lib/auth0-partner";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 import { SocialFeedLayout } from "@/components/social-feed/social-feed-layout";
-import { StudioSessionsDashboard } from "@/components/studio/studio-sessions-dashboard";
+import { StudioJobDetail } from "@/components/studio/studio-job-detail";
 
-export default async function StudioPage({
+export default async function StudioSessionVideoPage({
   params,
 }: {
-  params: Promise<{ userSub: string }>;
+  params: Promise<{ userSub: string; sessionId: string; jobId: string }>;
 }) {
   await params;
   const session = await auth0.getSession();
@@ -29,7 +29,7 @@ export default async function StudioPage({
       userName={session.user.name}
       userEmail={session.user.email}
     >
-      <StudioSessionsDashboard />
+      <StudioJobDetail />
     </SocialFeedLayout>
   );
 }

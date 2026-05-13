@@ -22,13 +22,23 @@ type JobDetail = {
   processedKey: string;
   videoUrl: string;
   snapshots: Array<{ key: string; url: string }>;
+  surfSessionId?: string | null;
 };
 
 export function StudioJobDetail() {
   const params = useParams();
   const jobId = typeof params.jobId === "string" ? params.jobId : "";
+  const sessionIdFromRoute =
+    typeof params.sessionId === "string" ? params.sessionId : null;
   const { user } = useUser();
   const userPathPrefix = user?.sub ? `/${userSubToPathSegment(user.sub)}` : "";
+
+  const backHref =
+    sessionIdFromRoute != null
+      ? `${userPathPrefix}/studio/sessions/${sessionIdFromRoute}`
+      : `${userPathPrefix}/studio`;
+  const backLabel =
+    sessionIdFromRoute != null ? "← Back to session" : "← Back to Studio";
 
   const [detail, setDetail] = useState<JobDetail | null>(null);
   const [loading, setLoading] = useState(Boolean(jobId));
@@ -111,11 +121,22 @@ export function StudioJobDetail() {
             size="sm"
             nativeButton={false}
             className="mb-2 -ml-2 text-zinc-300 hover:bg-white/5 hover:text-zinc-100"
-            render={<Link href={`${userPathPrefix}/studio`} />}
+            render={<Link href={backHref} />}
           >
-            ← Back to Studio
+            {backLabel}
           </Button>
         </div>
+
+        {detail && !sessionIdFromRoute && detail.surfSessionId ? (
+          <p className="text-sm text-zinc-500">
+            <Link
+              href={`${userPathPrefix}/studio/sessions/${detail.surfSessionId}`}
+              className="text-[#26c2c9] underline-offset-2 hover:underline"
+            >
+              Open this video’s session folder
+            </Link>
+          </p>
+        ) : null}
 
         {loading ? <p className="text-sm text-zinc-500">Loading…</p> : null}
 
