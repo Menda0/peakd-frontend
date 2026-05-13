@@ -34,7 +34,6 @@ function hasPartnerInClaims(claims: Record<string, unknown>): boolean {
  * optionally the Auth0 Management API (see `auth0-management.ts`).
  */
 export async function computeIsPartnerForSession(session: SessionData): Promise<boolean> {
-  debugger;
   if (hasPartnerInClaims(session.user as Record<string, unknown>)) return true;
 
   const accessToken = session.tokenSet?.accessToken;
