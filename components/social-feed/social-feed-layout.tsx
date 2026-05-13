@@ -24,7 +24,7 @@ export function SocialFeedLayout({
   userEmail?: string | null;
 }) {
   return (
-    <div className="dark flex min-h-[100dvh] flex-col bg-[#050a0f] text-zinc-100">
+    <div className="dark flex min-h-[100dvh] flex-col bg-[#040A10] text-zinc-100">
       <FeedAppBar
         homeHref={homeHref}
         uploadHref={uploadHref}

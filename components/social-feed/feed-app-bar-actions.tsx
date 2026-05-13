@@ -31,7 +31,7 @@ export function FeedAppBarActions({
     <div className="flex shrink-0 items-center gap-2 sm:gap-3">
       <Link
         href={uploadHref}
-        className="inline-flex items-center gap-2 rounded-full bg-[#26c2c9] px-4 py-2 text-sm font-medium text-[#050a0f] transition hover:bg-[#2dd4dc]"
+        className="inline-flex items-center gap-2 rounded-full bg-[#26c2c9] px-4 py-2 text-sm font-medium text-[#040A10] transition hover:bg-[#2dd4dc]"
       >
         <UploadIcon className="size-4" aria-hidden />
         <span className="hidden sm:inline">Upload</span>

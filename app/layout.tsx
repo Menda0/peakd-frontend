@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Auth0Provider } from "@auth0/nextjs-auth0/client";
 import { auth0 } from "@/lib/auth0";
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,6 +14,12 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+})
 
 export const metadata: Metadata = {
   title: "Peakd",
@@ -29,9 +36,9 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className={`min-h-full flex flex-col ${jakarta.className}`}>
         <Auth0Provider user={session?.user}>{children}</Auth0Provider>
       </body>
     </html>
