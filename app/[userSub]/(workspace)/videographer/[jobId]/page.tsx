@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getApiBase } from "@/lib/api";
+import { userSubToPathSegment } from "@/lib/user-sub-path";
 
 type JobDetail = {
   jobId: string;
@@ -25,12 +27,12 @@ type JobDetail = {
 export default function VideographerJobDetailPage() {
   const params = useParams();
   const jobId = typeof params.jobId === "string" ? params.jobId : "";
+  const { user } = useUser();
+  const userPathPrefix = user?.sub ? `/${userSubToPathSegment(user.sub)}` : "";
 
   const [detail, setDetail] = useState<JobDetail | null>(null);
   const [loading, setLoading] = useState(Boolean(jobId));
-  const [error, setError] = useState<string | null>(
-    jobId ? null : "Missing job id",
-  );
+  const [error, setError] = useState<string | null>(jobId ? null : "Missing job id");
 
   useEffect(() => {
     if (!jobId) {
@@ -78,11 +80,13 @@ export default function VideographerJobDetailPage() {
 
   if (!jobId) {
     return (
-      <div className="bg-background px-4 py-10">
+      <div className="px-4 py-8">
         <div className="mx-auto max-w-4xl space-y-4">
-          <Button variant="link" nativeButton={false} className="h-auto p-0" render={<Link href="/videographer" />}>
-            ← Back to uploads
-          </Button>
+          {userPathPrefix ? (
+            <Button variant="link" nativeButton={false} className="h-auto p-0" render={<Link href={`${userPathPrefix}/videographer`} />}>
+              ← Back to uploads
+            </Button>
+          ) : null}
           <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             Missing job id.
           </p>
@@ -91,16 +95,20 @@ export default function VideographerJobDetailPage() {
     );
   }
 
+  if (!userPathPrefix) {
+    return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
+  }
+
   return (
     <div className="bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-10 sm:px-6">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 sm:px-6">
         <div>
           <Button
             variant="ghost"
             size="sm"
             nativeButton={false}
             className="mb-2 -ml-2"
-            render={<Link href="/videographer" />}
+            render={<Link href={`${userPathPrefix}/videographer`} />}
           >
             ← Back to uploads
           </Button>
@@ -119,9 +127,7 @@ export default function VideographerJobDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-xl sm:text-2xl">{detail.originalFilename}</CardTitle>
-                <CardDescription>
-                  {new Date(detail.createdAt).toLocaleString()}
-                </CardDescription>
+                <CardDescription>{new Date(detail.createdAt).toLocaleString()}</CardDescription>
                 <p className="break-all font-mono text-xs text-muted-foreground">{detail.jobId}</p>
               </CardHeader>
             </Card>

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { getApiBase } from "@/lib/api";
+import { userSubToPathSegment } from "@/lib/user-sub-path";
 
 type JobListItem = {
   jobId: string;
@@ -22,7 +23,9 @@ type JobListItem = {
 };
 
 export default function VideographerDashboardPage() {
-  const { user, isLoading: userLoading } = useUser();
+  const { user } = useUser();
+  const userPathPrefix = user?.sub ? `/${userSubToPathSegment(user.sub)}` : "";
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [jobs, setJobs] = useState<JobListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,30 +96,23 @@ export default function VideographerDashboardPage() {
     if (file) void uploadFile(file);
   };
 
+  if (!userPathPrefix) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Loading workspace…
+      </div>
+    );
+  }
+
   return (
     <div className="bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-10 sm:px-6">
-        <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Peakd</p>
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              Videographer
-            </h1>
-            <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-              Upload a video to transcode, watermark, and capture frames. Past
-              uploads are listed below; open one for playback and snapshots.
-            </p>
-          </div>
-          <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-            {!userLoading && user?.email ? (
-              <span className="max-w-[240px] truncate text-xs text-muted-foreground">
-                {user.email}
-              </span>
-            ) : null}
-            <Button variant="outline" size="sm" nativeButton={false} render={<a href="/auth/logout" />}>
-              Log out
-            </Button>
-          </div>
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 sm:px-6">
+        <header className="space-y-1 border-b border-border pb-6">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Videographer</h1>
+          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+            Upload a video to transcode, watermark, and capture frames. Past uploads are listed
+            below; open one for playback and snapshots.
+          </p>
         </header>
 
         <Card>
@@ -130,9 +126,7 @@ export default function VideographerDashboardPage() {
             <div
               className={cn(
                 "rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors",
-                dragActive
-                  ? "border-primary bg-muted"
-                  : "border-border bg-card",
+                dragActive ? "border-primary bg-muted" : "border-border bg-card",
               )}
               onDragEnter={(e) => {
                 e.preventDefault();
@@ -194,15 +188,13 @@ export default function VideographerDashboardPage() {
           ) : null}
 
           {!loading && jobs.length === 0 && !listError ? (
-            <p className="text-sm text-muted-foreground">
-              No uploads yet. Upload a video above.
-            </p>
+            <p className="text-sm text-muted-foreground">No uploads yet. Upload a video above.</p>
           ) : null}
 
           <ul className="flex flex-col gap-3">
             {jobs.map((job) => (
               <li key={job.jobId}>
-                <Link href={`/videographer/${job.jobId}`} className="block">
+                <Link href={`${userPathPrefix}/videographer/${job.jobId}`} className="block">
                   <Card className="transition-colors hover:border-primary/40 hover:shadow-sm">
                     <CardContent className="flex gap-4 p-4">
                       <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-muted">
@@ -224,9 +216,7 @@ export default function VideographerDashboardPage() {
                         <span className="text-xs text-muted-foreground">
                           {new Date(job.createdAt).toLocaleString()}
                         </span>
-                        <span className="text-xs font-mono text-muted-foreground">
-                          {job.jobId}
-                        </span>
+                        <span className="text-xs font-mono text-muted-foreground">{job.jobId}</span>
                       </div>
                     </CardContent>
                   </Card>

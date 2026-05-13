@@ -4,22 +4,50 @@ import { auth0 } from "@/lib/auth0";
 
 export async function middleware(request: NextRequest) {
   const authRes = await auth0.middleware(request);
+  const { pathname, search } = request.nextUrl;
 
-  if (request.nextUrl.pathname.startsWith("/auth")) {
+  if (pathname.startsWith("/auth")) {
     return authRes;
   }
 
-  if (request.nextUrl.pathname.startsWith("/api/peakd")) {
+  if (pathname.startsWith("/api/peakd")) {
     return authRes;
   }
 
-  if (request.nextUrl.pathname.startsWith("/videographer")) {
-    const session = await auth0.getSession(request);
-    if (!session) {
-      const { origin } = new URL(request.url);
-      const returnTo = encodeURIComponent(request.nextUrl.pathname);
-      return NextResponse.redirect(`${origin}/auth/login?returnTo=${returnTo}`);
-    }
+  const session = await auth0.getSession(request);
+
+  if (session?.user?.sub && (pathname === "/videographer" || pathname.startsWith("/videographer/"))) {
+    const rest = pathname === "/videographer" ? "" : pathname.slice("/videographer".length);
+    const target = `/${encodeURIComponent(session.user.sub)}/videographer${rest}${search}`;
+    return NextResponse.redirect(new URL(target, request.url));
+  }
+
+  if (!session) {
+    const returnTo = encodeURIComponent(pathname + search);
+    return NextResponse.redirect(new URL(`/auth/login?returnTo=${returnTo}`, request.url));
+  }
+
+  if (pathname === "/") {
+    return authRes;
+  }
+
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts.length === 0) {
+    return authRes;
+  }
+
+  const first = parts[0];
+  let decodedFirst = first;
+  try {
+    decodedFirst = decodeURIComponent(first);
+  } catch {
+    decodedFirst = first;
+  }
+
+  if (decodedFirst !== session.user.sub) {
+    const rest = parts.slice(1).join("/");
+    const target = `/${encodeURIComponent(session.user.sub)}${rest ? `/${rest}` : ""}${search}`;
+    return NextResponse.redirect(new URL(target, request.url));
   }
 
   return authRes;
