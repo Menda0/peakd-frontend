@@ -1,18 +1,14 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  CalendarIcon,
+  AwardIcon,
+  CircleDollarSignIcon,
+  ClapperboardIcon,
   CompassIcon,
-  FilmIcon,
-  HeartIcon,
-  HistoryIcon,
-  HomeIcon,
-  MapPinIcon,
-  PlayIcon,
-  SparklesIcon,
-  UploadIcon,
+  LayoutDashboardIcon,
+  NewspaperIcon,
+  SquarePlayIcon,
+  UserRoundIcon,
   UsersIcon,
-  VideoIcon,
-  WavesIcon,
 } from "lucide-react";
 
 export type NavItemConfig = {
@@ -64,21 +60,21 @@ export type PopularSpot = {
 };
 
 export const MAIN_NAV_ITEMS: NavItemConfig[] = [
-  { id: "home", label: "Home", icon: HomeIcon, active: true },
-  { id: "explore", label: "Explore", icon: CompassIcon },
-  { id: "following", label: "Following", icon: UsersIcon },
-  { id: "spots", label: "Spots", icon: MapPinIcon },
-  { id: "collections", label: "Collections", icon: FilmIcon },
-  { id: "events", label: "Events", icon: CalendarIcon },
+  { id: "explore", label: "Explore", icon: CompassIcon, active: true },
+  { id: "my-videos", label: "My Videos", icon: SquarePlayIcon },
+  { id: "badges", label: "Badges", icon: AwardIcon },
+  { id: "surf-report", label: "Surf Report", icon: NewspaperIcon },
+  { id: "friends", label: "Friends", icon: UsersIcon },
 ];
 
-export const LIBRARY_ITEMS: NavItemConfig[] = [
-  { id: "later", label: "Watch Later", icon: PlayIcon },
-  { id: "liked", label: "Liked Videos", icon: HeartIcon },
-  { id: "uploads", label: "My Uploads", icon: UploadIcon },
-  { id: "history", label: "History", icon: HistoryIcon },
+export const PARTNER_NAV_ITEMS: NavItemConfig[] = [
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
+  { id: "studio", label: "Studio", icon: ClapperboardIcon },
+  { id: "profile", label: "Profile", icon: UserRoundIcon },
+  { id: "income", label: "Income", icon: CircleDollarSignIcon },
 ];
 
+/*
 export const CATEGORY_ITEMS: NavItemConfig[] = [
   { id: "big", label: "Big Waves", icon: WavesIcon },
   { id: "clips", label: "Surf Clips", icon: VideoIcon },
@@ -87,6 +83,7 @@ export const CATEGORY_ITEMS: NavItemConfig[] = [
   { id: "life", label: "Lifestyle", icon: HeartIcon },
   { id: "howto", label: "How To", icon: FilmIcon },
 ];
+*/
 
 export const MOCK_STORIES: StoryItem[] = [
   { id: "1", name: "Kai", active: true },
