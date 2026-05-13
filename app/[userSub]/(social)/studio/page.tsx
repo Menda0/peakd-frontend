@@ -16,7 +16,7 @@ export default async function StudioPage({
   }
 
   const prefix = `/${userSubToPathSegment(session.user.sub)}`;
-  const showPartnerNav = sessionHasPartnerRole(session);
+  const showPartnerNav = await sessionHasPartnerRole(session);
 
   return (
     <SocialFeedLayout

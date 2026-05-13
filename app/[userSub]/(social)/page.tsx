@@ -15,7 +15,7 @@ export default async function SocialHomePage({
   }
 
   const prefix = `/${userSubToPathSegment(session.user.sub)}`;
-  const showPartnerNav = sessionHasPartnerRole(session);
+  const showPartnerNav = await sessionHasPartnerRole(session);
 
   return (
     <SocialFeedLayout
