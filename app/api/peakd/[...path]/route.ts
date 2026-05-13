@@ -103,3 +103,29 @@ export async function POST(
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> },
+) {
+  try {
+    const { path } = await ctx.params;
+    return await forward(request, path, "PATCH");
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Proxy error";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> },
+) {
+  try {
+    const { path } = await ctx.params;
+    return await forward(request, path, "PUT");
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Proxy error";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}

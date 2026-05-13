@@ -14,6 +14,7 @@ import { FeedNavSidebar } from "./feed-nav-sidebar";
 export function SocialFeedLayout({
   homeHref,
   studioHref,
+  partnerProfileHref,
   showPartnerNav,
   userPicture,
   userName,
@@ -22,6 +23,7 @@ export function SocialFeedLayout({
 }: {
   homeHref: string;
   studioHref: string;
+  partnerProfileHref?: string;
   showPartnerNav: boolean;
   userPicture?: string | null;
   userName?: string | null;
@@ -29,7 +31,7 @@ export function SocialFeedLayout({
   children?: ReactNode;
 }) {
   return (
-    <div className="dark flex min-h-[100dvh] flex-col bg-[#040A10] text-zinc-100">
+    <div className="dark flex min-h-[100dvh] flex-col bg-[#040F1E] text-zinc-100">
       <FeedAppBar
         homeHref={homeHref}
         uploadHref={studioHref}
@@ -38,7 +40,11 @@ export function SocialFeedLayout({
         userEmail={userEmail}
       />
       <div className="flex min-h-0 flex-1">
-        <FeedNavSidebar studioHref={studioHref} showPartnerNav={showPartnerNav} />
+        <FeedNavSidebar
+          studioHref={studioHref}
+          partnerProfileHref={partnerProfileHref}
+          showPartnerNav={showPartnerNav}
+        />
         {children ? (
           <main className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
             <div className="mx-auto w-full max-w-4xl">{children}</div>

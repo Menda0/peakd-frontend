@@ -5,9 +5,11 @@ import { SidebarPromoCard } from "./sidebar-promo-card";
 
 export function FeedNavSidebar({
   studioHref,
+  partnerProfileHref,
   showPartnerNav,
 }: {
   studioHref: string;
+  partnerProfileHref?: string;
   showPartnerNav: boolean;
 }) {
   return (
@@ -15,7 +17,11 @@ export function FeedNavSidebar({
       <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
         <MainNav items={MAIN_NAV_ITEMS} />
         {showPartnerNav ? (
-          <PartnerNav items={PARTNER_NAV_ITEMS} studioHref={studioHref} />
+          <PartnerNav
+            items={PARTNER_NAV_ITEMS}
+            studioHref={studioHref}
+            partnerProfileHref={partnerProfileHref}
+          />
         ) : null}
         {/* <CategoryNav items={CATEGORY_ITEMS} /> */}
       </div>

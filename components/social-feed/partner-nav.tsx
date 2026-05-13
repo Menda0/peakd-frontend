@@ -5,9 +5,11 @@ import { NavSection } from "./nav-section";
 export function PartnerNav({
   items,
   studioHref,
+  partnerProfileHref,
 }: {
   items: NavItemConfig[];
   studioHref?: string;
+  partnerProfileHref?: string;
 }) {
   return (
     <NavSection title="Partner">
@@ -16,7 +18,13 @@ export function PartnerNav({
           key={item.id}
           label={item.label}
           icon={item.icon}
-          href={item.id === "studio" ? studioHref : undefined}
+          href={
+            item.id === "studio"
+              ? studioHref
+              : item.id === "profile"
+                ? partnerProfileHref
+                : undefined
+          }
         />
       ))}
     </NavSection>

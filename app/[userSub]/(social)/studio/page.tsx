@@ -17,11 +17,13 @@ export default async function StudioPage({
 
   const prefix = `/${userSubToPathSegment(session.user.sub)}`;
   const showPartnerNav = await sessionHasPartnerRole(session);
+  const partnerProfileHref = showPartnerNav ? `${prefix}/partner/profile` : undefined;
 
   return (
     <SocialFeedLayout
       homeHref={prefix}
       studioHref={`${prefix}/studio`}
+      partnerProfileHref={partnerProfileHref}
       showPartnerNav={showPartnerNav}
       userPicture={session.user.picture}
       userName={session.user.name}

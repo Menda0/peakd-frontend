@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function SidebarPromoCard({ studioHref }: { studioHref: string }) {
   return (
-    <div className="mt-auto overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-cyan-950/80 via-[#040A10] to-[#040A10] p-4">
+    <div className="mt-auto overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-cyan-950/80 via-[#040F1E] to-[#040F1E] p-4">
       <div
         className="mb-3 h-20 rounded-xl bg-gradient-to-r from-[#26c2c9]/30 via-blue-900/40 to-zinc-900"
         aria-hidden
