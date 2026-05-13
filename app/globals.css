@@ -81,6 +81,9 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --scrollbar-thumb: oklch(0.62 0 0 / 0.4);
+  --scrollbar-thumb-hover: oklch(0.52 0 0 / 0.55);
+  --scrollbar-track: oklch(0.96 0 0 / 0.65);
 }
 
 .dark {
@@ -115,16 +118,85 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --scrollbar-thumb: rgb(38 194 201 / 0.35);
+  --scrollbar-thumb-hover: rgb(45 212 220 / 0.55);
+  --scrollbar-track: rgb(4 15 30 / 0.65);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+
   body {
     @apply bg-background text-foreground;
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Compact react-day-picker inside popovers (default sheet uses 44px cells + oversized caption). */
+@layer components {
+  .rdp-compact.rdp-root {
+    --rdp-weekday-text-transform: uppercase;
+    --rdp-weekday-opacity: 0.65;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+  }
+
+  /* react-day-picker default sheet uses larger caption + `font-size: large` on .rdp-selected */
+  .rdp-compact.rdp-root .rdp-month_caption,
+  .rdp-compact.rdp-root .rdp-caption_label,
+  .rdp-compact.rdp-root .rdp-weekday,
+  .rdp-compact.rdp-root .rdp-week_number,
+  .rdp-compact.rdp-root .rdp-selected,
+  .rdp-compact.rdp-root .rdp-selected .rdp-day_button,
+  .rdp-compact.rdp-root .rdp-day_button {
+    font-size: 0.8125rem !important;
+    line-height: 1.25;
+    font-weight: 400;
+  }
+
+  .rdp-compact.rdp-root .rdp-month_caption,
+  .rdp-compact.rdp-root .rdp-caption_label {
+    font-weight: 600;
+  }
+
+  .rdp-compact.rdp-root .rdp-weekday {
+    letter-spacing: 0.04em;
+  }
+
+  .rdp-compact.rdp-root .rdp-chevron {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .rdp-compact.rdp-root .rdp-button_next:focus-visible,
+  .rdp-compact.rdp-root .rdp-button_previous:focus-visible,
+  .rdp-compact.rdp-root .rdp-day_button:focus-visible {
+    outline: 2px solid rgb(38 194 201 / 0.55);
+    outline-offset: 1px;
   }
 }

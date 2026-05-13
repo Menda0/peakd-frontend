@@ -2,14 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { format, isValid, parse } from "date-fns";
-import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 export function SessionDatePicker({
-  id,
+  id = "session-date",
   valueYmd,
   onChangeYmd,
   disabled,
@@ -28,49 +28,58 @@ export function SessionDatePicker({
     return isValid(d) ? d : undefined;
   }, [valueYmd]);
 
-  const labelText = useMemo(() => {
-    if (!selected) return "Pick a date";
-    return format(selected, "MMMM d, yyyy");
-  }, [selected]);
+  const fieldId = id;
+
+  const body = (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          id={fieldId}
+          disabled={disabled}
+          className={cn(
+            "h-10 w-full justify-start font-normal",
+            "border-white/15 bg-white/5 text-zinc-100 hover:bg-white/10",
+            "focus-visible:border-[#26c2c9]/60 focus-visible:ring-2 focus-visible:ring-[#26c2c9]/25",
+          )}
+        >
+          {selected ? selected.toLocaleDateString() : "Select date"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-auto max-w-[min(100vw-1.5rem,18rem)] overflow-hidden p-0"
+        align="start"
+        sideOffset={6}
+        collisionPadding={12}
+      >
+        <Calendar
+          mode="single"
+          selected={selected}
+          defaultMonth={selected ?? new Date()}
+          captionLayout="dropdown"
+          navLayout="around"
+          onSelect={(d) => {
+            if (d) {
+              onChangeYmd(format(d, "yyyy-MM-dd"));
+              setOpen(false);
+            }
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+
+  if (!label) {
+    return <div className="w-full">{body}</div>;
+  }
 
   return (
-    <div className="space-y-1.5">
-      {label ? (
-        <span className="block text-sm font-medium text-zinc-300">{label}</span>
-      ) : null}
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger
-          nativeButton={false}
-          disabled={disabled}
-          render={
-            <Button
-              type="button"
-              id={id}
-              variant="outline"
-              disabled={disabled}
-              className={cn(
-                "h-10 w-full justify-start gap-2 border-white/15 bg-white/5 font-normal text-zinc-100 hover:bg-white/10",
-                "focus-visible:border-[#26c2c9]/60 focus-visible:ring-2 focus-visible:ring-[#26c2c9]/25",
-              )}
-            />
-          }
-        >
-          <CalendarDays className="size-4 shrink-0 text-zinc-400" />
-          <span className="truncate">{labelText}</span>
-        </PopoverTrigger>
-        <PopoverContent className="border-white/10 bg-[#0a1218] p-0">
-          <Calendar
-            mode="single"
-            selected={selected}
-            onSelect={(d) => {
-              if (d) {
-                onChangeYmd(format(d, "yyyy-MM-dd"));
-                setOpen(false);
-              }
-            }}
-          />
-        </PopoverContent>
-      </Popover>
-    </div>
+    <Field className="w-full" data-disabled={disabled ? true : undefined}>
+      <FieldLabel htmlFor={fieldId} className="text-zinc-300">
+        {label}
+      </FieldLabel>
+      {body}
+    </Field>
   );
 }

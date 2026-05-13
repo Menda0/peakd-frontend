@@ -11,6 +11,7 @@
   "dependencies": {
     "@auth0/nextjs-auth0": "^4.20.0",
     "@base-ui/react": "^1.4.1",
+    "@radix-ui/react-popover": "^1.1.15",
     "@uiw/react-md-editor": "^4.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

@@ -1,48 +1,33 @@
 "use client";
 
 import * as React from "react";
-import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
+
 import { cn } from "@/lib/utils";
 
 const Popover = PopoverPrimitive.Root;
 const PopoverTrigger = PopoverPrimitive.Trigger;
-const PopoverPortal = PopoverPrimitive.Portal;
-const PopoverPositioner = PopoverPrimitive.Positioner;
+const PopoverAnchor = PopoverPrimitive.Anchor;
 
-function PopoverContent({
-  className,
-  align = "start",
-  side = "bottom",
-  sideOffset = 6,
-  children,
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Popup> &
-  Pick<
-    React.ComponentProps<typeof PopoverPrimitive.Positioner>,
-    "align" | "side" | "sideOffset"
-  >) {
-  return (
-    <PopoverPortal>
-      <PopoverPositioner
-        className="isolate z-50 outline-none"
-        side={side}
-        sideOffset={sideOffset}
-        align={align}
-      >
-        <PopoverPrimitive.Popup
-          data-slot="popover-content"
-          className={cn(
-            "z-50 w-auto rounded-lg border border-white/10 bg-[#0a1218] p-0 text-zinc-100 shadow-lg ring-1 ring-white/10 outline-none",
-            "origin-[var(--transform-origin)] duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-            className,
-          )}
-          {...props}
-        >
-          {children}
-        </PopoverPrimitive.Popup>
-      </PopoverPositioner>
-    </PopoverPortal>
-  );
-}
+const PopoverContent = React.forwardRef<
+  React.ElementRef<typeof PopoverPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
+>(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
+  <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Content
+      ref={ref}
+      align={align}
+      sideOffset={sideOffset}
+      className={cn(
+        "z-50 w-72 origin-[var(--radix-popover-content-transform-origin)] rounded-lg border border-white/10 bg-[#0a1218] p-4 text-zinc-100 shadow-lg ring-1 ring-white/10 outline-none",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+        "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        className,
+      )}
+      {...props}
+    />
+  </PopoverPrimitive.Portal>
+));
+PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
-export { Popover, PopoverTrigger, PopoverPortal, PopoverPositioner, PopoverContent };
+export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor };

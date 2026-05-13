@@ -10,6 +10,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -129,150 +130,164 @@ export function StudioNewSessionDialog({
         if (e.target === e.currentTarget) close();
       }}
     >
-      <Card className="max-h-[90vh] w-full max-w-lg overflow-y-auto border-white/10 bg-[#0a1218] text-zinc-100">
-        <CardHeader>
-          <CardTitle>New surf session</CardTitle>
+      <Card
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="new-session-title"
+        className="flex max-h-[min(90dvh,720px)] w-full max-w-lg flex-col gap-0 overflow-hidden border-white/10 bg-[#0a1218] py-0 text-zinc-100 ring-white/10"
+      >
+        <CardHeader className="shrink-0 space-y-1 border-b border-white/10 px-6 pt-6 pb-4">
+          <CardTitle id="new-session-title">New surf session</CardTitle>
           <CardDescription className="text-zinc-500">
             Pick where and when you surfed. You can add regions and spots on the fly.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-5">
-          <CountryPicker
-            id="surf-country"
-            label="Country"
-            countryCode={countryCode}
-            onCountryCodeChange={(code) => {
-              setCountryCode(code);
-              setRegionId(null);
-              setSpotId(null);
-            }}
-          />
-          <RegionPicker
-            id="surf-region"
-            countryCode={countryCode}
-            regionId={regionId}
-            onRegionIdChange={(id) => {
-              setRegionId(id);
-              setSpotId(null);
-            }}
-          />
-          <SpotPicker
-            id="surf-spot"
-            regionId={regionId}
-            spotId={spotId}
-            onSpotIdChange={setSpotId}
-          />
 
-          <SessionDatePicker
-            id="surf-session-date"
-            label="Session date"
-            valueYmd={sessionDate}
-            onChangeYmd={setSessionDate}
-          />
-
-          <div>
-            <label
-              htmlFor="surf-session-time"
-              className="mb-1.5 block text-sm font-medium text-zinc-300"
-            >
-              Session start time
-            </label>
-            <Input
-              id="surf-session-time"
-              type="time"
-              value={sessionTime}
-              onChange={(e) => setSessionTime(e.target.value)}
-              className="border-white/15 bg-white/5 text-zinc-100"
+        <CardContent className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          <div className="flex flex-col gap-5">
+            <CountryPicker
+              id="surf-country"
+              label="Country"
+              countryCode={countryCode}
+              onCountryCodeChange={(code) => {
+                setCountryCode(code);
+                setRegionId(null);
+                setSpotId(null);
+              }}
             />
-          </div>
-
-          <div>
-            <label
-              htmlFor="surf-duration"
-              className="mb-1.5 block text-sm font-medium text-zinc-300"
-            >
-              Duration ({formatDurationMinutes(durationMinutes)})
-            </label>
-            <Input
-              id="surf-duration"
-              type="number"
-              min={15}
-              max={1440}
-              step={15}
-              value={durationMinutes}
-              onChange={(e) => setDurationMinutes(parseInt(e.target.value, 10) || 0)}
-              className="border-white/15 bg-white/5 text-zinc-100"
+            <RegionPicker
+              id="surf-region"
+              countryCode={countryCode}
+              regionId={regionId}
+              onRegionIdChange={(id) => {
+                setRegionId(id);
+                setSpotId(null);
+              }}
             />
-            <p className="mt-1 text-xs text-zinc-500">Minutes in the water (15–1440).</p>
-          </div>
+            <SpotPicker
+              id="surf-spot"
+              regionId={regionId}
+              spotId={spotId}
+              onSpotIdChange={setSpotId}
+            />
 
-          <div className="space-y-2">
-            <span className="block text-sm font-medium text-zinc-300">Conditions rating</span>
-            <p className="text-xs text-zinc-500">Optional. How good were the overall conditions?</p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "border-white/15",
-                  conditionsRating === null
-                    ? "bg-[#26c2c9]/20 text-zinc-50"
-                    : "bg-transparent text-zinc-300",
-                )}
-                onClick={() => setConditionsRating(null)}
+            <SessionDatePicker
+              id="surf-session-date"
+              label="Session date"
+              valueYmd={sessionDate}
+              onChangeYmd={setSessionDate}
+            />
+
+            <div>
+              <label
+                htmlFor="surf-session-time"
+                className="mb-1.5 block text-sm font-medium text-zinc-300"
               >
-                No rating
-              </Button>
-              {([1, 2, 3, 4, 5] as const).map((n) => (
+                Session start time
+              </label>
+              <Input
+                id="surf-session-time"
+                type="time"
+                value={sessionTime}
+                onChange={(e) => setSessionTime(e.target.value)}
+                className="border-white/15 bg-white/5 text-zinc-100"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="surf-duration"
+                className="mb-1.5 block text-sm font-medium text-zinc-300"
+              >
+                Duration ({formatDurationMinutes(durationMinutes)})
+              </label>
+              <Input
+                id="surf-duration"
+                type="number"
+                min={15}
+                max={1440}
+                step={15}
+                value={durationMinutes}
+                onChange={(e) => setDurationMinutes(parseInt(e.target.value, 10) || 0)}
+                className="border-white/15 bg-white/5 text-zinc-100"
+              />
+              <p className="mt-1 text-xs text-zinc-500">Minutes in the water (15–1440).</p>
+            </div>
+
+            <div className="space-y-2">
+              <span className="block text-sm font-medium text-zinc-300">Conditions rating</span>
+              <p className="text-xs text-zinc-500">Optional. How good were the overall conditions?</p>
+              <div className="flex flex-wrap gap-2">
                 <Button
-                  key={n}
                   type="button"
                   variant="outline"
                   size="sm"
                   className={cn(
-                    "min-w-9 border-white/15",
-                    conditionsRating === n
-                      ? "bg-[#26c2c9]/25 text-[#2dd4dc]"
+                    "border-white/15",
+                    conditionsRating === null
+                      ? "bg-[#26c2c9]/20 text-zinc-50"
                       : "bg-transparent text-zinc-300",
                   )}
-                  onClick={() => setConditionsRating(n)}
+                  onClick={() => setConditionsRating(null)}
                 >
-                  {n}
+                  No rating
                 </Button>
-              ))}
-            </div>
-          </div>
-
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-medium text-zinc-300">Wave types</legend>
-            <p className="text-xs text-zinc-500">Select all that match. You can pick multiple.</p>
-            <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-3">
-              {WAVE_TYPE_OPTIONS.map((w) => {
-                const checked = waveTypes.includes(w.id);
-                return (
-                  <label
-                    key={w.id}
-                    className="flex cursor-pointer gap-3 rounded-md p-1 hover:bg-white/5"
+                {([1, 2, 3, 4, 5] as const).map((n) => (
+                  <Button
+                    key={n}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "min-w-9 border-white/15",
+                      conditionsRating === n
+                        ? "bg-[#26c2c9]/25 text-[#2dd4dc]"
+                        : "bg-transparent text-zinc-300",
+                    )}
+                    onClick={() => setConditionsRating(n)}
                   >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleWaveType(w.id)}
-                      className="mt-1 size-4 shrink-0 rounded border-white/30 bg-zinc-900 text-[#26c2c9] accent-[#26c2c9]"
-                    />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium text-zinc-100">{w.title}</span>
-                      <span className="block text-xs text-zinc-500">{w.description}</span>
-                    </span>
-                  </label>
-                );
-              })}
+                    {n}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </fieldset>
 
-          {error ? <p className="text-sm text-red-400">{error}</p> : null}
-          <div className="flex justify-end gap-2 pt-2">
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-zinc-300">Wave types</legend>
+              <p className="text-xs text-zinc-500">Select all that match. You can pick multiple.</p>
+              <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-3">
+                {WAVE_TYPE_OPTIONS.map((w) => {
+                  const checked = waveTypes.includes(w.id);
+                  return (
+                    <label
+                      key={w.id}
+                      className="flex cursor-pointer gap-3 rounded-md p-1 hover:bg-white/5"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleWaveType(w.id)}
+                        className="mt-1 size-4 shrink-0 rounded border-white/30 bg-zinc-900 text-[#26c2c9] accent-[#26c2c9]"
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-zinc-100">{w.title}</span>
+                        <span className="block text-xs text-zinc-500">{w.description}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          </div>
+        </CardContent>
+
+        <CardFooter className="shrink-0 flex-col items-stretch gap-3 border-white/10 bg-[#0a1218] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          {error ? (
+            <p className="text-sm text-red-400 sm:min-w-0 sm:flex-1 sm:pr-4">{error}</p>
+          ) : (
+            <span className="hidden sm:block sm:flex-1" aria-hidden />
+          )}
+          <div className="flex shrink-0 justify-end gap-2">
             <Button
               type="button"
               variant="outline"
@@ -291,7 +306,7 @@ export function StudioNewSessionDialog({
               {submitting ? "Creating…" : "Create session"}
             </Button>
           </div>
-        </CardContent>
+        </CardFooter>
       </Card>
     </div>
   );
