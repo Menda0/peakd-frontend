@@ -39,8 +39,8 @@ export function AppDashboardLayout({
   const pathname = usePathname() ?? "";
   const segments = pathname.split("/").filter(Boolean);
   const afterSub = segments.slice(1);
-  const onVideographer = afterSub[0] === "videographer";
-  const jobId = onVideographer && afterSub[1] ? afterSub[1] : null;
+  const onStudio = afterSub[0] === "studio";
+  const jobId = onStudio && afterSub[1] ? afterSub[1] : null;
 
   const initials =
     (user.name?.trim()?.charAt(0) ?? user.email?.trim()?.charAt(0) ?? "?").toUpperCase();
@@ -68,13 +68,13 @@ export function AppDashboardLayout({
             Home
           </Button>
           <Button
-            variant={onVideographer && !jobId ? "secondary" : "ghost"}
+            variant={onStudio && !jobId ? "secondary" : "ghost"}
             className="w-full justify-start gap-2"
             nativeButton={false}
-            render={<Link href={`${userPathPrefix}/videographer`} />}
+            render={<Link href={`${userPathPrefix}/studio`} />}
           >
             <ClapperboardIcon className="size-4 shrink-0 opacity-80" aria-hidden />
-            Videographer
+            Studio
           </Button>
         </nav>
         <div className="border-t border-border p-2">
@@ -149,24 +149,24 @@ export function AppDashboardLayout({
               <BreadcrumbList>
                 <BreadcrumbItem>
                   <BreadcrumbLink
-                    render={<Link href={`${userPathPrefix}/videographer`} />}
+                    render={<Link href={`${userPathPrefix}/studio`} />}
                     className="max-w-[140px] truncate"
                   >
                     Workspace
                   </BreadcrumbLink>
                 </BreadcrumbItem>
-                {onVideographer ? (
+                {onStudio ? (
                   <>
                     <BreadcrumbSeparator />
                     <BreadcrumbItem>
                       {jobId ? (
                         <BreadcrumbLink
-                          render={<Link href={`${userPathPrefix}/videographer`} />}
+                          render={<Link href={`${userPathPrefix}/studio`} />}
                         >
-                          Videographer
+                          Studio
                         </BreadcrumbLink>
                       ) : (
-                        <BreadcrumbPage>Videographer</BreadcrumbPage>
+                        <BreadcrumbPage>Studio</BreadcrumbPage>
                       )}
                     </BreadcrumbItem>
                   </>

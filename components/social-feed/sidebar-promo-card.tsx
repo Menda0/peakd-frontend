@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export function SidebarPromoCard({ uploadHref }: { uploadHref: string }) {
+export function SidebarPromoCard({ studioHref }: { studioHref: string }) {
   return (
     <div className="mt-auto overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-cyan-950/80 via-[#040A10] to-[#040A10] p-4">
       <div
@@ -11,7 +11,7 @@ export function SidebarPromoCard({ uploadHref }: { uploadHref: string }) {
         Share your wave. Inspire the world.
       </p>
       <Link
-        href={uploadHref}
+        href={studioHref}
         className="mt-3 flex w-full items-center justify-center rounded-xl bg-[#26c2c9] py-2.5 text-sm font-semibold text-[#040A10] transition hover:bg-[#2dd4dc]"
       >
         Upload Video

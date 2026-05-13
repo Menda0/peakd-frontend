@@ -1,8 +1,9 @@
 import { auth0 } from "@/lib/auth0";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 import { SocialFeedLayout } from "@/components/social-feed/social-feed-layout";
+import { StudioUploadDashboard } from "@/components/studio/studio-upload-dashboard";
 
-export default async function SocialHomePage({
+export default async function StudioPage({
   params,
 }: {
   params: Promise<{ userSub: string }>;
@@ -22,6 +23,8 @@ export default async function SocialHomePage({
       userPicture={session.user.picture}
       userName={session.user.name}
       userEmail={session.user.email}
-    />
+    >
+      <StudioUploadDashboard />
+    </SocialFeedLayout>
   );
 }

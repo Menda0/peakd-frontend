@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   MOCK_POSTS,
   MOCK_SPOTS,
@@ -12,29 +13,37 @@ import { FeedNavSidebar } from "./feed-nav-sidebar";
 
 export function SocialFeedLayout({
   homeHref,
-  uploadHref,
+  studioHref,
   userPicture,
   userName,
   userEmail,
+  children,
 }: {
   homeHref: string;
-  uploadHref: string;
+  studioHref: string;
   userPicture?: string | null;
   userName?: string | null;
   userEmail?: string | null;
+  children?: ReactNode;
 }) {
   return (
     <div className="dark flex min-h-[100dvh] flex-col bg-[#040A10] text-zinc-100">
       <FeedAppBar
         homeHref={homeHref}
-        uploadHref={uploadHref}
+        uploadHref={studioHref}
         userPicture={userPicture}
         userName={userName}
         userEmail={userEmail}
       />
       <div className="flex min-h-0 flex-1">
-        <FeedNavSidebar uploadHref={uploadHref} />
-        <FeedMainColumn stories={MOCK_STORIES} posts={MOCK_POSTS} />
+        <FeedNavSidebar studioHref={studioHref} />
+        {children ? (
+          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
+            <div className="mx-auto w-full max-w-4xl">{children}</div>
+          </main>
+        ) : (
+          <FeedMainColumn stories={MOCK_STORIES} posts={MOCK_POSTS} />
+        )}
         <DiscoverySidebar
           trending={MOCK_TRENDING}
           suggestedUsers={MOCK_SUGGESTED_USERS}

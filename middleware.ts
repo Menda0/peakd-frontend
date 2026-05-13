@@ -31,7 +31,13 @@ export async function middleware(request: NextRequest) {
 
   if (session?.user?.sub && (pathname === "/videographer" || pathname.startsWith("/videographer/"))) {
     const rest = pathname === "/videographer" ? "" : pathname.slice("/videographer".length);
-    const target = `/${encodeURIComponent(session.user.sub)}/videographer${rest}${search}`;
+    const target = `/${encodeURIComponent(session.user.sub)}/studio${rest}${search}`;
+    return NextResponse.redirect(new URL(target, request.url));
+  }
+
+  if (session?.user?.sub && (pathname === "/studio" || pathname.startsWith("/studio/"))) {
+    const rest = pathname === "/studio" ? "" : pathname.slice("/studio".length);
+    const target = `/${encodeURIComponent(session.user.sub)}/studio${rest}${search}`;
     return NextResponse.redirect(new URL(target, request.url));
   }
 

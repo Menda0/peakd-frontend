@@ -22,7 +22,7 @@ type JobListItem = {
   thumbnailUrl?: string;
 };
 
-export default function VideographerDashboardPage() {
+export function StudioUploadDashboard() {
   const { user } = useUser();
   const userPathPrefix = user?.sub ? `/${userSubToPathSegment(user.sub)}` : "";
 
@@ -97,28 +97,24 @@ export default function VideographerDashboardPage() {
   };
 
   if (!userPathPrefix) {
-    return (
-      <div className="p-6 text-sm text-muted-foreground">
-        Loading workspace…
-      </div>
-    );
+    return <div className="text-sm text-zinc-400">Loading workspace…</div>;
   }
 
   return (
-    <div className="bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 sm:px-6">
-        <header className="space-y-1 border-b border-border pb-6">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Videographer</h1>
-          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+    <div className="text-zinc-100">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
+        <header className="space-y-1 border-b border-white/10 pb-6">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Studio</h1>
+          <p className="max-w-xl text-sm leading-relaxed text-zinc-400">
             Upload a video to transcode, watermark, and capture frames. Past uploads are listed
             below; open one for playback and snapshots.
           </p>
         </header>
 
-        <Card>
+        <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
           <CardHeader>
             <CardTitle>Upload</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-zinc-500">
               Processing runs on the server; large files may take a while.
             </CardDescription>
           </CardHeader>
@@ -126,7 +122,7 @@ export default function VideographerDashboardPage() {
             <div
               className={cn(
                 "rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors",
-                dragActive ? "border-primary bg-muted" : "border-border bg-card",
+                dragActive ? "border-[#26c2c9]/50 bg-white/5" : "border-white/15 bg-zinc-900/30",
               )}
               onDragEnter={(e) => {
                 e.preventDefault();
@@ -139,7 +135,7 @@ export default function VideographerDashboardPage() {
               onDragLeave={() => setDragActive(false)}
               onDrop={onDrop}
             >
-              <p className="text-sm font-medium">Drop a video here or choose a file</p>
+              <p className="text-sm font-medium text-zinc-200">Drop a video here or choose a file</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -150,14 +146,14 @@ export default function VideographerDashboardPage() {
               />
               <Button
                 type="button"
-                className="mt-4"
+                className="mt-4 bg-[#26c2c9] text-[#040A10] hover:bg-[#2dd4dc]"
                 disabled={uploading}
                 onClick={() => fileInputRef.current?.click()}
               >
                 {uploading ? "Uploading…" : "Select video"}
               </Button>
               {uploadError ? (
-                <p className="mt-4 text-left text-sm text-destructive">{uploadError}</p>
+                <p className="mt-4 text-left text-sm text-red-400">{uploadError}</p>
               ) : null}
             </div>
           </CardContent>
@@ -170,6 +166,7 @@ export default function VideographerDashboardPage() {
               type="button"
               variant="outline"
               size="sm"
+              className="border-white/15 bg-transparent text-zinc-200 hover:bg-white/5"
               onClick={() => void loadJobs()}
               disabled={loading}
             >
@@ -178,26 +175,26 @@ export default function VideographerDashboardPage() {
           </div>
 
           {listError ? (
-            <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
               {listError}
             </p>
           ) : null}
 
           {loading && !listError ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm text-zinc-500">Loading…</p>
           ) : null}
 
           {!loading && jobs.length === 0 && !listError ? (
-            <p className="text-sm text-muted-foreground">No uploads yet. Upload a video above.</p>
+            <p className="text-sm text-zinc-500">No uploads yet. Upload a video above.</p>
           ) : null}
 
           <ul className="flex flex-col gap-3">
             {jobs.map((job) => (
               <li key={job.jobId}>
-                <Link href={`${userPathPrefix}/videographer/${job.jobId}`} className="block">
-                  <Card className="transition-colors hover:border-primary/40 hover:shadow-sm">
+                <Link href={`${userPathPrefix}/studio/${job.jobId}`} className="block">
+                  <Card className="border-white/10 bg-white/[0.03] transition-colors hover:border-[#26c2c9]/30 hover:shadow-sm">
                     <CardContent className="flex gap-4 p-4">
-                      <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-muted">
+                      <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
                         {job.thumbnailUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -206,17 +203,17 @@ export default function VideographerDashboardPage() {
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                          <span className="flex h-full w-full items-center justify-center text-xs text-zinc-500">
                             No preview
                           </span>
                         )}
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-                        <span className="truncate font-medium">{job.originalFilename}</span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="truncate font-medium text-zinc-100">{job.originalFilename}</span>
+                        <span className="text-xs text-zinc-500">
                           {new Date(job.createdAt).toLocaleString()}
                         </span>
-                        <span className="text-xs font-mono text-muted-foreground">{job.jobId}</span>
+                        <span className="text-xs font-mono text-zinc-500">{job.jobId}</span>
                       </div>
                     </CardContent>
                   </Card>

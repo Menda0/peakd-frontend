@@ -1,11 +1,12 @@
 import { auth0 } from "@/lib/auth0";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 import { SocialFeedLayout } from "@/components/social-feed/social-feed-layout";
+import { StudioJobDetail } from "@/components/studio/studio-job-detail";
 
-export default async function SocialHomePage({
+export default async function StudioJobPage({
   params,
 }: {
-  params: Promise<{ userSub: string }>;
+  params: Promise<{ userSub: string; jobId: string }>;
 }) {
   await params;
   const session = await auth0.getSession();
@@ -22,6 +23,8 @@ export default async function SocialHomePage({
       userPicture={session.user.picture}
       userName={session.user.name}
       userEmail={session.user.email}
-    />
+    >
+      <StudioJobDetail />
+    </SocialFeedLayout>
   );
 }

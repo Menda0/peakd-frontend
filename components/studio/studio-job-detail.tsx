@@ -24,7 +24,7 @@ type JobDetail = {
   snapshots: Array<{ key: string; url: string }>;
 };
 
-export default function VideographerJobDetailPage() {
+export function StudioJobDetail() {
   const params = useParams();
   const jobId = typeof params.jobId === "string" ? params.jobId : "";
   const { user } = useUser();
@@ -80,64 +80,69 @@ export default function VideographerJobDetailPage() {
 
   if (!jobId) {
     return (
-      <div className="px-4 py-8">
-        <div className="mx-auto max-w-4xl space-y-4">
-          {userPathPrefix ? (
-            <Button variant="link" nativeButton={false} className="h-auto p-0" render={<Link href={`${userPathPrefix}/videographer`} />}>
-              ← Back to uploads
-            </Button>
-          ) : null}
-          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            Missing job id.
-          </p>
-        </div>
+      <div className="space-y-4">
+        {userPathPrefix ? (
+          <Button
+            variant="link"
+            nativeButton={false}
+            className="h-auto p-0 text-[#26c2c9]"
+            render={<Link href={`${userPathPrefix}/studio`} />}
+          >
+            ← Back to Studio
+          </Button>
+        ) : null}
+        <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          Missing job id.
+        </p>
       </div>
     );
   }
 
   if (!userPathPrefix) {
-    return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
+    return <div className="text-sm text-zinc-400">Loading…</div>;
   }
 
   return (
-    <div className="bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 sm:px-6">
+    <div className="text-zinc-100">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
         <div>
           <Button
             variant="ghost"
             size="sm"
             nativeButton={false}
-            className="mb-2 -ml-2"
-            render={<Link href={`${userPathPrefix}/videographer`} />}
+            className="mb-2 -ml-2 text-zinc-300 hover:bg-white/5 hover:text-zinc-100"
+            render={<Link href={`${userPathPrefix}/studio`} />}
           >
-            ← Back to uploads
+            ← Back to Studio
           </Button>
         </div>
 
-        {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
+        {loading ? <p className="text-sm text-zinc-500">Loading…</p> : null}
 
         {error ? (
-          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
             {error}
           </p>
         ) : null}
 
         {detail && !loading ? (
           <>
-            <Card>
+            <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
               <CardHeader>
                 <CardTitle className="text-xl sm:text-2xl">{detail.originalFilename}</CardTitle>
-                <CardDescription>{new Date(detail.createdAt).toLocaleString()}</CardDescription>
-                <p className="break-all font-mono text-xs text-muted-foreground">{detail.jobId}</p>
+                <CardDescription className="text-zinc-500">
+                  {new Date(detail.createdAt).toLocaleString()}
+                </CardDescription>
+                <p className="break-all font-mono text-xs text-zinc-500">{detail.jobId}</p>
               </CardHeader>
             </Card>
 
-            <Card>
+            <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
               <CardHeader>
                 <CardTitle className="text-base">Processed video</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-hidden rounded-xl border border-border bg-black">
+                <div className="overflow-hidden rounded-xl border border-white/10 bg-black">
                   <video
                     key={detail.videoUrl}
                     className="aspect-video w-full"
@@ -152,13 +157,13 @@ export default function VideographerJobDetailPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
               <CardHeader>
                 <CardTitle className="text-base">Snapshots ({detail.snapshots.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 {detail.snapshots.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No frames for this job.</p>
+                  <p className="text-sm text-zinc-500">No frames for this job.</p>
                 ) : (
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {detail.snapshots.map((s, i) => (
@@ -167,7 +172,7 @@ export default function VideographerJobDetailPage() {
                         href={s.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="group overflow-hidden rounded-lg border border-border bg-card transition hover:border-primary/40"
+                        className="group overflow-hidden rounded-lg border border-white/10 bg-zinc-900/50 transition hover:border-[#26c2c9]/40"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element -- presigned S3 URLs */}
                         <img
