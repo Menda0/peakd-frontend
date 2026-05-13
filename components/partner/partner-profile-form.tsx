@@ -22,7 +22,7 @@ import {
   type PartnerProfileActionResult,
   getPartnerProfileAction,
   patchPartnerProfileAction,
-  presignPartnerAvatarAction,
+  uploadPartnerAvatarAction,
 } from "@/app/[userSub]/(social)/partner/profile/actions";
 import type { PartnerProfileDto, PartnerType } from "@/lib/partner-profile";
 import { isPartnerType } from "@/lib/partner-profile";
@@ -136,34 +136,13 @@ export function PartnerProfileForm({
     }
     setAvatarBusy(true);
     try {
-      const presignResult = await presignPartnerAvatarAction({
-        contentType: file.type || "application/octet-stream",
-        filename: file.name,
-      });
-      if (!presignResult.ok) {
-        throw new Error(presignResult.error);
+      const fd = new FormData();
+      fd.append("file", file, file.name);
+      const result = await uploadPartnerAvatarAction(fd);
+      if (!result.ok) {
+        throw new Error(result.error);
       }
-      const presign = presignResult.data;
-      const method = (presign.method || "PUT").toUpperCase();
-      const headers = new Headers(presign.headers ?? undefined);
-      if (!headers.has("Content-Type") && file.type) {
-        headers.set("Content-Type", file.type);
-      }
-      const putRes = await fetch(presign.uploadUrl, {
-        method,
-        headers,
-        body: file,
-        mode: "cors",
-        credentials: "omit",
-      });
-      if (!putRes.ok) {
-        throw new Error(`Upload failed (${putRes.status})`);
-      }
-      const patchResult = await patchPartnerProfileAction({ avatarKey: presign.avatarKey });
-      if (!patchResult.ok) {
-        throw new Error(patchResult.error);
-      }
-      setAvatarUrl(patchResult.data.avatarUrl);
+      setAvatarUrl(result.data.avatarUrl);
     } catch (e) {
       setAvatarError(e instanceof Error ? e.message : "Avatar upload failed");
     } finally {

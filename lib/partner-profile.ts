@@ -1,4 +1,4 @@
-/** DTO aligned with Nest `GET/PATCH /partners/me` and `POST /partners/me/avatar/presign`. */
+/** DTO aligned with Nest `GET/PATCH /partners/me` and `POST /partners/me/avatar` (multipart). */
 
 export const PARTNER_TYPES = ["videographer", "coach", "other"] as const;
 export type PartnerType = (typeof PARTNER_TYPES)[number];
@@ -13,23 +13,8 @@ export type PartnerProfileDto = {
 
 export type PartnerProfilePatch = Partial<PartnerProfileDto>;
 
-export type AvatarPresignRequestBody = {
-  contentType: string;
-  filename?: string;
-};
-
-export type AvatarPresignResponse = {
-  uploadUrl: string;
-  method: string;
-  headers?: Record<string, string>;
-  /** Persisted on the profile after a successful S3 PUT (MongoDB stores the key). */
-  avatarKey: string;
-  /** Display URL for this key (presigned GET or public base URL); matches GET /partners/me. */
-  avatarUrl: string;
-};
-
 export const PARTNER_PROFILE_PATH = "partners/me";
-export const PARTNER_AVATAR_PRESIGN_PATH = "partners/me/avatar/presign";
+export const PARTNER_AVATAR_UPLOAD_PATH = "partners/me/avatar";
 
 export function isPartnerType(value: unknown): value is PartnerType {
   return typeof value === "string" && (PARTNER_TYPES as readonly string[]).includes(value);

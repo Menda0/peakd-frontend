@@ -2,10 +2,8 @@
 
 import { auth0 } from "@/lib/auth0";
 import {
-  PARTNER_AVATAR_PRESIGN_PATH,
+  PARTNER_AVATAR_UPLOAD_PATH,
   PARTNER_PROFILE_PATH,
-  type AvatarPresignRequestBody,
-  type AvatarPresignResponse,
   type PartnerProfileDto,
   type PartnerType,
   normalizePartnerProfileDto,
@@ -42,8 +40,11 @@ async function peakdFetch(path: string, init: RequestInit = {}): Promise<Respons
   } catch {
     return new Response("Unauthorized", { status: 401 });
   }
-  const headers = new Headers(init.headers);
+  const headers = new Headers(init.headers ?? undefined);
   headers.set("Authorization", `Bearer ${token}`);
+  if (init.body instanceof FormData) {
+    headers.delete("Content-Type");
+  }
   if (!headers.has("Accept")) {
     headers.set("Accept", "application/json");
   }
@@ -121,39 +122,21 @@ export async function patchPartnerProfileAction(
   }
 }
 
-function assertPresignPayload(raw: unknown): AvatarPresignResponse | null {
-  if (!raw || typeof raw !== "object") return null;
-  const o = raw as Record<string, unknown>;
-  if (
-    typeof o.uploadUrl !== "string" ||
-    typeof o.avatarUrl !== "string" ||
-    typeof o.avatarKey !== "string"
-  ) {
-    return null;
-  }
-  return {
-    uploadUrl: o.uploadUrl,
-    method: typeof o.method === "string" ? o.method : "PUT",
-    headers:
-      o.headers && typeof o.headers === "object" && !Array.isArray(o.headers)
-        ? (o.headers as Record<string, string>)
-        : undefined,
-    avatarKey: o.avatarKey,
-    avatarUrl: o.avatarUrl,
-  };
-}
-
-export async function presignPartnerAvatarAction(
-  input: AvatarPresignRequestBody,
-): Promise<PartnerProfileActionResult<AvatarPresignResponse>> {
+/** Multipart upload to Nest → S3 (no browser PUT to S3 / CORS issues). */
+export async function uploadPartnerAvatarAction(
+  formData: FormData,
+): Promise<PartnerProfileActionResult<PartnerProfileDto>> {
   try {
-    const res = await peakdFetch(PARTNER_AVATAR_PRESIGN_PATH, {
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) {
+      return { ok: false, error: "Missing or empty image" };
+    }
+    const outbound = new FormData();
+    outbound.append("file", file, file.name);
+
+    const res = await peakdFetch(PARTNER_AVATAR_UPLOAD_PATH, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contentType: input.contentType,
-        ...(input.filename !== undefined ? { filename: input.filename } : {}),
-      }),
+      body: outbound,
     });
     const text = await res.text();
     if (!res.ok) {
@@ -163,15 +146,15 @@ export async function presignPartnerAvatarAction(
     try {
       parsed = JSON.parse(text) as unknown;
     } catch {
-      return { ok: false, error: "Invalid presign response" };
+      return { ok: false, error: "Invalid JSON from API" };
     }
-    const presign = assertPresignPayload(parsed);
-    if (!presign) {
-      return { ok: false, error: "Invalid presign payload" };
+    const dto = normalizePartnerProfileDto(parsed);
+    if (!dto) {
+      return { ok: false, error: "Unexpected profile shape from API" };
     }
-    return { ok: true, data: presign };
+    return { ok: true, data: dto };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Presign failed";
+    const msg = e instanceof Error ? e.message : "Avatar upload failed";
     return { ok: false, error: msg };
   }
 }
