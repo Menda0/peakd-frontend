@@ -7,8 +7,8 @@ export function FeedLogo({ href }: { href: string }) {
       <Image
         src="/logos/logo_horizontal_white.png"
         alt="Peakd"
-        width={168}
-        height={40}
+        width={600}
+        height={600}
         className="h-9 w-auto object-contain object-left sm:h-14"
         priority
       />

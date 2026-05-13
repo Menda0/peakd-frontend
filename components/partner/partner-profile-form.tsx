@@ -12,12 +12,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import {
   type PartnerProfileActionResult,
   getPartnerProfileAction,
@@ -38,6 +39,8 @@ const TYPE_LABELS: Record<PartnerType, string> = {
   coach: "Coach",
   other: "Other",
 };
+
+const TYPE_KEYS = Object.keys(TYPE_LABELS) as PartnerType[];
 
 function formStateFromDto(
   defaultPartnerName: string,
@@ -259,37 +262,56 @@ export function PartnerProfileForm({
               <p className="mt-1 text-xs text-zinc-500">Leave blank to use your account name.</p>
             </div>
 
-            <div>
-              <label htmlFor={typeId} className="mb-1.5 block text-sm font-medium text-zinc-300">
-                Type
-              </label>
-              <Select
-                value={partnerType}
-                items={TYPE_LABELS}
-                onValueChange={(next) => {
-                  if (next && isPartnerType(next)) {
-                    setPartnerType(next);
-                  }
-                }}
-              >
-                <SelectTrigger
-                  id={typeId}
-                  className="h-10 w-full max-w-md border-white/15 bg-white/5 text-zinc-100 hover:bg-white/10 focus-visible:border-[#26c2c9]/60 focus-visible:ring-2 focus-visible:ring-[#26c2c9]/25 data-placeholder:text-zinc-500"
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-start">
+              <div className="min-w-0">
+                <label htmlFor={typeId} className="mb-1.5 block text-sm font-medium text-zinc-300">
+                  Type
+                </label>
+                <Combobox
+                  items={TYPE_KEYS}
+                  value={partnerType}
+                  onValueChange={(next) => {
+                    if (next != null && isPartnerType(next)) {
+                      setPartnerType(next);
+                    }
+                  }}
+                  itemToStringValue={(key) => TYPE_LABELS[key]}
+                  autoHighlight
                 >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="max-w-md border border-white/10 bg-[#0a1218] text-zinc-100 ring-white/10">
-                  {(Object.keys(TYPE_LABELS) as PartnerType[]).map((key) => (
-                    <SelectItem
-                      key={key}
-                      value={key}
-                      className="focus:bg-[#26c2c9]/15 focus:text-zinc-50 data-highlighted:bg-[#26c2c9]/15 data-highlighted:text-zinc-50"
-                    >
-                      {TYPE_LABELS[key]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  <ComboboxInput
+                    id={typeId}
+                    placeholder="Search type…"
+                    className={cn(
+                      "h-10 w-full min-h-10 border-white/15 bg-white/5 text-zinc-100 placeholder:text-zinc-500",
+                      "focus-within:border-[#26c2c9]/60 focus-within:ring-2 focus-within:ring-[#26c2c9]/25",
+                    )}
+                  />
+                  <ComboboxContent
+                    className="border-white/10 bg-[#0a1218] text-zinc-100 ring-white/10"
+                    align="start"
+                  >
+                    <ComboboxEmpty className="text-zinc-500">No matches.</ComboboxEmpty>
+                    <ComboboxList>
+                      {(key: PartnerType) => (
+                        <ComboboxItem
+                          key={key}
+                          value={key}
+                          className="text-zinc-200 data-highlighted:bg-[#26c2c9]/15 data-highlighted:text-zinc-50"
+                        >
+                          {TYPE_LABELS[key]}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
+              </div>
+              <div className="min-w-0">
+                <PartnerCountryCombobox
+                  id={countryId}
+                  countryCode={countryCode}
+                  onCountryCodeChange={setCountryCode}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -298,12 +320,6 @@ export function PartnerProfileForm({
           <span className="mb-1.5 block text-sm font-medium text-zinc-300">Description</span>
           <PartnerMarkdownField value={descriptionMarkdown} onChange={setDescriptionMarkdown} />
         </div>
-
-        <PartnerCountryCombobox
-          id={countryId}
-          countryCode={countryCode}
-          onCountryCodeChange={setCountryCode}
-        />
       </CardContent>
       <CardFooter className="flex flex-col items-stretch gap-3 border-t border-white/10 bg-white/[0.03] p-4 text-zinc-100 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-h-5 text-sm">
