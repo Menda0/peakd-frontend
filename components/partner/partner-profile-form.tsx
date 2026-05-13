@@ -12,12 +12,20 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   type PartnerProfileActionResult,
   getPartnerProfileAction,
   patchPartnerProfileAction,
   presignPartnerAvatarAction,
 } from "@/app/[userSub]/(social)/partner/profile/actions";
 import type { PartnerProfileDto, PartnerType } from "@/lib/partner-profile";
+import { isPartnerType } from "@/lib/partner-profile";
 import { cn } from "@/lib/utils";
 import { PartnerCountryCombobox } from "./partner-country-combobox";
 import { PartnerMarkdownField } from "./partner-markdown-field";
@@ -188,15 +196,16 @@ export function PartnerProfileForm({
 
   if (loadError) {
     return (
-      <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
-        <CardHeader>
+      <Card className="border-white/10 bg-white/[0.03] text-zinc-100 ring-white/10">
+        <CardHeader className="gap-1.5 border-b border-white/10 pb-4">
           <CardTitle className="text-zinc-50">Partner profile</CardTitle>
           <CardDescription className="text-red-400/90">{loadError}</CardDescription>
         </CardHeader>
-        <CardFooter>
+        <CardFooter className="border-t border-white/10 bg-white/[0.03] p-4">
           <Button
             type="button"
             variant="outline"
+            className="border-white/20 bg-white/5 text-zinc-100 hover:bg-white/10 hover:text-zinc-50"
             disabled={reloadBusy}
             onClick={() => void reload()}
           >
@@ -208,8 +217,8 @@ export function PartnerProfileForm({
   }
 
   return (
-    <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
-      <CardHeader>
+    <Card className="border-white/10 bg-white/[0.03] text-zinc-100 ring-white/10">
+      <CardHeader className="gap-1.5 border-b border-white/10 pb-4">
         <CardTitle className="text-zinc-50">Partner profile</CardTitle>
         <CardDescription className="text-zinc-400">
           Edit how you appear to the Peakd community. Changes are saved to your account.
@@ -275,18 +284,33 @@ export function PartnerProfileForm({
               <label htmlFor={typeId} className="mb-1.5 block text-sm font-medium text-zinc-300">
                 Type
               </label>
-              <select
-                id={typeId}
+              <Select
                 value={partnerType}
-                onChange={(e) => setPartnerType(e.target.value as PartnerType)}
-                className="h-10 w-full max-w-md rounded-lg border border-white/15 bg-white/5 px-3 text-sm text-zinc-100 outline-none focus-visible:border-[#26c2c9]/60 focus-visible:ring-2 focus-visible:ring-[#26c2c9]/25"
+                items={TYPE_LABELS}
+                onValueChange={(next) => {
+                  if (next && isPartnerType(next)) {
+                    setPartnerType(next);
+                  }
+                }}
               >
-                {(Object.keys(TYPE_LABELS) as PartnerType[]).map((key) => (
-                  <option key={key} value={key} className="bg-zinc-900">
-                    {TYPE_LABELS[key]}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  id={typeId}
+                  className="h-10 w-full max-w-md border-white/15 bg-white/5 text-zinc-100 hover:bg-white/10 focus-visible:border-[#26c2c9]/60 focus-visible:ring-2 focus-visible:ring-[#26c2c9]/25 data-placeholder:text-zinc-500"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-w-md border border-white/10 bg-[#0a1218] text-zinc-100 ring-white/10">
+                  {(Object.keys(TYPE_LABELS) as PartnerType[]).map((key) => (
+                    <SelectItem
+                      key={key}
+                      value={key}
+                      className="focus:bg-[#26c2c9]/15 focus:text-zinc-50 data-highlighted:bg-[#26c2c9]/15 data-highlighted:text-zinc-50"
+                    >
+                      {TYPE_LABELS[key]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -302,7 +326,7 @@ export function PartnerProfileForm({
           onCountryCodeChange={setCountryCode}
         />
       </CardContent>
-      <CardFooter className="flex flex-col items-stretch gap-3 border-t border-white/10 sm:flex-row sm:items-center sm:justify-between">
+      <CardFooter className="flex flex-col items-stretch gap-3 border-t border-white/10 bg-white/[0.03] p-4 text-zinc-100 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-h-5 text-sm">
           {saveError ? <span className="text-red-400">{saveError}</span> : null}
           {saveOk && !saveError ? <span className="text-[#26c2c9]">Saved.</span> : null}
