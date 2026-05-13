@@ -55,10 +55,13 @@ function ComboboxInput({
   disabled = false,
   showTrigger = true,
   showClear = false,
+  trailingAddon,
   ...props
 }: ComboboxPrimitive.Input.Props & {
   showTrigger?: boolean
   showClear?: boolean
+  /** Rendered in the trailing group before the dropdown trigger (e.g. “add new”). */
+  trailingAddon?: React.ReactNode
 }) {
   return (
     <InputGroup className={cn("w-auto", className)}>
@@ -66,7 +69,8 @@ function ComboboxInput({
         render={<InputGroupInput disabled={disabled} />}
         {...props}
       />
-      <InputGroupAddon align="inline-end">
+      <InputGroupAddon align="inline-end" className="gap-0.5">
+        {trailingAddon}
         {showTrigger && (
           <InputGroupButton
             size="icon-xs"

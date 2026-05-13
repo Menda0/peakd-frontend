@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { getApiBase } from "@/lib/api";
+import { formatDurationMinutes, waveTypeTitle } from "@/lib/surf-session-waves";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 
 type SessionDetail = {
@@ -22,6 +23,10 @@ type SessionDetail = {
   regionId: string;
   spotId: string;
   sessionDate: string;
+  sessionTime: string;
+  durationMinutes: number;
+  conditionsRating: number | null;
+  waveTypes: string[];
   createdAt: string;
   spotName?: string;
   regionName?: string;
@@ -185,10 +190,24 @@ export function StudioSessionFolder() {
           <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
             <CardHeader>
               <CardTitle className="text-xl sm:text-2xl">
-                {session.spotName ?? "Surf session"} · {session.sessionDate}
+                {session.spotName ?? "Surf session"} · {session.sessionDate} ·{" "}
+                {session.sessionTime ?? "12:00"}
               </CardTitle>
-              <CardDescription className="text-zinc-500">
-                {session.regionName ?? session.regionId} · {session.countryCode}
+              <CardDescription className="space-y-1 text-zinc-500">
+                <span>
+                  {session.regionName ?? session.regionId} · {session.countryCode}
+                </span>
+                <span className="block text-xs text-zinc-500">
+                  {formatDurationMinutes(session.durationMinutes ?? 120)} in the water
+                  {session.conditionsRating != null
+                    ? ` · Conditions rated ${session.conditionsRating}/5`
+                    : ""}
+                </span>
+                {session.waveTypes?.length ? (
+                  <span className="block text-xs text-zinc-400">
+                    Waves: {session.waveTypes.map((id) => waveTypeTitle(id)).join(", ")}
+                  </span>
+                ) : null}
               </CardDescription>
               <p className="font-mono text-xs text-zinc-600">{session.sessionId}</p>
             </CardHeader>

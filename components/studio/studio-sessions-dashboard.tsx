@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getApiBase } from "@/lib/api";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 import { StudioNewSessionDialog } from "@/components/studio/studio-new-session-dialog";
+import { formatDurationMinutes, waveTypeTitle } from "@/lib/surf-session-waves";
 
 type SurfSessionRow = {
   sessionId: string;
@@ -16,6 +17,10 @@ type SurfSessionRow = {
   regionId: string;
   spotId: string;
   sessionDate: string;
+  sessionTime: string;
+  durationMinutes: number;
+  conditionsRating: number | null;
+  waveTypes: string[];
   createdAt: string;
   spotName?: string;
   regionName?: string;
@@ -150,10 +155,19 @@ export function StudioSessionsDashboard() {
                         <span className="font-medium text-zinc-100">
                           {s.spotName ?? "Spot"}{" "}
                           <span className="font-normal text-zinc-500">·</span>{" "}
-                          {s.sessionDate}
+                          {s.sessionDate}{" "}
+                          <span className="font-normal text-zinc-500">·</span>{" "}
+                          {s.sessionTime}
                         </span>
                         <p className="truncate text-xs text-zinc-500">
-                          {s.regionName ?? s.regionId} · {s.countryCode}
+                          {s.regionName ?? s.regionId} · {s.countryCode} ·{" "}
+                          {formatDurationMinutes(s.durationMinutes ?? 120)}
+                          {s.conditionsRating != null
+                            ? ` · Conditions ${s.conditionsRating}/5`
+                            : ""}
+                          {s.waveTypes?.length
+                            ? ` · ${s.waveTypes.map((id) => waveTypeTitle(id)).join(", ")}`
+                            : ""}
                         </p>
                       </div>
                       <span className="shrink-0 font-mono text-xs text-zinc-600">
