@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getApiBase } from "../../../lib/api";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { getApiBase } from "@/lib/api";
 
 type JobDetail = {
   jobId: string;
@@ -37,7 +45,9 @@ export default function VideographerJobDetailPage() {
         setError(null);
         try {
           const base = getApiBase();
-          const res = await fetch(`${base}/videos/${jobId}`);
+          const res = await fetch(`${base}/videos/${jobId}`, {
+            credentials: "include",
+          });
           if (res.status === 404) {
             throw new Error("This upload was not found.");
           }
@@ -68,15 +78,12 @@ export default function VideographerJobDetailPage() {
 
   if (!jobId) {
     return (
-      <div className="min-h-full bg-zinc-50 px-4 py-10 font-sans dark:bg-zinc-950">
-        <div className="mx-auto max-w-4xl">
-          <Link
-            href="/videographer"
-            className="text-sm font-medium text-zinc-600 underline-offset-4 hover:underline dark:text-zinc-400"
-          >
+      <div className="bg-background px-4 py-10">
+        <div className="mx-auto max-w-4xl space-y-4">
+          <Button variant="link" nativeButton={false} className="h-auto p-0" render={<Link href="/videographer" />}>
             ← Back to uploads
-          </Link>
-          <p className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
+          </Button>
+          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             Missing job id.
           </p>
         </div>
@@ -85,86 +92,89 @@ export default function VideographerJobDetailPage() {
   }
 
   return (
-    <div className="min-h-full bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+    <div className="bg-background text-foreground">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-10 sm:px-6">
         <div>
-          <Link
-            href="/videographer"
-            className="text-sm font-medium text-zinc-600 underline-offset-4 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
+            className="mb-2 -ml-2"
+            render={<Link href="/videographer" />}
           >
             ← Back to uploads
-          </Link>
+          </Button>
         </div>
 
-        {loading ? (
-          <p className="text-sm text-zinc-500">Loading…</p>
-        ) : null}
+        {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
 
         {error ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
+          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </p>
         ) : null}
 
         {detail && !loading ? (
           <>
-            <header className="border-b border-zinc-200 pb-6 dark:border-zinc-800">
-              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                {detail.originalFilename}
-              </h1>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                {new Date(detail.createdAt).toLocaleString()}
-              </p>
-              <p className="mt-2 break-all font-mono text-xs text-zinc-400 dark:text-zinc-500">
-                {detail.jobId}
-              </p>
-            </header>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl sm:text-2xl">{detail.originalFilename}</CardTitle>
+                <CardDescription>
+                  {new Date(detail.createdAt).toLocaleString()}
+                </CardDescription>
+                <p className="break-all font-mono text-xs text-muted-foreground">{detail.jobId}</p>
+              </CardHeader>
+            </Card>
 
-            <section>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                Processed video
-              </h2>
-              <div className="overflow-hidden rounded-xl border border-zinc-200 bg-black dark:border-zinc-800">
-                <video
-                  key={detail.videoUrl}
-                  className="aspect-video w-full"
-                  controls
-                  playsInline
-                  preload="metadata"
-                  src={detail.videoUrl}
-                >
-                  Your browser does not support the video tag.
-                </video>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                Snapshots ({detail.snapshots.length})
-              </h2>
-              {detail.snapshots.length === 0 ? (
-                <p className="text-sm text-zinc-500">No frames for this job.</p>
-              ) : (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {detail.snapshots.map((s, i) => (
-                    <a
-                      key={s.key}
-                      href={s.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element -- presigned S3 URLs */}
-                      <img
-                        src={s.url}
-                        alt={`Frame ${i + 1}`}
-                        className="aspect-video w-full object-cover transition group-hover:opacity-95"
-                      />
-                    </a>
-                  ))}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Processed video</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-hidden rounded-xl border border-border bg-black">
+                  <video
+                    key={detail.videoUrl}
+                    className="aspect-video w-full"
+                    controls
+                    playsInline
+                    preload="metadata"
+                    src={detail.videoUrl}
+                  >
+                    Your browser does not support the video tag.
+                  </video>
                 </div>
-              )}
-            </section>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Snapshots ({detail.snapshots.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {detail.snapshots.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No frames for this job.</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {detail.snapshots.map((s, i) => (
+                      <a
+                        key={s.key}
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group overflow-hidden rounded-lg border border-border bg-card transition hover:border-primary/40"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element -- presigned S3 URLs */}
+                        <img
+                          src={s.url}
+                          alt={`Frame ${i + 1}`}
+                          className="aspect-video w-full object-cover transition group-hover:opacity-95"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </>
         ) : null}
       </div>
