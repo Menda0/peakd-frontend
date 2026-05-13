@@ -16,15 +16,21 @@ export function FeedAppBar({
   userEmail?: string | null;
 }) {
   return (
-    <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-3 border-b border-white/10 bg-[#050a0f]/95 px-4 backdrop-blur-md sm:px-6">
-      <FeedLogo href={homeHref} />
-      <FeedSearchBar />
-      <FeedAppBarActions
-        userPicture={userPicture}
-        userName={userName}
-        userEmail={userEmail}
-        uploadHref={uploadHref}
-      />
+    <header className="sticky top-0 z-20 grid h-[4.25rem] shrink-0 grid-cols-[minmax(0,1fr)_minmax(0,42rem)_minmax(0,1fr)] items-center gap-3 border-b border-white/10 bg-[#050a0f]/95 px-3 backdrop-blur-md sm:h-[4.5rem] sm:px-5">
+      <div className="flex min-w-0 items-center justify-start">
+        <FeedLogo href={homeHref} />
+      </div>
+      <div className="flex min-w-0 justify-center px-1 sm:px-2">
+        <FeedSearchBar />
+      </div>
+      <div className="flex min-w-0 items-center justify-end">
+        <FeedAppBarActions
+          userPicture={userPicture}
+          userName={userName}
+          userEmail={userEmail}
+          uploadHref={uploadHref}
+        />
+      </div>
     </header>
   );
 }

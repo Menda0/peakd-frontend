@@ -2,7 +2,7 @@ import { SearchIcon } from "lucide-react";
 
 export function FeedSearchBar() {
   return (
-    <div className="relative mx-4 hidden min-w-0 max-w-2xl flex-1 md:block">
+    <div className="relative w-full max-w-md min-w-0 sm:max-w-xl lg:max-w-2xl">
       <SearchIcon
         className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-zinc-500"
         aria-hidden

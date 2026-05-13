@@ -14,6 +14,19 @@ export async function middleware(request: NextRequest) {
     return authRes;
   }
 
+  // Next internals and public files must not be session-redirected. The image optimizer
+  // fetches /logos/* (and similar) server-side; treating the first segment as userSub breaks that.
+  if (pathname.startsWith("/_next/") || pathname.startsWith("/logos/")) {
+    return authRes;
+  }
+
+  const isRootPublicAsset = /^\/[^/]+\.(?:ico|png|jpg|jpeg|gif|webp|svg|woff2?|ttf|eot|txt|xml|json|webmanifest)$/i.test(
+    pathname,
+  );
+  if (isRootPublicAsset) {
+    return authRes;
+  }
+
   const session = await auth0.getSession(request);
 
   if (session?.user?.sub && (pathname === "/videographer" || pathname.startsWith("/videographer/"))) {
