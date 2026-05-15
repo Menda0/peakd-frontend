@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,7 +24,7 @@ export function GeoCreateConfirmModal({
 }: {
   open: boolean;
   title: string;
-  description: string;
+  description: ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   onConfirm: () => void;
@@ -48,7 +49,7 @@ export function GeoCreateConfirmModal({
       <Card className="w-full max-w-md border-white/10 bg-[#0a1218] text-zinc-100">
         <CardHeader>
           <CardTitle className="text-lg">{title}</CardTitle>
-          <CardDescription className="text-zinc-400">{description}</CardDescription>
+          <CardDescription className="whitespace-pre-wrap text-zinc-400">{description}</CardDescription>
         </CardHeader>
         {error ? (
           <CardContent className="pt-0">

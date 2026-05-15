@@ -14,8 +14,15 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { getApiBase } from "@/lib/api";
+import { GeoCreateConfirmModal } from "@/components/pickers/geo-create-confirm-modal";
 import { formatDurationMinutes, waveTypeTitle } from "@/lib/surf-session-waves";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 type SessionDetail = {
   sessionId: string;
@@ -36,8 +43,27 @@ type JobListItem = {
   jobId: string;
   originalFilename: string;
   createdAt: string;
+  status?: "processing" | "completed" | "failed";
+  errorMessage?: string | null;
   thumbnailUrl?: string;
 };
+
+type PendingUpload = {
+  clientId: string;
+  fileName: string;
+  phase: "uploading" | "error";
+  errorMessage?: string;
+};
+
+type StagedFile = {
+  clientId: string;
+  file: File;
+};
+
+function isProbablyVideoFile(file: File): boolean {
+  if (file.type.startsWith("video/")) return true;
+  return /\.(mp4|mov|m4v|webm|mkv|avi|mpeg|mpg|wmv)$/i.test(file.name);
+}
 
 export function StudioSessionFolder() {
   const params = useParams();
@@ -51,8 +77,11 @@ export function StudioSessionFolder() {
   const [loading, setLoading] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [listError, setListError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
+  const [uploadConfirmOpen, setUploadConfirmOpen] = useState(false);
+  const [confirmUploadFiles, setConfirmUploadFiles] = useState<File[] | null>(null);
+  const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
   const [dragActive, setDragActive] = useState(false);
 
   const loadSession = useCallback(async () => {
@@ -112,44 +141,161 @@ export function StudioSessionFolder() {
     });
   }, [sessionId, loadAll]);
 
-  const uploadFile = async (file: File) => {
-    if (!sessionId) return;
-    setUploadError(null);
-    setUploading(true);
-    try {
-      const base = getApiBase();
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("surfSessionId", sessionId);
-      const res = await fetch(`${base}/videos/process`, {
-        method: "POST",
-        body: fd,
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => res.statusText);
-        throw new Error(text || `Upload failed (${res.status})`);
+  const hasProcessingJob = jobs.some((j) => (j.status ?? "completed") === "processing");
+
+  useEffect(() => {
+    if (!sessionId || !hasProcessingJob) return;
+    const id = window.setInterval(() => {
+      void loadJobs();
+    }, 2500);
+    return () => window.clearInterval(id);
+  }, [sessionId, hasProcessingJob, loadJobs]);
+
+  const removePending = useCallback((clientId: string) => {
+    setPendingUploads((rows) => rows.filter((r) => r.clientId !== clientId));
+  }, []);
+
+  const uploadOne = useCallback(
+    async (clientId: string, file: File) => {
+      if (!sessionId) return;
+      try {
+        const base = getApiBase();
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("surfSessionId", sessionId);
+        const res = await fetch(`${base}/videos/process`, {
+          method: "POST",
+          body: fd,
+          credentials: "include",
+        });
+        const text = await res.text();
+        let parsed: { jobId?: string; status?: string } = {};
+        if (text) {
+          try {
+            parsed = JSON.parse(text) as { jobId?: string; status?: string };
+          } catch {
+            /* not JSON */
+          }
+        }
+        if (res.status === 202) {
+          if (!parsed.jobId) {
+            throw new Error(text || "Invalid upload response");
+          }
+          setPendingUploads((rows) => rows.filter((r) => r.clientId !== clientId));
+          await loadJobs();
+          return;
+        }
+        if (!res.ok) {
+          throw new Error(text || `Upload failed (${res.status})`);
+        }
+        setPendingUploads((rows) => rows.filter((r) => r.clientId !== clientId));
+        await loadJobs();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Upload failed";
+        setPendingUploads((rows) =>
+          rows.map((r) =>
+            r.clientId === clientId ? { ...r, phase: "error", errorMessage: msg } : r,
+          ),
+        );
       }
-      await loadJobs();
-    } catch (e) {
-      setUploadError(e instanceof Error ? e.message : "Upload failed");
-    } finally {
-      setUploading(false);
+    },
+    [sessionId, loadJobs],
+  );
+
+  const startUploads = useCallback(
+    (files: File[]) => {
+      const videoFiles = files.filter(isProbablyVideoFile);
+      if (videoFiles.length === 0) {
+        setUploadError("Choose one or more video files.");
+        return;
+      }
+      setUploadError(null);
+      const newRows: PendingUpload[] = videoFiles.map((file) => ({
+        clientId: crypto.randomUUID(),
+        fileName: file.name,
+        phase: "uploading",
+      }));
+      setPendingUploads((prev) => [...newRows, ...prev]);
+      for (let i = 0; i < videoFiles.length; i++) {
+        void uploadOne(newRows[i].clientId, videoFiles[i]);
+      }
+    },
+    [uploadOne],
+  );
+
+  const addStagedFiles = useCallback((files: File[]) => {
+    const videoFiles = files.filter(isProbablyVideoFile);
+    if (videoFiles.length === 0) {
+      setUploadError("No video files found. Use MP4, MOV, WebM, MKV, or similar.");
+      return;
     }
-  };
+    setUploadError(null);
+    setStagedFiles((prev) => {
+      const next = [...prev];
+      for (const file of videoFiles) {
+        const dup = next.some(
+          (s) =>
+            s.file.name === file.name &&
+            s.file.size === file.size &&
+            s.file.lastModified === file.lastModified,
+        );
+        if (!dup) next.push({ clientId: crypto.randomUUID(), file });
+      }
+      return next;
+    });
+  }, []);
+
+  const removeStaged = useCallback((clientId: string) => {
+    setStagedFiles((rows) => rows.filter((r) => r.clientId !== clientId));
+  }, []);
+
+  const clearStaged = useCallback(() => {
+    setStagedFiles([]);
+  }, []);
 
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const list = e.target.files;
+    const picked = list?.length ? Array.from(list) : [];
     e.target.value = "";
-    if (file) void uploadFile(file);
+    if (picked.length) addStagedFiles(picked);
   };
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) void uploadFile(file);
+    const files = Array.from(e.dataTransfer.files ?? []);
+    if (files.length) addStagedFiles(files);
   };
+
+  const openUploadConfirm = () => {
+    if (!stagedFiles.length) return;
+    setConfirmUploadFiles(stagedFiles.map((s) => s.file));
+    setUploadConfirmOpen(true);
+  };
+
+  const handleCancelUploadConfirm = () => {
+    setUploadConfirmOpen(false);
+    setConfirmUploadFiles(null);
+  };
+
+  const handleConfirmUpload = () => {
+    const files = confirmUploadFiles;
+    if (!files?.length) return;
+    setUploadConfirmOpen(false);
+    setConfirmUploadFiles(null);
+    clearStaged();
+    startUploads(files);
+  };
+
+  const uploadConfirmDescription =
+    confirmUploadFiles && confirmUploadFiles.length > 0
+      ? `You are about to upload ${confirmUploadFiles.length} file${
+          confirmUploadFiles.length === 1 ? "" : "s"
+        } to this session. Each file will upload and process on the server in parallel.\n\n${confirmUploadFiles
+          .slice(0, 8)
+          .map((f) => `· ${f.name}`)
+          .join("\n")}${confirmUploadFiles.length > 8 ? `\n· …and ${confirmUploadFiles.length - 8} more` : ""}`
+      : "";
 
   if (!userPathPrefix) {
     return <div className="text-sm text-zinc-400">Loading workspace…</div>;
@@ -158,7 +304,7 @@ export function StudioSessionFolder() {
   if (!sessionId) {
     return (
       <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-        Missing session id.
+        This session link is invalid.
       </p>
     );
   }
@@ -195,7 +341,7 @@ export function StudioSessionFolder() {
               </CardTitle>
               <CardDescription className="space-y-1 text-zinc-500">
                 <span>
-                  {session.regionName ?? session.regionId} · {session.countryCode}
+                  {session.regionName ?? "Region"} · {session.countryCode}
                 </span>
                 <span className="block text-xs text-zinc-500">
                   {formatDurationMinutes(session.durationMinutes ?? 120)} in the water
@@ -209,7 +355,6 @@ export function StudioSessionFolder() {
                   </span>
                 ) : null}
               </CardDescription>
-              <p className="font-mono text-xs text-zinc-600">{session.sessionId}</p>
             </CardHeader>
           </Card>
         ) : null}
@@ -218,13 +363,14 @@ export function StudioSessionFolder() {
           <CardHeader>
             <CardTitle>Upload</CardTitle>
             <CardDescription className="text-zinc-500">
-              Videos are stored in this session folder.
+              Import videos into the queue below, then use <span className="text-zinc-400">Upload to session</span>{" "}
+              to start. You will be asked to confirm before anything is sent.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div
               className={cn(
-                "rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors",
+                "rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors sm:px-6 sm:py-8",
                 dragActive ? "border-[#26c2c9]/50 bg-white/5" : "border-white/15 bg-zinc-900/30",
               )}
               onDragEnter={(e) => {
@@ -239,30 +385,94 @@ export function StudioSessionFolder() {
               onDrop={onDrop}
             >
               <p className="text-sm font-medium text-zinc-200">
-                Drop a video here or choose a file
+                Drop videos here or import files (queue appears below)
               </p>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="video/*"
+                accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi,.mpeg,.mpg,.wmv"
+                multiple
                 className="sr-only"
-                disabled={uploading || !!sessionError}
+                disabled={!!sessionError}
                 onChange={onInputChange}
               />
               <Button
                 type="button"
-                className="mt-4 bg-[#26c2c9] text-[#040A10] hover:bg-[#2dd4dc]"
-                disabled={uploading || !!sessionError}
+                variant="outline"
+                className="mt-4 border-white/20 bg-white/5 text-zinc-100 hover:bg-white/10"
+                disabled={!!sessionError}
                 onClick={() => fileInputRef.current?.click()}
               >
-                {uploading ? "Uploading…" : "Select video"}
+                Import videos
               </Button>
+
+              {stagedFiles.length > 0 ? (
+                <ul className="mt-6 space-y-2 text-left">
+                  {stagedFiles.map(({ clientId, file }) => (
+                    <li
+                      key={clientId}
+                      className="flex items-center gap-3 rounded-lg border border-white/10 bg-black/25 px-3 py-2.5"
+                    >
+                      <span className="min-w-0 flex-1 truncate text-sm text-zinc-100" title={file.name}>
+                        {file.name}
+                      </span>
+                      <span className="shrink-0 text-xs tabular-nums text-zinc-500">
+                        {formatFileSize(file.size)}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 shrink-0 px-2 text-zinc-400 hover:text-zinc-100"
+                        disabled={!!sessionError}
+                        onClick={() => removeStaged(clientId)}
+                        aria-label={`Remove ${file.name}`}
+                      >
+                        Remove
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-6 text-xs text-zinc-500">
+                  No files in the queue yet. Use Import or drag files here — they will show in this area
+                  before uploading.
+                </p>
+              )}
+
               {uploadError ? (
                 <p className="mt-4 text-left text-sm text-red-400">{uploadError}</p>
               ) : null}
             </div>
+
+            <div className="flex flex-col gap-2 border-t border-white/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-zinc-500">
+                {stagedFiles.length > 0
+                  ? `${stagedFiles.length} file${stagedFiles.length === 1 ? "" : "s"} ready to upload.`
+                  : "Add files to the queue to enable upload."}
+              </p>
+              <Button
+                type="button"
+                className="shrink-0 bg-[#26c2c9] text-[#040A10] hover:bg-[#2dd4dc] disabled:opacity-40"
+                disabled={!!sessionError || stagedFiles.length === 0}
+                onClick={openUploadConfirm}
+              >
+                Upload to session
+              </Button>
+            </div>
           </CardContent>
         </Card>
+
+        <GeoCreateConfirmModal
+          open={uploadConfirmOpen}
+          title="Start upload?"
+          description={uploadConfirmDescription}
+          confirmLabel="Upload"
+          cancelLabel="Cancel"
+          onConfirm={handleConfirmUpload}
+          onCancel={handleCancelUploadConfirm}
+          isSubmitting={false}
+        />
 
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-4">
@@ -285,46 +495,109 @@ export function StudioSessionFolder() {
             </p>
           ) : null}
 
-          {!loading && jobs.length === 0 && !listError && session ? (
+          {!loading &&
+          jobs.length === 0 &&
+          pendingUploads.length === 0 &&
+          !listError &&
+          session ? (
             <p className="text-sm text-zinc-500">No videos in this session yet.</p>
           ) : null}
 
           <ul className="flex flex-col gap-3">
-            {jobs.map((job) => (
-              <li key={job.jobId}>
-                <Link
-                  href={`${userPathPrefix}/studio/sessions/${sessionId}/videos/${job.jobId}`}
-                  className="block"
-                >
-                  <Card className="border-white/10 bg-white/[0.03] transition-colors hover:border-[#26c2c9]/30 hover:shadow-sm">
-                    <CardContent className="flex gap-4 p-4">
-                      <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
-                        {job.thumbnailUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={job.thumbnailUrl}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <span className="flex h-full w-full items-center justify-center text-xs text-zinc-500">
-                            No preview
+            {pendingUploads.map((p) => (
+              <li key={p.clientId}>
+                <Card className="border-white/10 bg-white/[0.03]">
+                  <CardContent className="flex gap-4 p-4">
+                    <div
+                      className={cn(
+                        "relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-800",
+                        p.phase === "uploading" && "animate-pulse",
+                      )}
+                    />
+                    <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
+                      <span className="truncate font-medium text-zinc-100" title={p.fileName}>
+                        {p.fileName}
+                      </span>
+                      {p.phase === "uploading" ? (
+                        <div className="space-y-1.5">
+                          <div className="h-2.5 w-40 max-w-full animate-pulse rounded bg-zinc-700/80" />
+                          <span className="text-xs text-zinc-500">
+                            Uploading to server…
                           </span>
-                        )}
-                      </div>
-                      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-                        <span className="truncate font-medium text-zinc-100">
-                          {job.originalFilename}
-                        </span>
-                        <span className="text-xs text-zinc-500">
-                          {new Date(job.createdAt).toLocaleString()}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <span className="text-xs text-red-400">{p.errorMessage ?? "Failed"}</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-fit shrink-0 border-white/15 text-zinc-200"
+                            onClick={() => removePending(p.clientId)}
+                          >
+                            Dismiss
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               </li>
             ))}
+            {jobs.map((job) => {
+              const status = job.status ?? "completed";
+              const isProcessing = status === "processing";
+              const isFailed = status === "failed";
+              return (
+                <li key={job.jobId}>
+                  <Link
+                    href={`${userPathPrefix}/studio/sessions/${sessionId}/videos/${job.jobId}`}
+                    className="block"
+                  >
+                    <Card
+                      className={cn(
+                        "border-white/10 bg-white/[0.03] transition-colors hover:border-[#26c2c9]/30 hover:shadow-sm",
+                        isFailed && "hover:border-red-500/30",
+                      )}
+                    >
+                      <CardContent className="flex gap-4 p-4">
+                        <div
+                          className={cn(
+                            "relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-800",
+                            isProcessing && "animate-pulse",
+                          )}
+                        >
+                          {job.thumbnailUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={job.thumbnailUrl}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span className="flex h-full w-full items-center justify-center px-1 text-center text-xs text-zinc-500">
+                              {isProcessing ? "Processing" : isFailed ? "Failed" : "No preview"}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+                          <span className="truncate font-medium text-zinc-100">
+                            {job.originalFilename}
+                          </span>
+                          <span className="line-clamp-2 text-xs text-zinc-500">
+                            {isProcessing
+                              ? "Processing on server — safe to refresh; status is saved."
+                              : isFailed
+                                ? (job.errorMessage ?? "Processing failed.")
+                                : new Date(job.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </section>
       </div>

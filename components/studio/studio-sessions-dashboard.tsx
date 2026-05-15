@@ -30,6 +30,8 @@ type JobListItem = {
   jobId: string;
   originalFilename: string;
   createdAt: string;
+  status?: "processing" | "completed" | "failed";
+  errorMessage?: string | null;
   thumbnailUrl?: string;
   surfSessionId?: string | null;
 };
@@ -150,7 +152,7 @@ export function StudioSessionsDashboard() {
                   className="block"
                 >
                   <Card className="border-white/10 bg-white/[0.03] transition-colors hover:border-[#26c2c9]/30 hover:shadow-sm">
-                    <CardContent className="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <CardContent className="flex flex-col gap-1 p-4">
                       <div className="min-w-0">
                         <span className="font-medium text-zinc-100">
                           {s.spotName ?? "Spot"}{" "}
@@ -160,7 +162,7 @@ export function StudioSessionsDashboard() {
                           {s.sessionTime}
                         </span>
                         <p className="truncate text-xs text-zinc-500">
-                          {s.regionName ?? s.regionId} · {s.countryCode} ·{" "}
+                          {s.regionName ?? "Region"} · {s.countryCode} ·{" "}
                           {formatDurationMinutes(s.durationMinutes ?? 120)}
                           {s.conditionsRating != null
                             ? ` · Conditions ${s.conditionsRating}/5`
@@ -170,9 +172,6 @@ export function StudioSessionsDashboard() {
                             : ""}
                         </p>
                       </div>
-                      <span className="shrink-0 font-mono text-xs text-zinc-600">
-                        {s.sessionId}
-                      </span>
                     </CardContent>
                   </Card>
                 </Link>
