@@ -52,14 +52,20 @@ function ConditionsStars({ rating }: { rating: number | null }) {
   );
 }
 
+export const SESSION_PREVIEW_SLOTS_LIST = 3;
+export const SESSION_PREVIEW_SLOTS_DETAIL = 4;
+export const VIDEO_JOB_THUMBNAIL_SLOTS = 4;
+
 function SessionPreviewThumbs({
   urls,
   videoCount,
+  slotCount = SESSION_PREVIEW_SLOTS_LIST,
 }: {
   urls: string[];
   videoCount: number;
+  slotCount?: number;
 }) {
-  const slots = [0, 1, 2] as const;
+  const slots = Array.from({ length: slotCount }, (_, i) => i);
   const videoLabel = videoCount === 1 ? "1 wave" : `${videoCount} waves`;
 
   return (
@@ -96,12 +102,57 @@ function SessionPreviewThumbs({
   );
 }
 
+export function VideoThumbnailStrip({
+  urls,
+  slotCount = VIDEO_JOB_THUMBNAIL_SLOTS,
+  emptyLabel,
+  isProcessing = false,
+  className,
+}: {
+  urls: string[];
+  slotCount?: number;
+  emptyLabel?: string;
+  isProcessing?: boolean;
+  className?: string;
+}) {
+  const slots = Array.from({ length: slotCount }, (_, i) => i);
+
+  return (
+    <div className={cn("flex shrink-0 items-stretch gap-1.5", className)}>
+      {slots.map((i) => {
+        const url = urls[i];
+        return (
+          <div
+            key={i}
+            className={cn(
+              "relative h-20 w-[4.25rem] overflow-hidden rounded-lg border border-white/10 bg-zinc-800 sm:w-[4.5rem]",
+              (isProcessing || (i === 0 && urls.length === 0 && !emptyLabel)) &&
+                "animate-pulse",
+            )}
+          >
+            {url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center px-1 text-center text-[10px] leading-tight text-zinc-500">
+                {emptyLabel && i === 0 ? emptyLabel : ""}
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function SessionSummaryCard({
   session,
   className,
+  previewSlotCount = SESSION_PREVIEW_SLOTS_LIST,
 }: {
   session: SurfSessionSummary;
   className?: string;
+  previewSlotCount?: number;
 }) {
   const waveLabels = session.waveTypes?.map((id) => waveTypeTitle(id)) ?? [];
 
@@ -151,6 +202,7 @@ export function SessionSummaryCard({
         <SessionPreviewThumbs
           urls={session.previewThumbnailUrls}
           videoCount={session.videoCount}
+          slotCount={previewSlotCount}
         />
       </CardContent>
     </Card>

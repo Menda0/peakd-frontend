@@ -15,7 +15,11 @@ import {
 import { cn } from "@/lib/utils";
 import { getApiBase } from "@/lib/api";
 import { GeoCreateConfirmModal } from "@/components/pickers/geo-create-confirm-modal";
-import { SessionSummaryCard } from "@/components/studio/session-summary-card";
+import {
+  SESSION_PREVIEW_SLOTS_DETAIL,
+  SessionSummaryCard,
+  VideoThumbnailStrip,
+} from "@/components/studio/session-summary-card";
 import {
   StudioSessionFormFields,
   validateStudioSessionFormValues,
@@ -67,6 +71,7 @@ type JobListItem = {
   status?: "processing" | "completed" | "failed";
   errorMessage?: string | null;
   thumbnailUrl?: string;
+  thumbnailUrls?: string[];
 };
 
 type PendingUpload = {
@@ -148,7 +153,16 @@ export function StudioSessionFolder() {
         throw new Error(await res.text().catch(() => res.statusText));
       }
       const data = (await res.json()) as JobListItem[];
-      setJobs(Array.isArray(data) ? data : []);
+      setJobs(
+        Array.isArray(data)
+          ? data.map((job) => ({
+              ...job,
+              thumbnailUrls:
+                job.thumbnailUrls ??
+                (job.thumbnailUrl ? [job.thumbnailUrl] : []),
+            }))
+          : [],
+      );
     } catch (e) {
       setListError(e instanceof Error ? e.message : "Failed to load videos");
       setJobs([]);
@@ -475,7 +489,10 @@ export function StudioSessionFolder() {
                     Edit session
                   </Button>
                 </div>
-                <SessionSummaryCard session={session} />
+                <SessionSummaryCard
+                  session={session}
+                  previewSlotCount={SESSION_PREVIEW_SLOTS_DETAIL}
+                />
               </div>
             )}
           </section>
@@ -682,26 +699,18 @@ export function StudioSessionFolder() {
                         isFailed && "hover:border-red-500/30",
                       )}
                     >
-                      <CardContent className="flex gap-4 p-4">
-                        <div
-                          className={cn(
-                            "relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-800",
-                            isProcessing && "animate-pulse",
-                          )}
-                        >
-                          {job.thumbnailUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={job.thumbnailUrl}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <span className="flex h-full w-full items-center justify-center px-1 text-center text-xs text-zinc-500">
-                              {isProcessing ? "Processing" : isFailed ? "Failed" : "No preview"}
-                            </span>
-                          )}
-                        </div>
+                      <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+                        <VideoThumbnailStrip
+                          urls={job.thumbnailUrls ?? []}
+                          isProcessing={isProcessing}
+                          emptyLabel={
+                            isProcessing
+                              ? "Processing"
+                              : isFailed
+                                ? "Failed"
+                                : "No preview"
+                          }
+                        />
                         <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
                           <span className="truncate font-medium text-zinc-100">
                             {job.originalFilename}
