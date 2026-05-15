@@ -35,6 +35,14 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** Whole days until expiry for raw-export ZIP UX (aligned with API retention). */
+function rawDaysRemaining(expiresAt: string | null | undefined): number {
+  if (!expiresAt?.trim()) return 0;
+  const end = Date.parse(expiresAt);
+  if (!Number.isFinite(end)) return 0;
+  return Math.max(0, Math.ceil((end - Date.now()) / 86_400_000));
+}
+
 type SessionDetail = {
   sessionId: string;
   countryCode: string;
@@ -54,6 +62,9 @@ type SessionDetail = {
   closedAt?: string | null;
   exportStatus?: "idle" | "processing" | "ready" | "failed";
   exportErrorMessage?: string | null;
+  rawExportStatus?: "idle" | "processing" | "ready" | "failed";
+  rawExportErrorMessage?: string | null;
+  rawExportExpiresAt?: string | null;
 };
 
 function sessionToFormValues(session: SessionDetail): StudioSessionFormValues {
@@ -104,13 +115,21 @@ function SessionActionsBar({
   exportProcessing,
   exportReady,
   exportFailed,
+  rawExportProcessing,
+  rawExportReady,
+  rawExportFailed,
+  rawDaysLeft,
+  anyExportProcessing,
   closingSession,
   downloadingExport,
+  downloadingRawExport,
   closeError,
   downloadError,
+  rawDownloadError,
   onCloseClick,
   onEditClick,
-  onDownloadClick,
+  onDownloadProcessedClick,
+  onDownloadRawClick,
 }: {
   session: SessionDetail;
   hasProcessingJob: boolean;
@@ -119,13 +138,21 @@ function SessionActionsBar({
   exportProcessing: boolean;
   exportReady: boolean;
   exportFailed: boolean;
+  rawExportProcessing: boolean;
+  rawExportReady: boolean;
+  rawExportFailed: boolean;
+  rawDaysLeft: number;
+  anyExportProcessing: boolean;
   closingSession: boolean;
   downloadingExport: boolean;
+  downloadingRawExport: boolean;
   closeError: string | null;
   downloadError: string | null;
+  rawDownloadError: string | null;
   onCloseClick: () => void;
   onEditClick: () => void;
-  onDownloadClick: () => void;
+  onDownloadProcessedClick: () => void;
+  onDownloadRawClick: () => void;
 }) {
   return (
     <>
@@ -138,7 +165,7 @@ function SessionActionsBar({
               size="sm"
               className="border-white/15 bg-transparent text-zinc-200"
               disabled={!exportReady || downloadingExport || exportProcessing}
-              onClick={onDownloadClick}
+              onClick={onDownloadProcessedClick}
             >
               {downloadingExport || exportProcessing ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -147,10 +174,45 @@ function SessionActionsBar({
               )}
               <span className="ml-2">
                 {exportProcessing
-                  ? "Preparing download…"
+                  ? "Preparing processed…"
                   : exportFailed
-                    ? "Download unavailable"
-                    : "Download"}
+                    ? "Processed unavailable"
+                    : "Download processed"}
+              </span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-white/15 bg-transparent text-zinc-200"
+              disabled={
+                !rawExportReady ||
+                rawDaysLeft <= 0 ||
+                downloadingRawExport ||
+                rawExportProcessing
+              }
+              title={
+                rawDaysLeft <= 0 && rawExportReady
+                  ? "Raw export retention period has ended."
+                  : undefined
+              }
+              onClick={onDownloadRawClick}
+            >
+              {downloadingRawExport || rawExportProcessing ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Download className="size-4" aria-hidden />
+              )}
+              <span className="ml-2">
+                {rawExportProcessing
+                  ? "Preparing raw ZIP…"
+                  : rawExportFailed
+                    ? "Raw unavailable"
+                    : rawExportReady && rawDaysLeft > 0
+                      ? `Download raw (${rawDaysLeft}d left)`
+                      : rawExportReady
+                        ? "Raw expired"
+                        : "Download raw"}
               </span>
             </Button>
             <Button
@@ -161,7 +223,7 @@ function SessionActionsBar({
               disabled
               title="Share coming soon"
             >
-              {exportProcessing ? (
+              {anyExportProcessing ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />
               ) : (
                 <Share2 className="size-4" aria-hidden />
@@ -205,8 +267,14 @@ function SessionActionsBar({
       </div>
       {closeError ? <p className="text-sm text-red-400">{closeError}</p> : null}
       {downloadError ? <p className="text-sm text-red-400">{downloadError}</p> : null}
+      {rawDownloadError ? (
+        <p className="text-sm text-red-400">{rawDownloadError}</p>
+      ) : null}
       {exportFailed && session.exportErrorMessage ? (
         <p className="text-sm text-red-400">{session.exportErrorMessage}</p>
+      ) : null}
+      {rawExportFailed && session.rawExportErrorMessage ? (
+        <p className="text-sm text-red-400">{session.rawExportErrorMessage}</p>
       ) : null}
       {isSessionClosed ? (
         <p className="text-xs text-zinc-500">
@@ -247,6 +315,8 @@ export function StudioSessionFolder() {
   const [closeError, setCloseError] = useState<string | null>(null);
   const [downloadingExport, setDownloadingExport] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloadingRawExport, setDownloadingRawExport] = useState(false);
+  const [rawDownloadError, setRawDownloadError] = useState<string | null>(null);
 
   const loadSession = useCallback(async () => {
     if (!sessionId) return;
@@ -270,6 +340,9 @@ export function StudioSessionFolder() {
         status: data.status ?? "open",
         exportStatus: data.exportStatus ?? "idle",
         exportErrorMessage: data.exportErrorMessage ?? null,
+        rawExportStatus: data.rawExportStatus ?? "idle",
+        rawExportErrorMessage: data.rawExportErrorMessage ?? null,
+        rawExportExpiresAt: data.rawExportExpiresAt ?? null,
         closedAt: data.closedAt ?? null,
       });
     } catch (e) {
@@ -328,8 +401,15 @@ export function StudioSessionFolder() {
   const exportProcessing = session?.exportStatus === "processing";
   const exportReady = session?.exportStatus === "ready";
   const exportFailed = session?.exportStatus === "failed";
+  const rawExportProcessing = session?.rawExportStatus === "processing";
+  const rawExportReady = session?.rawExportStatus === "ready";
+  const rawExportFailed = session?.rawExportStatus === "failed";
+  const rawDaysLeft = rawDaysRemaining(session?.rawExportExpiresAt);
+  const anyExportProcessing = exportProcessing || rawExportProcessing;
   const showExportActions =
-    isSessionClosed || (session?.exportStatus != null && session.exportStatus !== "idle");
+    isSessionClosed ||
+    (session?.exportStatus != null && session.exportStatus !== "idle") ||
+    (session?.rawExportStatus != null && session.rawExportStatus !== "idle");
   const uploadDisabled =
     !!sessionError || loading || !session || editing || isSessionClosed;
 
@@ -342,12 +422,41 @@ export function StudioSessionFolder() {
   }, [sessionId, hasProcessingJob, loadJobs]);
 
   useEffect(() => {
-    if (!sessionId || !exportProcessing) return;
+    if (!sessionId || (!exportProcessing && !rawExportProcessing)) return;
     const id = window.setInterval(() => {
       void loadSession();
     }, 2500);
     return () => window.clearInterval(id);
-  }, [sessionId, exportProcessing, loadSession]);
+  }, [sessionId, exportProcessing, rawExportProcessing, loadSession]);
+
+  const handleDownloadRawExport = useCallback(async () => {
+    if (!sessionId || !rawExportReady || rawDaysRemaining(session?.rawExportExpiresAt) <= 0) {
+      return;
+    }
+    setRawDownloadError(null);
+    setDownloadingRawExport(true);
+    try {
+      const base = getApiBase();
+      const res = await fetch(
+        `${base}/studio/sessions/${sessionId}/export/raw/download`,
+        { credentials: "include" },
+      );
+      if (!res.ok) {
+        throw new Error(await res.text().catch(() => res.statusText));
+      }
+      const data = (await res.json()) as { downloadUrl?: string };
+      if (!data.downloadUrl) {
+        throw new Error("Download link unavailable");
+      }
+      window.open(data.downloadUrl, "_blank", "noopener,noreferrer");
+    } catch (e) {
+      setRawDownloadError(
+        e instanceof Error ? e.message : "Failed to start raw download",
+      );
+    } finally {
+      setDownloadingRawExport(false);
+    }
+  }, [sessionId, rawExportReady, session?.rawExportExpiresAt]);
 
   const removePending = useCallback((clientId: string) => {
     setPendingUploads((rows) => rows.filter((r) => r.clientId !== clientId));
@@ -664,6 +773,14 @@ export function StudioSessionFolder() {
                             exportStatus: updated.exportStatus ?? session.exportStatus,
                             exportErrorMessage:
                               updated.exportErrorMessage ?? session.exportErrorMessage,
+                            rawExportStatus:
+                              updated.rawExportStatus ?? session.rawExportStatus,
+                            rawExportErrorMessage:
+                              updated.rawExportErrorMessage ??
+                              session.rawExportErrorMessage,
+                            rawExportExpiresAt:
+                              updated.rawExportExpiresAt ??
+                              session.rawExportExpiresAt,
                             closedAt: updated.closedAt ?? session.closedAt,
                           });
                           setEditing(false);
@@ -692,10 +809,17 @@ export function StudioSessionFolder() {
                   exportProcessing={exportProcessing}
                   exportReady={exportReady}
                   exportFailed={exportFailed}
+                  rawExportProcessing={rawExportProcessing}
+                  rawExportReady={rawExportReady}
+                  rawExportFailed={rawExportFailed}
+                  rawDaysLeft={rawDaysLeft}
+                  anyExportProcessing={anyExportProcessing}
                   closingSession={closingSession}
                   downloadingExport={downloadingExport}
+                  downloadingRawExport={downloadingRawExport}
                   closeError={closeError}
                   downloadError={downloadError}
+                  rawDownloadError={rawDownloadError}
                   onCloseClick={() => {
                     setCloseError(null);
                     setCloseConfirmOpen(true);
@@ -705,7 +829,8 @@ export function StudioSessionFolder() {
                     setEditError(null);
                     setEditing(true);
                   }}
-                  onDownloadClick={() => void handleDownloadExport()}
+                  onDownloadProcessedClick={() => void handleDownloadExport()}
+                  onDownloadRawClick={() => void handleDownloadRawExport()}
                 />
                 <SessionSummaryCard
                   session={session}
