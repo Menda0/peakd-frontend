@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -27,7 +28,32 @@ import {
 } from "@/components/studio/studio-session-form-fields";
 import type { WaveTypeId } from "@/lib/surf-session-waves";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
-import { Download, Loader2, Share2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { buttonVariants } from "@/components/ui/button";
+import { ChevronDown, Copy, Download, Loader2, Share2 } from "lucide-react";
+
+type ExportKind = "processed" | "raw";
+
+/** Same-origin path proxied by `/api/peakd/*` (streams ZIP from API; not S3 URLs). */
+function sessionExportPath(sessionId: string, kind: ExportKind): string {
+  const branch =
+    kind === "processed" ? "export/download" : "export/raw/download";
+  return `/studio/sessions/${sessionId}/${branch}`;
+}
+
+function absoluteSessionExportShareUrl(
+  sessionId: string,
+  kind: ExportKind,
+): string {
+  if (typeof window === "undefined") return "";
+  return `${window.location.origin}${getApiBase()}${sessionExportPath(sessionId, kind)}`;
+}
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -41,6 +67,85 @@ function rawDaysRemaining(expiresAt: string | null | undefined): number {
   const end = Date.parse(expiresAt);
   if (!Number.isFinite(end)) return 0;
   return Math.max(0, Math.ceil((end - Date.now()) / 86_400_000));
+}
+
+function StudioExportShareModal({
+  kind,
+  url,
+  copied,
+  rawDaysLeft,
+  onClose,
+  onCopyLink,
+}: {
+  kind: ExportKind | null;
+  url: string;
+  copied: boolean;
+  rawDaysLeft: number;
+  onClose: () => void;
+  onCopyLink: () => void;
+}) {
+  if (!kind) return null;
+
+  const title =
+    kind === "processed" ? "Share processed export" : "Share raw export";
+  const description =
+    kind === "processed"
+      ? "This Peakd link downloads through our site (not direct cloud storage). Anyone who opens it must be signed in as you — share only with people you trust."
+      : rawDaysLeft > 0
+        ? `Same as processed — link goes through Peakd. Raw ZIP files are removed from storage after about ${rawDaysLeft} more whole day${rawDaysLeft === 1 ? "" : "s"}; until then you can reuse this link while signed in.`
+        : "Raw export retention has ended; sharing is no longer available.";
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4"
+      role="presentation"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <Card className="w-full max-w-lg border-white/10 bg-[#0a1218] text-zinc-100">
+        <CardHeader>
+          <CardTitle className="text-lg">{title}</CardTitle>
+          <CardDescription className="text-zinc-400">{description}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 border-t border-white/10 pt-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+            <Input
+              readOnly
+              value={url}
+              className="border-white/15 bg-black/30 font-mono text-xs text-zinc-200"
+              aria-label="Share link"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0 border-white/15 bg-transparent text-zinc-200 sm:w-auto"
+              onClick={onCopyLink}
+            >
+              <Copy className="size-4" aria-hidden />
+              <span className="ml-2">{copied ? "Copied" : "Copy"}</span>
+            </Button>
+          </div>
+          {copied ? (
+            <p className="text-xs text-emerald-400">Link copied to clipboard.</p>
+          ) : null}
+          <p className="text-xs text-zinc-500">
+            Opening the link in a browser starts a logged-in download from Peakd.
+          </p>
+        </CardContent>
+        <CardFooter className="justify-end border-white/10 bg-transparent py-4">
+          <Button
+            type="button"
+            variant="outline"
+            className="border-white/15 bg-transparent text-zinc-200"
+            onClick={onClose}
+          >
+            Close
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
+  );
 }
 
 type SessionDetail = {
@@ -107,6 +212,9 @@ function isProbablyVideoFile(file: File): boolean {
   return /\.(mp4|mov|m4v|webm|mkv|avi|mpeg|mpg|wmv)$/i.test(file.name);
 }
 
+const dropdownSurface =
+  "min-w-[260px] border border-white/10 bg-[#0a1218] p-1 text-zinc-100 shadow-lg ring-1 ring-white/10";
+
 function SessionActionsBar({
   session,
   hasProcessingJob,
@@ -121,15 +229,13 @@ function SessionActionsBar({
   rawDaysLeft,
   anyExportProcessing,
   closingSession,
-  downloadingExport,
-  downloadingRawExport,
   closeError,
   downloadError,
   rawDownloadError,
   onCloseClick,
   onEditClick,
-  onDownloadProcessedClick,
-  onDownloadRawClick,
+  onDownloadPick,
+  onSharePick,
 }: {
   session: SessionDetail;
   hasProcessingJob: boolean;
@@ -144,92 +250,132 @@ function SessionActionsBar({
   rawDaysLeft: number;
   anyExportProcessing: boolean;
   closingSession: boolean;
-  downloadingExport: boolean;
-  downloadingRawExport: boolean;
   closeError: string | null;
   downloadError: string | null;
   rawDownloadError: string | null;
   onCloseClick: () => void;
   onEditClick: () => void;
-  onDownloadProcessedClick: () => void;
-  onDownloadRawClick: () => void;
+  onDownloadPick: (kind: ExportKind) => void;
+  onSharePick: (kind: ExportKind) => void;
 }) {
+  const processedDownloadDisabled =
+    !exportReady || exportProcessing;
+  const rawDownloadDisabled =
+    !rawExportReady ||
+    rawExportProcessing ||
+    rawDaysLeft <= 0;
+
+  const processedShareDisabled = !exportReady || exportProcessing;
+  const rawShareDisabled =
+    !rawExportReady || rawExportProcessing || rawDaysLeft <= 0;
+
+  const downloadTriggerLabel = anyExportProcessing
+    ? "Preparing exports…"
+    : "Download";
+
   return (
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
         {showExportActions ? (
           <div className="flex flex-wrap items-center gap-2 sm:mr-auto">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-white/15 bg-transparent text-zinc-200"
-              disabled={!exportReady || downloadingExport || exportProcessing}
-              onClick={onDownloadProcessedClick}
-            >
-              {downloadingExport || exportProcessing ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <Download className="size-4" aria-hidden />
-              )}
-              <span className="ml-2">
-                {exportProcessing
-                  ? "Preparing processed…"
-                  : exportFailed
-                    ? "Processed unavailable"
-                    : "Download processed"}
-              </span>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-white/15 bg-transparent text-zinc-200"
-              disabled={
-                !rawExportReady ||
-                rawDaysLeft <= 0 ||
-                downloadingRawExport ||
-                rawExportProcessing
-              }
-              title={
-                rawDaysLeft <= 0 && rawExportReady
-                  ? "Raw export retention period has ended."
-                  : undefined
-              }
-              onClick={onDownloadRawClick}
-            >
-              {downloadingRawExport || rawExportProcessing ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <Download className="size-4" aria-hidden />
-              )}
-              <span className="ml-2">
-                {rawExportProcessing
-                  ? "Preparing raw ZIP…"
-                  : rawExportFailed
-                    ? "Raw unavailable"
-                    : rawExportReady && rawDaysLeft > 0
-                      ? `Download raw (${rawDaysLeft}d left)`
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "border-white/15 bg-transparent text-zinc-200 data-popup-open:bg-white/10",
+                )}
+                disabled={processedDownloadDisabled && rawDownloadDisabled}
+              >
+                {anyExportProcessing ? (
+                  <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+                ) : (
+                  <Download className="size-4 shrink-0" aria-hidden />
+                )}
+                <span className="ml-2">{downloadTriggerLabel}</span>
+                <ChevronDown className="ml-1 size-4 shrink-0 opacity-70" aria-hidden />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className={dropdownSurface}>
+                <DropdownMenuItem
+                  disabled={processedDownloadDisabled}
+                  className="flex cursor-pointer flex-col items-start gap-0.5 py-2 focus:bg-white/10"
+                  onClick={() => onDownloadPick("processed")}
+                >
+                  <span className="font-medium text-zinc-100">Processed</span>
+                  <span className="text-xs text-zinc-500">
+                    WebM + snapshots (ZIP)
+                    {exportFailed ? " — build failed" : ""}
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={rawDownloadDisabled}
+                  title={
+                    rawDaysLeft <= 0 && rawExportReady
+                      ? "Raw export retention period has ended."
+                      : undefined
+                  }
+                  className="flex cursor-pointer flex-col items-start gap-0.5 py-2 focus:bg-white/10"
+                  onClick={() => onDownloadPick("raw")}
+                >
+                  <span className="font-medium text-zinc-100">Raw originals</span>
+                  <span className="text-xs text-zinc-500">
+                    {rawExportReady && rawDaysLeft > 0
+                      ? `Original uploads + snapshots · ${rawDaysLeft}d left on Peakd`
                       : rawExportReady
-                        ? "Raw expired"
-                        : "Download raw"}
-              </span>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-white/15 bg-transparent text-zinc-400"
-              disabled
-              title="Share coming soon"
-            >
-              {anyExportProcessing ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <Share2 className="size-4" aria-hidden />
-              )}
-              <span className="ml-2">Share</span>
-            </Button>
+                        ? "Retention ended"
+                        : rawExportFailed
+                          ? "Build failed"
+                          : "ZIP of source files + snapshots"}
+                  </span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "border-white/15 bg-transparent text-zinc-200 data-popup-open:bg-white/10",
+                )}
+                disabled={processedShareDisabled && rawShareDisabled}
+              >
+                {anyExportProcessing ? (
+                  <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+                ) : (
+                  <Share2 className="size-4 shrink-0" aria-hidden />
+                )}
+                <span className="ml-2">Share</span>
+                <ChevronDown className="ml-1 size-4 shrink-0 opacity-70" aria-hidden />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className={dropdownSurface}>
+                <DropdownMenuItem
+                  disabled={processedShareDisabled}
+                  className="flex cursor-pointer flex-col items-start gap-0.5 py-2 focus:bg-white/10"
+                  onClick={() => onSharePick("processed")}
+                >
+                  <span className="font-medium text-zinc-100">Processed export</span>
+                  <span className="text-xs text-zinc-500">
+                    Temporary download link (ZIP)
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={rawShareDisabled}
+                  title={
+                    rawDaysLeft <= 0 && rawExportReady
+                      ? "Raw export retention period has ended."
+                      : undefined
+                  }
+                  className="flex cursor-pointer flex-col items-start gap-0.5 py-2 focus:bg-white/10"
+                  onClick={() => onSharePick("raw")}
+                >
+                  <span className="font-medium text-zinc-100">Raw export</span>
+                  <span className="text-xs text-zinc-500">
+                    {rawExportReady && rawDaysLeft > 0
+                      ? `Temporary link · ~${rawDaysLeft}d file retention on Peakd`
+                      : "Original uploads + snapshots"}
+                  </span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         ) : null}
         {!isSessionClosed ? (
@@ -313,10 +459,16 @@ export function StudioSessionFolder() {
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   const [closingSession, setClosingSession] = useState(false);
   const [closeError, setCloseError] = useState<string | null>(null);
-  const [downloadingExport, setDownloadingExport] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
-  const [downloadingRawExport, setDownloadingRawExport] = useState(false);
   const [rawDownloadError, setRawDownloadError] = useState<string | null>(null);
+  const [shareModalKind, setShareModalKind] = useState<ExportKind | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
+  const shareCopyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const shareDisplayedUrl = useMemo(() => {
+    if (!shareModalKind || !sessionId) return "";
+    return absoluteSessionExportShareUrl(sessionId, shareModalKind);
+  }, [shareModalKind, sessionId]);
 
   const loadSession = useCallback(async () => {
     if (!sessionId) return;
@@ -429,34 +581,65 @@ export function StudioSessionFolder() {
     return () => window.clearInterval(id);
   }, [sessionId, exportProcessing, rawExportProcessing, loadSession]);
 
-  const handleDownloadRawExport = useCallback(async () => {
-    if (!sessionId || !rawExportReady || rawDaysRemaining(session?.rawExportExpiresAt) <= 0) {
-      return;
+  const handleCloseShareModal = useCallback(() => {
+    setShareModalKind(null);
+    setShareCopied(false);
+    if (shareCopyResetRef.current) {
+      clearTimeout(shareCopyResetRef.current);
+      shareCopyResetRef.current = null;
     }
-    setRawDownloadError(null);
-    setDownloadingRawExport(true);
+  }, []);
+
+  const handleCopyShareLink = useCallback(async () => {
+    if (!shareDisplayedUrl) return;
     try {
-      const base = getApiBase();
-      const res = await fetch(
-        `${base}/studio/sessions/${sessionId}/export/raw/download`,
-        { credentials: "include" },
-      );
-      if (!res.ok) {
-        throw new Error(await res.text().catch(() => res.statusText));
+      await navigator.clipboard.writeText(shareDisplayedUrl);
+      setShareCopied(true);
+      if (shareCopyResetRef.current) {
+        clearTimeout(shareCopyResetRef.current);
       }
-      const data = (await res.json()) as { downloadUrl?: string };
-      if (!data.downloadUrl) {
-        throw new Error("Download link unavailable");
-      }
-      window.open(data.downloadUrl, "_blank", "noopener,noreferrer");
-    } catch (e) {
-      setRawDownloadError(
-        e instanceof Error ? e.message : "Failed to start raw download",
-      );
-    } finally {
-      setDownloadingRawExport(false);
+      shareCopyResetRef.current = setTimeout(() => {
+        setShareCopied(false);
+        shareCopyResetRef.current = null;
+      }, 2500);
+    } catch {
+      setShareCopied(false);
     }
-  }, [sessionId, rawExportReady, session?.rawExportExpiresAt]);
+  }, [shareDisplayedUrl]);
+
+  const handleDownloadPick = useCallback(
+    (kind: ExportKind) => {
+      if (kind === "processed" && (!exportReady || exportProcessing)) {
+        return;
+      }
+      if (
+        kind === "raw" &&
+        (!rawExportReady ||
+          rawExportProcessing ||
+          rawDaysRemaining(session?.rawExportExpiresAt) <= 0)
+      ) {
+        return;
+      }
+      const setErr =
+        kind === "processed" ? setDownloadError : setRawDownloadError;
+      setErr(null);
+      const path = sessionExportPath(sessionId, kind);
+      window.open(`${getApiBase()}${path}`, "_blank", "noopener,noreferrer");
+    },
+    [
+      sessionId,
+      exportReady,
+      exportProcessing,
+      rawExportReady,
+      rawExportProcessing,
+      session?.rawExportExpiresAt,
+    ],
+  );
+
+  const handleSharePick = useCallback((kind: ExportKind) => {
+    setShareCopied(false);
+    setShareModalKind(kind);
+  }, []);
 
   const removePending = useCallback((clientId: string) => {
     setPendingUploads((rows) => rows.filter((r) => r.clientId !== clientId));
@@ -551,33 +734,6 @@ export function StudioSessionFolder() {
       setClosingSession(false);
     }
   }, [sessionId, loadSession]);
-
-  const handleDownloadExport = useCallback(async () => {
-    if (!sessionId || !exportReady) return;
-    setDownloadError(null);
-    setDownloadingExport(true);
-    try {
-      const base = getApiBase();
-      const res = await fetch(
-        `${base}/studio/sessions/${sessionId}/export/download`,
-        { credentials: "include" },
-      );
-      if (!res.ok) {
-        throw new Error(await res.text().catch(() => res.statusText));
-      }
-      const data = (await res.json()) as { downloadUrl?: string };
-      if (!data.downloadUrl) {
-        throw new Error("Download link unavailable");
-      }
-      window.open(data.downloadUrl, "_blank", "noopener,noreferrer");
-    } catch (e) {
-      setDownloadError(
-        e instanceof Error ? e.message : "Failed to start download",
-      );
-    } finally {
-      setDownloadingExport(false);
-    }
-  }, [sessionId, exportReady]);
 
   const addStagedFiles = useCallback((files: File[]) => {
     if (uploadDisabled) return;
@@ -815,8 +971,6 @@ export function StudioSessionFolder() {
                   rawDaysLeft={rawDaysLeft}
                   anyExportProcessing={anyExportProcessing}
                   closingSession={closingSession}
-                  downloadingExport={downloadingExport}
-                  downloadingRawExport={downloadingRawExport}
                   closeError={closeError}
                   downloadError={downloadError}
                   rawDownloadError={rawDownloadError}
@@ -829,8 +983,8 @@ export function StudioSessionFolder() {
                     setEditError(null);
                     setEditing(true);
                   }}
-                  onDownloadProcessedClick={() => void handleDownloadExport()}
-                  onDownloadRawClick={() => void handleDownloadRawExport()}
+                  onDownloadPick={handleDownloadPick}
+                  onSharePick={handleSharePick}
                 />
                 <SessionSummaryCard
                   session={session}
@@ -982,6 +1136,15 @@ export function StudioSessionFolder() {
             if (!closingSession) setCloseConfirmOpen(false);
           }}
           isSubmitting={closingSession}
+        />
+
+        <StudioExportShareModal
+          kind={shareModalKind}
+          url={shareDisplayedUrl}
+          copied={shareCopied}
+          rawDaysLeft={rawDaysLeft}
+          onClose={handleCloseShareModal}
+          onCopyLink={() => void handleCopyShareLink()}
         />
 
         <section className="space-y-4">
