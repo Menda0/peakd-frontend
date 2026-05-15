@@ -9,7 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getApiBase } from "@/lib/api";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 import { StudioNewSessionDialog } from "@/components/studio/studio-new-session-dialog";
-import { formatDurationMinutes, waveTypeTitle } from "@/lib/surf-session-waves";
+import { SessionSummaryCard } from "@/components/studio/session-summary-card";
+
 
 type SurfSessionRow = {
   sessionId: string;
@@ -24,6 +25,8 @@ type SurfSessionRow = {
   createdAt: string;
   spotName?: string;
   regionName?: string;
+  videoCount: number;
+  previewThumbnailUrls: string[];
 };
 
 type JobListItem = {
@@ -35,6 +38,7 @@ type JobListItem = {
   thumbnailUrl?: string;
   surfSessionId?: string | null;
 };
+
 
 export function StudioSessionsDashboard() {
   const router = useRouter();
@@ -64,7 +68,15 @@ export function StudioSessionsDashboard() {
       }
       const sData = (await sRes.json()) as SurfSessionRow[];
       const jData = (await jRes.json()) as JobListItem[];
-      setSessions(Array.isArray(sData) ? sData : []);
+      setSessions(
+        Array.isArray(sData)
+          ? sData.map((s) => ({
+              ...s,
+              videoCount: s.videoCount ?? 0,
+              previewThumbnailUrls: s.previewThumbnailUrls ?? [],
+            }))
+          : [],
+      );
       const jobs = Array.isArray(jData) ? jData : [];
       setLegacyJobs(jobs.filter((j) => !j.surfSessionId));
     } catch (e) {
@@ -149,31 +161,12 @@ export function StudioSessionsDashboard() {
               <li key={s.sessionId}>
                 <Link
                   href={`${userPathPrefix}/studio/sessions/${s.sessionId}`}
-                  className="block"
+                  className="block transition-colors hover:[&_.session-summary-card]:border-[#26c2c9]/30 hover:[&_.session-summary-card]:shadow-sm"
                 >
-                  <Card className="border-white/10 bg-white/[0.03] transition-colors hover:border-[#26c2c9]/30 hover:shadow-sm">
-                    <CardContent className="flex flex-col gap-1 p-4">
-                      <div className="min-w-0">
-                        <span className="font-medium text-zinc-100">
-                          {s.spotName ?? "Spot"}{" "}
-                          <span className="font-normal text-zinc-500">·</span>{" "}
-                          {s.sessionDate}{" "}
-                          <span className="font-normal text-zinc-500">·</span>{" "}
-                          {s.sessionTime}
-                        </span>
-                        <p className="truncate text-xs text-zinc-500">
-                          {s.regionName ?? "Region"} · {s.countryCode} ·{" "}
-                          {formatDurationMinutes(s.durationMinutes ?? 120)}
-                          {s.conditionsRating != null
-                            ? ` · Conditions ${s.conditionsRating}/5`
-                            : ""}
-                          {s.waveTypes?.length
-                            ? ` · ${s.waveTypes.map((id) => waveTypeTitle(id)).join(", ")}`
-                            : ""}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <SessionSummaryCard
+                    session={s}
+                    className="session-summary-card"
+                  />
                 </Link>
               </li>
             ))}

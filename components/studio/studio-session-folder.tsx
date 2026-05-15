@@ -15,7 +15,13 @@ import {
 import { cn } from "@/lib/utils";
 import { getApiBase } from "@/lib/api";
 import { GeoCreateConfirmModal } from "@/components/pickers/geo-create-confirm-modal";
-import { formatDurationMinutes, waveTypeTitle } from "@/lib/surf-session-waves";
+import { SessionSummaryCard } from "@/components/studio/session-summary-card";
+import {
+  StudioSessionFormFields,
+  validateStudioSessionFormValues,
+  type StudioSessionFormValues,
+} from "@/components/studio/studio-session-form-fields";
+import type { WaveTypeId } from "@/lib/surf-session-waves";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 
 function formatFileSize(bytes: number): string {
@@ -37,7 +43,22 @@ type SessionDetail = {
   createdAt: string;
   spotName?: string;
   regionName?: string;
+  videoCount: number;
+  previewThumbnailUrls: string[];
 };
+
+function sessionToFormValues(session: SessionDetail): StudioSessionFormValues {
+  return {
+    countryCode: session.countryCode,
+    regionId: session.regionId,
+    spotId: session.spotId,
+    sessionDate: session.sessionDate,
+    sessionTime: session.sessionTime ?? "12:00",
+    durationMinutes: session.durationMinutes ?? 120,
+    conditionsRating: session.conditionsRating,
+    waveTypes: (session.waveTypes ?? []) as WaveTypeId[],
+  };
+}
 
 type JobListItem = {
   jobId: string;
@@ -83,6 +104,10 @@ export function StudioSessionFolder() {
   const [confirmUploadFiles, setConfirmUploadFiles] = useState<File[] | null>(null);
   const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
   const [dragActive, setDragActive] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editValues, setEditValues] = useState<StudioSessionFormValues | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const loadSession = useCallback(async () => {
     if (!sessionId) return;
@@ -98,7 +123,12 @@ export function StudioSessionFolder() {
       if (!res.ok) {
         throw new Error(await res.text().catch(() => res.statusText));
       }
-      setSession((await res.json()) as SessionDetail);
+      const data = (await res.json()) as SessionDetail;
+      setSession({
+        ...data,
+        videoCount: data.videoCount ?? 0,
+        previewThumbnailUrls: data.previewThumbnailUrls ?? [],
+      });
     } catch (e) {
       setSession(null);
       setSessionError(e instanceof Error ? e.message : "Failed to load session");
@@ -333,30 +363,122 @@ export function StudioSessionFolder() {
         ) : null}
 
         {session && !sessionError ? (
-          <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
-            <CardHeader>
-              <CardTitle className="text-xl sm:text-2xl">
-                {session.spotName ?? "Surf session"} · {session.sessionDate} ·{" "}
-                {session.sessionTime ?? "12:00"}
-              </CardTitle>
-              <CardDescription className="space-y-1 text-zinc-500">
-                <span>
-                  {session.regionName ?? "Region"} · {session.countryCode}
-                </span>
-                <span className="block text-xs text-zinc-500">
-                  {formatDurationMinutes(session.durationMinutes ?? 120)} in the water
-                  {session.conditionsRating != null
-                    ? ` · Conditions rated ${session.conditionsRating}/5`
-                    : ""}
-                </span>
-                {session.waveTypes?.length ? (
-                  <span className="block text-xs text-zinc-400">
-                    Waves: {session.waveTypes.map((id) => waveTypeTitle(id)).join(", ")}
-                  </span>
-                ) : null}
-              </CardDescription>
-            </CardHeader>
-          </Card>
+          <section className="space-y-4">
+            {editing && editValues ? (
+              <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
+                <CardHeader>
+                  <CardTitle>Edit session</CardTitle>
+                  <CardDescription className="text-zinc-500">
+                    Update where and when you surfed, conditions, and wave types.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <StudioSessionFormFields
+                    idPrefix="edit-surf"
+                    values={editValues}
+                    onChange={(patch) =>
+                      setEditValues((prev) => (prev ? { ...prev, ...patch } : prev))
+                    }
+                  />
+                  {editError ? (
+                    <p className="text-sm text-red-400">{editError}</p>
+                  ) : null}
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-white/15 bg-transparent text-zinc-200"
+                      disabled={savingEdit}
+                      onClick={() => {
+                        setEditing(false);
+                        setEditValues(null);
+                        setEditError(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      className="bg-[#26c2c9] text-[#040A10] hover:bg-[#2dd4dc]"
+                      disabled={savingEdit}
+                      onClick={() => void (async () => {
+                        const validationError = validateStudioSessionFormValues(editValues);
+                        if (validationError) {
+                          setEditError(validationError);
+                          return;
+                        }
+                        setEditError(null);
+                        setSavingEdit(true);
+                        try {
+                          const base = getApiBase();
+                          const res = await fetch(
+                            `${base}/studio/sessions/${sessionId}`,
+                            {
+                              method: "PATCH",
+                              credentials: "include",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                countryCode: editValues.countryCode,
+                                regionId: editValues.regionId,
+                                spotId: editValues.spotId,
+                                sessionDate: editValues.sessionDate,
+                                sessionTime: editValues.sessionTime,
+                                durationMinutes: editValues.durationMinutes,
+                                conditionsRating: editValues.conditionsRating,
+                                waveTypes: editValues.waveTypes,
+                              }),
+                            },
+                          );
+                          if (!res.ok) {
+                            throw new Error(
+                              await res.text().catch(() => res.statusText),
+                            );
+                          }
+                          const updated = (await res.json()) as SessionDetail;
+                          setSession({
+                            ...updated,
+                            videoCount: updated.videoCount ?? session.videoCount,
+                            previewThumbnailUrls:
+                              updated.previewThumbnailUrls ??
+                              session.previewThumbnailUrls,
+                          });
+                          setEditing(false);
+                          setEditValues(null);
+                        } catch (e) {
+                          setEditError(
+                            e instanceof Error ? e.message : "Failed to save session",
+                          );
+                        } finally {
+                          setSavingEdit(false);
+                        }
+                      })()}
+                    >
+                      {savingEdit ? "Saving…" : "Save changes"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="border-white/15 bg-transparent text-zinc-200"
+                    onClick={() => {
+                      setEditValues(sessionToFormValues(session));
+                      setEditError(null);
+                      setEditing(true);
+                    }}
+                  >
+                    Edit session
+                  </Button>
+                </div>
+                <SessionSummaryCard session={session} />
+              </div>
+            )}
+          </section>
         ) : null}
 
         <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
