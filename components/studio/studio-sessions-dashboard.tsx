@@ -14,6 +14,7 @@ import { SessionSummaryCard } from "@/components/studio/session-summary-card";
 
 type SurfSessionRow = {
   sessionId: string;
+  status?: "open" | "closed";
   countryCode: string;
   regionId: string;
   spotId: string;
@@ -72,6 +73,7 @@ export function StudioSessionsDashboard() {
         Array.isArray(sData)
           ? sData.map((s) => ({
               ...s,
+              status: s.status ?? "open",
               videoCount: s.videoCount ?? 0,
               previewThumbnailUrls: s.previewThumbnailUrls ?? [],
             }))

@@ -27,6 +27,7 @@ import {
 } from "@/components/studio/studio-session-form-fields";
 import type { WaveTypeId } from "@/lib/surf-session-waves";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
+import { Download, Loader2, Share2 } from "lucide-react";
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -49,6 +50,10 @@ type SessionDetail = {
   regionName?: string;
   videoCount: number;
   previewThumbnailUrls: string[];
+  status?: "open" | "closed";
+  closedAt?: string | null;
+  exportStatus?: "idle" | "processing" | "ready" | "failed";
+  exportErrorMessage?: string | null;
 };
 
 function sessionToFormValues(session: SessionDetail): StudioSessionFormValues {
@@ -91,6 +96,130 @@ function isProbablyVideoFile(file: File): boolean {
   return /\.(mp4|mov|m4v|webm|mkv|avi|mpeg|mpg|wmv)$/i.test(file.name);
 }
 
+function SessionActionsBar({
+  session,
+  hasProcessingJob,
+  isSessionClosed,
+  showExportActions,
+  exportProcessing,
+  exportReady,
+  exportFailed,
+  closingSession,
+  downloadingExport,
+  closeError,
+  downloadError,
+  onCloseClick,
+  onEditClick,
+  onDownloadClick,
+}: {
+  session: SessionDetail;
+  hasProcessingJob: boolean;
+  isSessionClosed: boolean;
+  showExportActions: boolean;
+  exportProcessing: boolean;
+  exportReady: boolean;
+  exportFailed: boolean;
+  closingSession: boolean;
+  downloadingExport: boolean;
+  closeError: string | null;
+  downloadError: string | null;
+  onCloseClick: () => void;
+  onEditClick: () => void;
+  onDownloadClick: () => void;
+}) {
+  return (
+    <>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+        {showExportActions ? (
+          <div className="flex flex-wrap items-center gap-2 sm:mr-auto">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-white/15 bg-transparent text-zinc-200"
+              disabled={!exportReady || downloadingExport || exportProcessing}
+              onClick={onDownloadClick}
+            >
+              {downloadingExport || exportProcessing ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Download className="size-4" aria-hidden />
+              )}
+              <span className="ml-2">
+                {exportProcessing
+                  ? "Preparing download…"
+                  : exportFailed
+                    ? "Download unavailable"
+                    : "Download"}
+              </span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-white/15 bg-transparent text-zinc-400"
+              disabled
+              title="Share coming soon"
+            >
+              {exportProcessing ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Share2 className="size-4" aria-hidden />
+              )}
+              <span className="ml-2">Share</span>
+            </Button>
+          </div>
+        ) : null}
+        {!isSessionClosed ? (
+          <>
+            <span
+              title={
+                hasProcessingJob
+                  ? "Wait until all videos finish processing before closing this session."
+                  : undefined
+              }
+              className="inline-flex"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="border-white/15 bg-transparent text-zinc-200"
+                disabled={hasProcessingJob || closingSession}
+                onClick={onCloseClick}
+              >
+                {closingSession ? "Closing…" : "Close session"}
+              </Button>
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-white/15 bg-transparent text-zinc-200"
+              onClick={onEditClick}
+            >
+              Edit session
+            </Button>
+          </>
+        ) : null}
+      </div>
+      {closeError ? <p className="text-sm text-red-400">{closeError}</p> : null}
+      {downloadError ? <p className="text-sm text-red-400">{downloadError}</p> : null}
+      {exportFailed && session.exportErrorMessage ? (
+        <p className="text-sm text-red-400">{session.exportErrorMessage}</p>
+      ) : null}
+      {isSessionClosed ? (
+        <p className="text-xs text-zinc-500">
+          This session is closed. Uploads are disabled.
+          {session.closedAt
+            ? ` Closed ${new Date(session.closedAt).toLocaleString()}.`
+            : ""}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
 export function StudioSessionFolder() {
   const params = useParams();
   const sessionId = typeof params.sessionId === "string" ? params.sessionId : "";
@@ -113,6 +242,11 @@ export function StudioSessionFolder() {
   const [editValues, setEditValues] = useState<StudioSessionFormValues | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+  const [closingSession, setClosingSession] = useState(false);
+  const [closeError, setCloseError] = useState<string | null>(null);
+  const [downloadingExport, setDownloadingExport] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const loadSession = useCallback(async () => {
     if (!sessionId) return;
@@ -133,6 +267,10 @@ export function StudioSessionFolder() {
         ...data,
         videoCount: data.videoCount ?? 0,
         previewThumbnailUrls: data.previewThumbnailUrls ?? [],
+        status: data.status ?? "open",
+        exportStatus: data.exportStatus ?? "idle",
+        exportErrorMessage: data.exportErrorMessage ?? null,
+        closedAt: data.closedAt ?? null,
       });
     } catch (e) {
       setSession(null);
@@ -186,6 +324,14 @@ export function StudioSessionFolder() {
   }, [sessionId, loadAll]);
 
   const hasProcessingJob = jobs.some((j) => (j.status ?? "completed") === "processing");
+  const isSessionClosed = session?.status === "closed";
+  const exportProcessing = session?.exportStatus === "processing";
+  const exportReady = session?.exportStatus === "ready";
+  const exportFailed = session?.exportStatus === "failed";
+  const showExportActions =
+    isSessionClosed || (session?.exportStatus != null && session.exportStatus !== "idle");
+  const uploadDisabled =
+    !!sessionError || loading || !session || editing || isSessionClosed;
 
   useEffect(() => {
     if (!sessionId || !hasProcessingJob) return;
@@ -194,6 +340,14 @@ export function StudioSessionFolder() {
     }, 2500);
     return () => window.clearInterval(id);
   }, [sessionId, hasProcessingJob, loadJobs]);
+
+  useEffect(() => {
+    if (!sessionId || !exportProcessing) return;
+    const id = window.setInterval(() => {
+      void loadSession();
+    }, 2500);
+    return () => window.clearInterval(id);
+  }, [sessionId, exportProcessing, loadSession]);
 
   const removePending = useCallback((clientId: string) => {
     setPendingUploads((rows) => rows.filter((r) => r.clientId !== clientId));
@@ -267,7 +421,57 @@ export function StudioSessionFolder() {
     [uploadOne],
   );
 
+  const handleCloseSession = useCallback(async () => {
+    if (!sessionId) return;
+    setCloseError(null);
+    setClosingSession(true);
+    try {
+      const base = getApiBase();
+      const res = await fetch(`${base}/studio/sessions/${sessionId}/close`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error(await res.text().catch(() => res.statusText));
+      }
+      setCloseConfirmOpen(false);
+      await loadSession();
+    } catch (e) {
+      setCloseError(e instanceof Error ? e.message : "Failed to close session");
+    } finally {
+      setClosingSession(false);
+    }
+  }, [sessionId, loadSession]);
+
+  const handleDownloadExport = useCallback(async () => {
+    if (!sessionId || !exportReady) return;
+    setDownloadError(null);
+    setDownloadingExport(true);
+    try {
+      const base = getApiBase();
+      const res = await fetch(
+        `${base}/studio/sessions/${sessionId}/export/download`,
+        { credentials: "include" },
+      );
+      if (!res.ok) {
+        throw new Error(await res.text().catch(() => res.statusText));
+      }
+      const data = (await res.json()) as { downloadUrl?: string };
+      if (!data.downloadUrl) {
+        throw new Error("Download link unavailable");
+      }
+      window.open(data.downloadUrl, "_blank", "noopener,noreferrer");
+    } catch (e) {
+      setDownloadError(
+        e instanceof Error ? e.message : "Failed to start download",
+      );
+    } finally {
+      setDownloadingExport(false);
+    }
+  }, [sessionId, exportReady]);
+
   const addStagedFiles = useCallback((files: File[]) => {
+    if (uploadDisabled) return;
     const videoFiles = files.filter(isProbablyVideoFile);
     if (videoFiles.length === 0) {
       setUploadError("No video files found. Use MP4, MOV, WebM, MKV, or similar.");
@@ -287,7 +491,7 @@ export function StudioSessionFolder() {
       }
       return next;
     });
-  }, []);
+  }, [uploadDisabled]);
 
   const removeStaged = useCallback((clientId: string) => {
     setStagedFiles((rows) => rows.filter((r) => r.clientId !== clientId));
@@ -307,12 +511,13 @@ export function StudioSessionFolder() {
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
+    if (uploadDisabled) return;
     const files = Array.from(e.dataTransfer.files ?? []);
     if (files.length) addStagedFiles(files);
   };
 
   const openUploadConfirm = () => {
-    if (!stagedFiles.length) return;
+    if (uploadDisabled || !stagedFiles.length) return;
     setConfirmUploadFiles(stagedFiles.map((s) => s.file));
     setUploadConfirmOpen(true);
   };
@@ -455,6 +660,11 @@ export function StudioSessionFolder() {
                             previewThumbnailUrls:
                               updated.previewThumbnailUrls ??
                               session.previewThumbnailUrls,
+                            status: updated.status ?? session.status,
+                            exportStatus: updated.exportStatus ?? session.exportStatus,
+                            exportErrorMessage:
+                              updated.exportErrorMessage ?? session.exportErrorMessage,
+                            closedAt: updated.closedAt ?? session.closedAt,
                           });
                           setEditing(false);
                           setEditValues(null);
@@ -474,21 +684,29 @@ export function StudioSessionFolder() {
               </Card>
             ) : (
               <div className="space-y-3">
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="border-white/15 bg-transparent text-zinc-200"
-                    onClick={() => {
-                      setEditValues(sessionToFormValues(session));
-                      setEditError(null);
-                      setEditing(true);
-                    }}
-                  >
-                    Edit session
-                  </Button>
-                </div>
+                <SessionActionsBar
+                  session={session}
+                  hasProcessingJob={hasProcessingJob}
+                  isSessionClosed={isSessionClosed}
+                  showExportActions={showExportActions}
+                  exportProcessing={exportProcessing}
+                  exportReady={exportReady}
+                  exportFailed={exportFailed}
+                  closingSession={closingSession}
+                  downloadingExport={downloadingExport}
+                  closeError={closeError}
+                  downloadError={downloadError}
+                  onCloseClick={() => {
+                    setCloseError(null);
+                    setCloseConfirmOpen(true);
+                  }}
+                  onEditClick={() => {
+                    setEditValues(sessionToFormValues(session));
+                    setEditError(null);
+                    setEditing(true);
+                  }}
+                  onDownloadClick={() => void handleDownloadExport()}
+                />
                 <SessionSummaryCard
                   session={session}
                   previewSlotCount={SESSION_PREVIEW_SLOTS_DETAIL}
@@ -502,22 +720,35 @@ export function StudioSessionFolder() {
           <CardHeader>
             <CardTitle>Upload</CardTitle>
             <CardDescription className="text-zinc-500">
-              Import videos into the queue below, then use <span className="text-zinc-400">Upload to session</span>{" "}
-              to start. You will be asked to confirm before anything is sent.
+              {isSessionClosed
+                ? "This session is closed. You can't add more videos."
+                : (
+                    <>
+                      Import videos into the queue below, then use{" "}
+                      <span className="text-zinc-400">Upload to session</span> to start. You will be
+                      asked to confirm before anything is sent.
+                    </>
+                  )}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div
               className={cn(
                 "rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors sm:px-6 sm:py-8",
-                dragActive ? "border-[#26c2c9]/50 bg-white/5" : "border-white/15 bg-zinc-900/30",
+                uploadDisabled
+                  ? "border-white/10 bg-zinc-900/20 opacity-60"
+                  : dragActive
+                    ? "border-[#26c2c9]/50 bg-white/5"
+                    : "border-white/15 bg-zinc-900/30",
               )}
               onDragEnter={(e) => {
                 e.preventDefault();
+                if (uploadDisabled) return;
                 setDragActive(true);
               }}
               onDragOver={(e) => {
                 e.preventDefault();
+                if (uploadDisabled) return;
                 setDragActive(true);
               }}
               onDragLeave={() => setDragActive(false)}
@@ -532,14 +763,14 @@ export function StudioSessionFolder() {
                 accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi,.mpeg,.mpg,.wmv"
                 multiple
                 className="sr-only"
-                disabled={!!sessionError}
+                disabled={uploadDisabled}
                 onChange={onInputChange}
               />
               <Button
                 type="button"
                 variant="outline"
                 className="mt-4 border-white/20 bg-white/5 text-zinc-100 hover:bg-white/10"
-                disabled={!!sessionError}
+                disabled={uploadDisabled}
                 onClick={() => fileInputRef.current?.click()}
               >
                 Import videos
@@ -563,7 +794,7 @@ export function StudioSessionFolder() {
                         variant="ghost"
                         size="sm"
                         className="h-8 shrink-0 px-2 text-zinc-400 hover:text-zinc-100"
-                        disabled={!!sessionError}
+                        disabled={uploadDisabled}
                         onClick={() => removeStaged(clientId)}
                         aria-label={`Remove ${file.name}`}
                       >
@@ -593,7 +824,7 @@ export function StudioSessionFolder() {
               <Button
                 type="button"
                 className="shrink-0 bg-[#26c2c9] text-[#040A10] hover:bg-[#2dd4dc] disabled:opacity-40"
-                disabled={!!sessionError || stagedFiles.length === 0}
+                disabled={uploadDisabled || stagedFiles.length === 0}
                 onClick={openUploadConfirm}
               >
                 Upload to session
@@ -611,6 +842,21 @@ export function StudioSessionFolder() {
           onConfirm={handleConfirmUpload}
           onCancel={handleCancelUploadConfirm}
           isSubmitting={false}
+        />
+
+        <GeoCreateConfirmModal
+          open={closeConfirmOpen}
+          title="Close this session?"
+          description={
+            "Closing ends uploads for this session and starts building a ZIP with all completed videos and their snapshot images. You can download the archive when it is ready."
+          }
+          confirmLabel="Close session"
+          cancelLabel="Cancel"
+          onConfirm={() => void handleCloseSession()}
+          onCancel={() => {
+            if (!closingSession) setCloseConfirmOpen(false);
+          }}
+          isSubmitting={closingSession}
         />
 
         <section className="space-y-4">

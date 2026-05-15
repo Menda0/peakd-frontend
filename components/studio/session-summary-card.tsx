@@ -7,6 +7,7 @@ import { formatDurationMinutes, waveTypeTitle } from "@/lib/surf-session-waves";
 
 export type SurfSessionSummary = {
   sessionId: string;
+  status?: "open" | "closed";
   countryCode: string;
   regionId: string;
   spotId: string;
@@ -170,6 +171,11 @@ export function SessionSummaryCard({
               <span className="font-medium text-zinc-100">
                 {session.spotName ?? "Spot"}
               </span>
+              {session.status === "closed" ? (
+                <span className="rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+                  Closed
+                </span>
+              ) : null}
               <span className="text-sm text-zinc-500">
                 {session.sessionDate} · {session.sessionTime}
               </span>
