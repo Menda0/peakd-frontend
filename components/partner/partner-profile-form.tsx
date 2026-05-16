@@ -10,7 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-fields";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { formInputLgClassName } from "@/lib/form-styles";
 import {
   Combobox,
   ComboboxContent,
@@ -223,7 +226,7 @@ export function PartnerProfileForm({
                 </div>
               )}
             </div>
-            <label className="cursor-pointer">
+            <Label className="cursor-pointer">
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/gif"
@@ -243,30 +246,27 @@ export function PartnerProfileForm({
               >
                 {avatarBusy ? "Uploading…" : "Change photo"}
               </span>
-            </label>
+            </Label>
             {avatarError ? <p className="text-center text-xs text-red-400">{avatarError}</p> : null}
           </div>
 
           <div className="min-w-0 flex-1 space-y-5">
-            <div>
-              <label htmlFor={nameId} className="mb-1.5 block text-sm font-medium text-zinc-300">
-                Partner name
-              </label>
+            <FormField
+              label="Partner name"
+              htmlFor={nameId}
+              description="Leave blank to use your account name."
+            >
               <Input
                 id={nameId}
                 value={partnerName}
                 onChange={(e) => setPartnerName(e.target.value)}
                 placeholder={defaultPartnerName}
-                className="h-10 border-white/15 bg-white/5 text-zinc-100 placeholder:text-zinc-500"
+                className={formInputLgClassName}
               />
-              <p className="mt-1 text-xs text-zinc-500">Leave blank to use your account name.</p>
-            </div>
+            </FormField>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-start">
-              <div className="min-w-0">
-                <label htmlFor={typeId} className="mb-1.5 block text-sm font-medium text-zinc-300">
-                  Type
-                </label>
+              <FormField label="Type" htmlFor={typeId} className="min-w-0">
                 <Combobox
                   items={TYPE_KEYS}
                   value={partnerType}
@@ -304,7 +304,7 @@ export function PartnerProfileForm({
                     </ComboboxList>
                   </ComboboxContent>
                 </Combobox>
-              </div>
+              </FormField>
               <div className="min-w-0">
                 <PartnerCountryCombobox
                   id={countryId}
@@ -316,10 +316,9 @@ export function PartnerProfileForm({
           </div>
         </div>
 
-        <div>
-          <span className="mb-1.5 block text-sm font-medium text-zinc-300">Description</span>
+        <FormField label="Description">
           <PartnerMarkdownField value={descriptionMarkdown} onChange={setDescriptionMarkdown} />
-        </div>
+        </FormField>
       </CardContent>
       <CardFooter className="flex flex-col items-stretch gap-3 border-t border-white/10 bg-white/[0.03] p-4 text-zinc-100 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-h-5 text-sm">

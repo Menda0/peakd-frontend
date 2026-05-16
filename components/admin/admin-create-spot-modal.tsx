@@ -10,7 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { FormCheckboxField, FormField } from "@/components/ui/form-fields";
 import { Input } from "@/components/ui/input";
+import { formInputClassName } from "@/lib/form-styles";
 
 export type AdminCreateSpotInput = {
   name: string;
@@ -79,62 +81,52 @@ export function AdminCreateSpotModal({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-sm text-zinc-400" htmlFor={nameId}>
-              Name
-            </label>
+          <FormField label="Name" htmlFor={nameId}>
             <Input
               id={nameId}
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="Spot name"
               disabled={isSubmitting}
-              className="border-white/15 bg-white/5 text-zinc-100"
+              className={formInputClassName}
               autoFocus
             />
-          </div>
+          </FormField>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1">
-              <label className="text-sm text-zinc-400">Level</label>
+            <FormField label="Level">
               <Input
                 value={form.level}
                 onChange={(e) => setForm((f) => ({ ...f, level: e.target.value }))}
                 placeholder="e.g. Intermediate"
                 disabled={isSubmitting}
-                className="border-white/15 bg-white/5 text-zinc-100"
+                className={formInputClassName}
               />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm text-zinc-400">Break type</label>
+            </FormField>
+            <FormField label="Break type">
               <Input
                 value={form.breakType}
                 onChange={(e) => setForm((f) => ({ ...f, breakType: e.target.value }))}
                 placeholder="e.g. Beach break"
                 disabled={isSubmitting}
-                className="border-white/15 bg-white/5 text-zinc-100"
+                className={formInputClassName}
               />
-            </div>
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-sm text-zinc-400">Consistency</label>
+            </FormField>
+            <FormField label="Consistency" className="sm:col-span-2">
               <Input
                 value={form.consistency}
                 onChange={(e) => setForm((f) => ({ ...f, consistency: e.target.value }))}
                 placeholder="e.g. High"
                 disabled={isSubmitting}
-                className="border-white/15 bg-white/5 text-zinc-100"
+                className={formInputClassName}
               />
-            </div>
+            </FormField>
           </div>
-          <label className="flex items-center gap-2 text-sm text-zinc-300">
-            <input
-              type="checkbox"
-              checked={form.verified}
-              onChange={(e) => setForm((f) => ({ ...f, verified: e.target.checked }))}
-              disabled={isSubmitting}
-              className="rounded border-white/20"
-            />
-            Verified
-          </label>
+          <FormCheckboxField
+            label="Verified"
+            checked={form.verified}
+            onCheckedChange={(verified) => setForm((f) => ({ ...f, verified }))}
+            disabled={isSubmitting}
+          />
           {error ? <p className="text-sm text-red-400">{error}</p> : null}
         </CardContent>
         <CardFooter className="flex justify-end gap-2 border-t border-white/10 pt-4">

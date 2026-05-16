@@ -12,8 +12,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-fields";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { formInputLgClassName, formSelectClassName } from "@/lib/form-styles";
 import { patchUserProfileAction, uploadUserAvatarAction } from "@/lib/user-profile-actions";
 import {
   auth0DisplayNameHint,
@@ -233,7 +242,7 @@ export function UserProfileModal({
                       </div>
                     )}
                   </div>
-                  <label className="cursor-pointer">
+                  <Label className="cursor-pointer">
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp,image/gif"
@@ -253,38 +262,39 @@ export function UserProfileModal({
                     >
                       {avatarBusy ? "Uploading…" : "Change photo"}
                     </span>
-                  </label>
+                  </Label>
                   {avatarError ? (
                     <p className="text-center text-xs text-red-400">{avatarError}</p>
                   ) : null}
                 </div>
                 <div className="min-w-0 flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="user-profile-name" className="text-zinc-300">
-                  Name
-                </Label>
+              <FormField label="Name" htmlFor="user-profile-name">
                 <Input
                   id="user-profile-name"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   disabled={saving}
-                  className="h-10 border-white/15 bg-white/5 text-zinc-100 placeholder:text-zinc-500"
+                  className={formInputLgClassName}
                   autoComplete="name"
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="user-profile-nickname" className="text-zinc-300">
-                  Nickname <span className="font-normal text-zinc-500">(optional)</span>
-                </Label>
+              </FormField>
+              <FormField
+                label={
+                  <>
+                    Nickname <span className="font-normal text-zinc-500">(optional)</span>
+                  </>
+                }
+                htmlFor="user-profile-nickname"
+              >
                 <Input
                   id="user-profile-nickname"
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
                   disabled={saving}
-                  className="h-10 border-white/15 bg-white/5 text-zinc-100 placeholder:text-zinc-500"
+                  className={formInputLgClassName}
                   placeholder="How you want to appear"
                 />
-              </div>
+              </FormField>
               <CountryPicker
                 id="user-profile-country"
                 label="Country"
@@ -307,25 +317,32 @@ export function UserProfileModal({
                 verifiedOnly
                 positionerClassName="z-[130]"
               />
-              <div className="space-y-2">
-                <Label htmlFor="user-profile-surf" className="text-zinc-300">
-                  Surf level <span className="font-normal text-zinc-500">(optional)</span>
-                </Label>
-                <select
-                  id="user-profile-surf"
-                  value={surfLevel}
-                  onChange={(e) =>
-                    setSurfLevel((e.target.value === "" ? "" : e.target.value) as SurfLevel | "")
+              <FormField
+                label={
+                  <>
+                    Surf level <span className="font-normal text-zinc-500">(optional)</span>
+                  </>
+                }
+                htmlFor="user-profile-surf"
+              >
+                <Select
+                  value={surfLevel || "none"}
+                  onValueChange={(v) =>
+                    setSurfLevel(v === "none" ? "" : (v as SurfLevel))
                   }
                   disabled={saving}
-                  className="h-10 w-full rounded-lg border border-white/15 bg-white/5 px-2.5 text-sm text-zinc-100 outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/25"
                 >
-                  <option value="">Prefer not to say</option>
-                  <option value="beginner">Beginner</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
-                </select>
-              </div>
+                  <SelectTrigger id="user-profile-surf" className={formSelectClassName}>
+                    <SelectValue placeholder="Prefer not to say" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Prefer not to say</SelectItem>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormField>
                 </div>
               </div>
             </>

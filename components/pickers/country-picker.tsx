@@ -9,6 +9,8 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { formLabelClassName } from "@/lib/form-styles";
 import { cn } from "@/lib/utils";
 import { getEnglishCountryOptions, type CountryOption } from "@/lib/countries";
 
@@ -80,12 +82,12 @@ export function CountryPicker({
 
   if (label) {
     return (
-      <div>
-        <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-zinc-300">
+      <Field className="w-full">
+        <FieldLabel htmlFor={id} className={formLabelClassName}>
           {label}
-        </label>
+        </FieldLabel>
         {field}
-      </div>
+      </Field>
     );
   }
 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { formLabelClassName } from "@/lib/form-styles";
 import { cn } from "@/lib/utils";
 
 export function SessionDatePicker({
@@ -76,7 +77,7 @@ export function SessionDatePicker({
 
   return (
     <Field className="w-full" data-disabled={disabled ? true : undefined}>
-      <FieldLabel htmlFor={fieldId} className="text-zinc-300">
+      <FieldLabel htmlFor={fieldId} className={formLabelClassName}>
         {label}
       </FieldLabel>
       {body}

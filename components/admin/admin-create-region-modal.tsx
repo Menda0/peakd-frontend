@@ -10,7 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { FormCheckboxField, FormField } from "@/components/ui/form-fields";
 import { Input } from "@/components/ui/input";
+import { formInputClassName } from "@/lib/form-styles";
 
 export function AdminCreateRegionModal({
   open,
@@ -59,30 +61,23 @@ export function AdminCreateRegionModal({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-sm text-zinc-400" htmlFor={nameId}>
-              Name
-            </label>
+          <FormField label="Name" htmlFor={nameId}>
             <Input
               id={nameId}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Ericeira"
               disabled={!countryCode || isSubmitting}
-              className="border-white/15 bg-white/5 text-zinc-100"
+              className={formInputClassName}
               autoFocus
             />
-          </div>
-          <label className="flex items-center gap-2 text-sm text-zinc-300">
-            <input
-              type="checkbox"
-              checked={verified}
-              onChange={(e) => setVerified(e.target.checked)}
-              disabled={!countryCode || isSubmitting}
-              className="rounded border-white/20"
-            />
-            Verified
-          </label>
+          </FormField>
+          <FormCheckboxField
+            label="Verified"
+            checked={verified}
+            onCheckedChange={setVerified}
+            disabled={!countryCode || isSubmitting}
+          />
           {error ? <p className="text-sm text-red-400">{error}</p> : null}
         </CardContent>
         <CardFooter className="flex justify-end gap-2 border-t border-white/10 pt-4">

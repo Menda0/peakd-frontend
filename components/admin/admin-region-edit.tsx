@@ -15,7 +15,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { FormCheckboxField, FormField } from "@/components/ui/form-fields";
 import { Input } from "@/components/ui/input";
+import { formInputClassName } from "@/lib/form-styles";
 import { CountryPicker } from "@/components/pickers/country-picker";
 import {
   AdminStatusBadge,
@@ -274,15 +276,14 @@ export function AdminRegionEdit({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1">
-              <label className="text-sm text-zinc-400">Name</label>
+            <FormField label="Name">
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={regionBusy || region.disabled}
-                className="border-white/15 bg-white/5 text-zinc-100"
+                className={formInputClassName}
               />
-            </div>
+            </FormField>
             <CountryPicker
               label="Country"
               countryCode={countryCode}
@@ -290,16 +291,12 @@ export function AdminRegionEdit({
               disabled={regionBusy || region.disabled}
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-zinc-300">
-            <input
-              type="checkbox"
-              checked={verified}
-              onChange={(e) => setVerified(e.target.checked)}
-              disabled={regionBusy || region.disabled}
-              className="rounded border-white/20"
-            />
-            Verified
-          </label>
+          <FormCheckboxField
+            label="Verified"
+            checked={verified}
+            onCheckedChange={setVerified}
+            disabled={regionBusy || region.disabled}
+          />
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
@@ -385,7 +382,7 @@ export function AdminRegionEdit({
                               setSpotEdit((f) => ({ ...f, name: e.target.value }))
                             }
                             disabled={busy}
-                            className="border-white/15 bg-white/5 text-zinc-100"
+                            className={formInputClassName}
                           />
                         </td>
                         <td className="py-2 pr-3">
@@ -395,7 +392,7 @@ export function AdminRegionEdit({
                               setSpotEdit((f) => ({ ...f, level: e.target.value }))
                             }
                             disabled={busy}
-                            className="border-white/15 bg-white/5 text-zinc-100"
+                            className={formInputClassName}
                           />
                         </td>
                         <td className="py-2 pr-3">
@@ -405,7 +402,7 @@ export function AdminRegionEdit({
                               setSpotEdit((f) => ({ ...f, breakType: e.target.value }))
                             }
                             disabled={busy}
-                            className="border-white/15 bg-white/5 text-zinc-100"
+                            className={formInputClassName}
                           />
                         </td>
                         <td className="py-2 pr-3">
@@ -415,21 +412,19 @@ export function AdminRegionEdit({
                               setSpotEdit((f) => ({ ...f, consistency: e.target.value }))
                             }
                             disabled={busy}
-                            className="border-white/15 bg-white/5 text-zinc-100"
+                            className={formInputClassName}
                           />
                         </td>
                         <td className="py-2 pr-3">
-                          <label className="flex items-center gap-1 text-xs text-zinc-300">
-                            <input
-                              type="checkbox"
-                              checked={spotEdit.verified}
-                              onChange={(e) =>
-                                setSpotEdit((f) => ({ ...f, verified: e.target.checked }))
-                              }
-                              disabled={busy}
-                            />
-                            Verified
-                          </label>
+                          <FormCheckboxField
+                            label="Verified"
+                            checked={spotEdit.verified}
+                            onCheckedChange={(v) =>
+                              setSpotEdit((f) => ({ ...f, verified: v }))
+                            }
+                            disabled={busy}
+                            labelClassName="text-xs"
+                          />
                         </td>
                         <td className="py-2">
                           <div className="flex gap-1">

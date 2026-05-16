@@ -11,6 +11,8 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { formLabelClassName } from "@/lib/form-styles";
 import { cn } from "@/lib/utils";
 import { getApiBase } from "@/lib/api";
 import { GeoCreateConfirmModal } from "@/components/pickers/geo-create-confirm-modal";
@@ -166,9 +168,10 @@ export function SpotPicker({
         error={createError}
       />
 
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-zinc-300">
-        {label}
-      </label>
+      <Field className="w-full">
+        <FieldLabel htmlFor={id} className={formLabelClassName}>
+          {label}
+        </FieldLabel>
       <Combobox
         items={items}
         value={value}
@@ -243,6 +246,7 @@ export function SpotPicker({
           </ComboboxList>
         </ComboboxContent>
       </Combobox>
+      </Field>
       {listError ? <p className="text-sm text-red-400">{listError}</p> : null}
     </div>
   );

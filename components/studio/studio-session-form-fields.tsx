@@ -5,7 +5,17 @@ import { RegionPicker } from "@/components/pickers/region-picker";
 import { SpotPicker } from "@/components/pickers/spot-picker";
 import { SessionDatePicker } from "@/components/studio/session-date-picker";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
+import { FormField } from "@/components/ui/form-fields";
 import { Input } from "@/components/ui/input";
+import { formInputClassName, formLabelClassName } from "@/lib/form-styles";
 import {
   WAVE_TYPE_OPTIONS,
   formatDurationMinutes,
@@ -73,29 +83,21 @@ export function StudioSessionFormFields({
         onChangeYmd={(sessionDate) => onChange({ sessionDate })}
       />
 
-      <div>
-        <label
-          htmlFor={`${idPrefix}-session-time`}
-          className="mb-1.5 block text-sm font-medium text-zinc-300"
-        >
-          Session start time
-        </label>
+      <FormField label="Session start time" htmlFor={`${idPrefix}-session-time`}>
         <Input
           id={`${idPrefix}-session-time`}
           type="time"
           value={values.sessionTime}
           onChange={(e) => onChange({ sessionTime: e.target.value })}
-          className="border-white/15 bg-white/5 text-zinc-100"
+          className={formInputClassName}
         />
-      </div>
+      </FormField>
 
-      <div>
-        <label
-          htmlFor={`${idPrefix}-duration`}
-          className="mb-1.5 block text-sm font-medium text-zinc-300"
-        >
-          Duration ({formatDurationMinutes(values.durationMinutes)})
-        </label>
+      <FormField
+        label={`Duration (${formatDurationMinutes(values.durationMinutes)})`}
+        htmlFor={`${idPrefix}-duration`}
+        description="Minutes in the water (15–1440)."
+      >
         <Input
           id={`${idPrefix}-duration`}
           type="number"
@@ -106,16 +108,15 @@ export function StudioSessionFormFields({
           onChange={(e) =>
             onChange({ durationMinutes: parseInt(e.target.value, 10) || 0 })
           }
-          className="border-white/15 bg-white/5 text-zinc-100"
+          className={formInputClassName}
         />
-        <p className="mt-1 text-xs text-zinc-500">Minutes in the water (15–1440).</p>
-      </div>
+      </FormField>
 
-      <div className="space-y-2">
-        <span className="block text-sm font-medium text-zinc-300">Conditions rating</span>
-        <p className="text-xs text-zinc-500">
+      <Field>
+        <FieldLabel className={formLabelClassName}>Conditions rating</FieldLabel>
+        <FieldDescription className="text-zinc-500">
           Optional. How good were the overall conditions?
-        </p>
+        </FieldDescription>
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
@@ -149,34 +150,43 @@ export function StudioSessionFormFields({
             </Button>
           ))}
         </div>
-      </div>
+      </Field>
 
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-medium text-zinc-300">Wave types</legend>
-        <p className="text-xs text-zinc-500">Select all that match. You can pick multiple.</p>
+      <FieldSet>
+        <FieldLegend variant="label" className={formLabelClassName}>
+          Wave types
+        </FieldLegend>
+        <FieldDescription className="text-zinc-500">
+          Select all that match. You can pick multiple.
+        </FieldDescription>
         <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-3">
           {WAVE_TYPE_OPTIONS.map((w) => {
             const checked = values.waveTypes.includes(w.id);
+            const checkboxId = `${idPrefix}-wave-${w.id}`;
             return (
-              <label
+              <Field
                 key={w.id}
-                className="flex cursor-pointer gap-3 rounded-md p-1 hover:bg-white/5"
+                orientation="horizontal"
+                className="cursor-pointer rounded-md p-1 hover:bg-white/5"
               >
-                <input
-                  type="checkbox"
+                <Checkbox
+                  id={checkboxId}
                   checked={checked}
-                  onChange={() => toggleWaveType(w.id)}
-                  className="mt-1 size-4 shrink-0 rounded border-white/30 bg-zinc-900 text-primary accent-primary"
+                  onCheckedChange={() => toggleWaveType(w.id)}
                 />
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium text-zinc-100">{w.title}</span>
-                  <span className="block text-xs text-zinc-500">{w.description}</span>
-                </span>
-              </label>
+                <div className="min-w-0">
+                  <FieldLabel htmlFor={checkboxId} className="text-sm text-zinc-100">
+                    {w.title}
+                  </FieldLabel>
+                  <FieldDescription className="text-xs text-zinc-500">
+                    {w.description}
+                  </FieldDescription>
+                </div>
+              </Field>
             );
           })}
         </div>
-      </fieldset>
+      </FieldSet>
     </div>
   );
 }
