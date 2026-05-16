@@ -16,7 +16,11 @@ import { GeoVerifiedIcon } from "@/components/pickers/geo-verified-icon";
 import { formLabelClassName } from "@/lib/form-styles";
 import { cn } from "@/lib/utils";
 import { getApiBase } from "@/lib/api";
-import { isGeoVerified, sortGeoOptions } from "@/lib/geo-picker-utils";
+import {
+  filterGeoByQuery,
+  isGeoVerified,
+  sortGeoOptions,
+} from "@/lib/geo-picker-utils";
 import { GeoCreateConfirmModal } from "@/components/pickers/geo-create-confirm-modal";
 
 export type RegionOption = {
@@ -27,10 +31,6 @@ export type RegionOption = {
 
 function itemEqual(a: RegionOption, b: RegionOption) {
   return a.regionId === b.regionId;
-}
-
-function norm(s: string) {
-  return s.trim().toLowerCase();
 }
 
 function parseRegionList(data: unknown): RegionOption[] {
@@ -141,10 +141,10 @@ export function RegionPicker({
   const canCreate = allowCreate;
 
   const trimmedQuery = query.trim();
-  const hasExactNameMatch = useMemo(() => {
-    if (!trimmedQuery) return true;
-    return items.some((r) => norm(r.name) === norm(trimmedQuery));
-  }, [items, trimmedQuery]);
+  const queryMatches = useMemo(
+    () => filterGeoByQuery(items, trimmedQuery),
+    [items, trimmedQuery],
+  );
 
   const showAddButton =
     canCreate &&
@@ -153,7 +153,7 @@ export function RegionPicker({
     !loading &&
     !gated &&
     trimmedQuery.length > 0 &&
-    !hasExactNameMatch;
+    queryMatches.length === 0;
 
   const submitNewRegion = async (name: string) => {
     if (!countryCode || !name.trim()) return;
@@ -279,6 +279,8 @@ export function RegionPicker({
             )}
             onKeyDown={(e) => {
               if (e.nativeEvent.isComposing || e.key !== "Enter") return;
+              // Let the combobox select a highlighted match (e.g. "Ma" → "Praia da Mata").
+              if (queryMatches.length > 0) return;
               if (!showAddButton) return;
               e.preventDefault();
               e.stopPropagation();

@@ -16,7 +16,11 @@ import { GeoVerifiedIcon } from "@/components/pickers/geo-verified-icon";
 import { formLabelClassName } from "@/lib/form-styles";
 import { cn } from "@/lib/utils";
 import { getApiBase } from "@/lib/api";
-import { isGeoVerified, sortGeoOptions } from "@/lib/geo-picker-utils";
+import {
+  filterGeoByQuery,
+  isGeoVerified,
+  sortGeoOptions,
+} from "@/lib/geo-picker-utils";
 import { GeoCreateConfirmModal } from "@/components/pickers/geo-create-confirm-modal";
 
 export type SpotOption = {
@@ -27,10 +31,6 @@ export type SpotOption = {
 
 function itemEqual(a: SpotOption, b: SpotOption) {
   return a.spotId === b.spotId;
-}
-
-function norm(s: string) {
-  return s.trim().toLowerCase();
 }
 
 function parseSpotList(data: unknown): SpotOption[] {
@@ -137,10 +137,10 @@ export function SpotPicker({
   const canCreate = allowCreate;
 
   const trimmedQuery = query.trim();
-  const hasExactNameMatch = useMemo(() => {
-    if (!trimmedQuery) return true;
-    return items.some((s) => norm(s.name) === norm(trimmedQuery));
-  }, [items, trimmedQuery]);
+  const queryMatches = useMemo(
+    () => filterGeoByQuery(items, trimmedQuery),
+    [items, trimmedQuery],
+  );
 
   const showAddButton =
     canCreate &&
@@ -149,7 +149,7 @@ export function SpotPicker({
     !loading &&
     !gated &&
     trimmedQuery.length > 0 &&
-    !hasExactNameMatch;
+    queryMatches.length === 0;
 
   const submitNewSpot = async (name: string) => {
     if (!regionId || !name.trim()) return;
@@ -273,6 +273,7 @@ export function SpotPicker({
             )}
             onKeyDown={(e) => {
               if (e.nativeEvent.isComposing || e.key !== "Enter") return;
+              if (queryMatches.length > 0) return;
               if (!showAddButton) return;
               e.preventDefault();
               e.stopPropagation();
