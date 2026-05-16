@@ -15,9 +15,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  SpotBreakTypeSelect,
+  SpotConsistencySelect,
+  SpotLevelMultiSelect,
+} from "@/components/admin/spot-attribute-fields";
 import { FormCheckboxField, FormField } from "@/components/ui/form-fields";
 import { Input } from "@/components/ui/input";
 import { formInputClassName } from "@/lib/form-styles";
+import {
+  formatSpotLevels,
+  isSpotBreakType,
+  isSpotConsistency,
+  parseSpotLevels,
+  type SpotBreakType,
+  type SpotConsistency,
+  type SpotLevelId,
+} from "@/lib/spot-attributes";
 import { CountryPicker } from "@/components/pickers/country-picker";
 import {
   AdminStatusBadge,
@@ -38,9 +52,9 @@ import {
 
 const emptySpotForm = () => ({
   name: "",
-  level: "",
-  breakType: "",
-  consistency: "",
+  levels: [] as SpotLevelId[],
+  breakType: "" as SpotBreakType | "",
+  consistency: "" as SpotConsistency | "",
   verified: false,
 });
 
@@ -162,9 +176,13 @@ export function AdminRegionEdit({
     setEditingSpotId(spot.spotId);
     setSpotEdit({
       name: spot.name,
-      level: spot.level ?? "",
-      breakType: spot.breakType ?? "",
-      consistency: spot.consistency ?? "",
+      levels: parseSpotLevels(spot.level),
+      breakType:
+        spot.breakType && isSpotBreakType(spot.breakType) ? spot.breakType : "",
+      consistency:
+        spot.consistency && isSpotConsistency(spot.consistency)
+          ? spot.consistency
+          : "",
       verified: spot.verified,
     });
   };
@@ -180,9 +198,9 @@ export function AdminRegionEdit({
     setError(null);
     const res = await updateAdminSpotAction(regionId, spotId, {
       name: spotEdit.name,
-      level: spotEdit.level.trim() || null,
-      breakType: spotEdit.breakType.trim() || null,
-      consistency: spotEdit.consistency.trim() || null,
+      level: formatSpotLevels(spotEdit.levels),
+      breakType: spotEdit.breakType || null,
+      consistency: spotEdit.consistency || null,
       verified: spotEdit.verified,
     });
     setSpotRowBusy(null);
@@ -386,33 +404,35 @@ export function AdminRegionEdit({
                           />
                         </td>
                         <td className="py-2 pr-3">
-                          <Input
-                            value={spotEdit.level}
-                            onChange={(e) =>
-                              setSpotEdit((f) => ({ ...f, level: e.target.value }))
+                          <SpotLevelMultiSelect
+                            value={spotEdit.levels}
+                            onChange={(levels) =>
+                              setSpotEdit((f) => ({ ...f, levels }))
                             }
                             disabled={busy}
-                            className={formInputClassName}
+                            className="min-w-[9rem]"
                           />
                         </td>
                         <td className="py-2 pr-3">
-                          <Input
+                          <SpotBreakTypeSelect
                             value={spotEdit.breakType}
-                            onChange={(e) =>
-                              setSpotEdit((f) => ({ ...f, breakType: e.target.value }))
+                            onChange={(breakType) =>
+                              setSpotEdit((f) => ({ ...f, breakType }))
                             }
                             disabled={busy}
-                            className={formInputClassName}
+                            showLabel={false}
+                            className="min-w-[10rem]"
                           />
                         </td>
                         <td className="py-2 pr-3">
-                          <Input
+                          <SpotConsistencySelect
                             value={spotEdit.consistency}
-                            onChange={(e) =>
-                              setSpotEdit((f) => ({ ...f, consistency: e.target.value }))
+                            onChange={(consistency) =>
+                              setSpotEdit((f) => ({ ...f, consistency }))
                             }
                             disabled={busy}
-                            className={formInputClassName}
+                            showLabel={false}
+                            className="min-w-[8rem]"
                           />
                         </td>
                         <td className="py-2 pr-3">

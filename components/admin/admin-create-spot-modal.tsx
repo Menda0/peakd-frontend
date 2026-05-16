@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import {
+  SpotBreakTypeSelect,
+  SpotConsistencySelect,
+  SpotLevelMultiSelect,
+} from "@/components/admin/spot-attribute-fields";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,6 +18,12 @@ import {
 import { FormCheckboxField, FormField } from "@/components/ui/form-fields";
 import { Input } from "@/components/ui/input";
 import { formInputClassName } from "@/lib/form-styles";
+import {
+  formatSpotLevels,
+  type SpotBreakType,
+  type SpotConsistency,
+  type SpotLevelId,
+} from "@/lib/spot-attributes";
 
 export type AdminCreateSpotInput = {
   name: string;
@@ -24,9 +35,9 @@ export type AdminCreateSpotInput = {
 
 const emptyForm = () => ({
   name: "",
-  level: "",
-  breakType: "",
-  consistency: "",
+  levels: [] as SpotLevelId[],
+  breakType: "" as SpotBreakType | "",
+  consistency: "" as SpotConsistency | "",
   verified: false,
 });
 
@@ -46,6 +57,9 @@ export function AdminCreateSpotModal({
   error: string | null;
 }) {
   const nameId = useId();
+  const levelId = useId();
+  const breakId = useId();
+  const consistencyId = useId();
   const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
@@ -58,9 +72,9 @@ export function AdminCreateSpotModal({
   const submit = () => {
     onCreate({
       name: form.name.trim(),
-      level: form.level.trim() || null,
-      breakType: form.breakType.trim() || null,
-      consistency: form.consistency.trim() || null,
+      level: formatSpotLevels(form.levels),
+      breakType: form.breakType || null,
+      consistency: form.consistency || null,
       verified: form.verified,
     });
   };
@@ -93,33 +107,27 @@ export function AdminCreateSpotModal({
             />
           </FormField>
           <div className="grid gap-3 sm:grid-cols-2">
-            <FormField label="Level">
-              <Input
-                value={form.level}
-                onChange={(e) => setForm((f) => ({ ...f, level: e.target.value }))}
-                placeholder="e.g. Intermediate"
+            <FormField label="Level" htmlFor={levelId}>
+              <SpotLevelMultiSelect
+                id={levelId}
+                value={form.levels}
+                onChange={(levels) => setForm((f) => ({ ...f, levels }))}
                 disabled={isSubmitting}
-                className={formInputClassName}
               />
             </FormField>
-            <FormField label="Break type">
-              <Input
-                value={form.breakType}
-                onChange={(e) => setForm((f) => ({ ...f, breakType: e.target.value }))}
-                placeholder="e.g. Beach break"
-                disabled={isSubmitting}
-                className={formInputClassName}
-              />
-            </FormField>
-            <FormField label="Consistency" className="sm:col-span-2">
-              <Input
-                value={form.consistency}
-                onChange={(e) => setForm((f) => ({ ...f, consistency: e.target.value }))}
-                placeholder="e.g. High"
-                disabled={isSubmitting}
-                className={formInputClassName}
-              />
-            </FormField>
+            <SpotBreakTypeSelect
+              id={breakId}
+              value={form.breakType}
+              onChange={(breakType) => setForm((f) => ({ ...f, breakType }))}
+              disabled={isSubmitting}
+            />
+            <SpotConsistencySelect
+              id={consistencyId}
+              value={form.consistency}
+              onChange={(consistency) => setForm((f) => ({ ...f, consistency }))}
+              disabled={isSubmitting}
+              className="sm:col-span-2"
+            />
           </div>
           <FormCheckboxField
             label="Verified"
