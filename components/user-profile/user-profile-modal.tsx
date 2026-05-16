@@ -49,7 +49,7 @@ export function UserProfileModal({
   onSaved: (dto: UserProfileDto) => void;
   onRetry?: () => void | Promise<void>;
 }) {
-  const dismissible = mode === "settings";
+  const allowDismiss = true;
 
   const [displayName, setDisplayName] = useState("");
   const [nickname, setNickname] = useState("");
@@ -72,13 +72,13 @@ export function UserProfileModal({
   }, [open, profile, auth0User]);
 
   useEffect(() => {
-    if (!open || !dismissible) return;
+    if (!open || !allowDismiss) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, dismissible, onClose]);
+  }, [open, allowDismiss, onClose]);
 
   const save = useCallback(async () => {
     setSubmitError(null);
@@ -120,7 +120,7 @@ export function UserProfileModal({
     mode === "onboarding" ? "Complete your profile" : "Edit your profile";
   const description =
     mode === "onboarding"
-      ? "Add your name and country to continue. Partner profile (if any) is separate."
+      ? "Add your name and country. You can skip for now; we will prompt again next time you open Peakd. Partner profile (if any) is separate."
       : "Update your app profile. Partner profile settings are unchanged.";
 
   return (
@@ -131,7 +131,7 @@ export function UserProfileModal({
       )}
       role="presentation"
       onMouseDown={(e) => {
-        if (dismissible && e.target === e.currentTarget && !saving) {
+        if (allowDismiss && e.target === e.currentTarget && !saving) {
           onClose();
         }
       }}
@@ -236,38 +236,37 @@ export function UserProfileModal({
         </CardContent>
         <CardFooter
           className={cn(
-            "flex flex-wrap gap-2 border-t border-white/10 pt-4",
-            dismissible ? "justify-between" : "justify-end",
+            "flex flex-wrap items-center gap-3 border-t border-white/10 bg-[#0a1218] px-4 py-4 text-zinc-100",
+            allowDismiss || (loadError && onRetry) ? "justify-between" : "justify-end",
           )}
         >
-          {dismissible ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="border-white/15 bg-transparent text-zinc-200"
-              disabled={saving}
-              onClick={onClose}
-            >
-              Cancel
-            </Button>
-          ) : loadError && onRetry ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="border-white/15 bg-transparent text-zinc-200"
-              disabled={saving}
-              onClick={() => void onRetry()}
-            >
-              Retry
-            </Button>
-          ) : (
-            <span className="text-xs text-zinc-500">
-              Save to continue using Peakd.
-            </span>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {loadError && onRetry ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="border-white/20 bg-white/5 text-zinc-100 hover:bg-white/10 hover:text-zinc-50"
+                disabled={saving}
+                onClick={() => void onRetry()}
+              >
+                Retry
+              </Button>
+            ) : null}
+            {allowDismiss ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="border-white/20 bg-white/5 text-zinc-100 hover:bg-white/10 hover:text-zinc-50"
+                disabled={saving}
+                onClick={onClose}
+              >
+                {mode === "onboarding" ? "Not now" : "Cancel"}
+              </Button>
+            ) : null}
+          </div>
           <Button
             type="button"
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            className="bg-[#26c2c9] text-zinc-950 hover:bg-[#22adb4]"
             disabled={saving || !profile}
             onClick={() => void save()}
           >

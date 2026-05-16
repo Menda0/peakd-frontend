@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
@@ -14,12 +15,17 @@ import {
 import { UserProfileModal, type UserProfileModalMode } from "@/components/user-profile/user-profile-modal";
 import { getUserProfileAction } from "@/lib/user-profile-actions";
 import {
+  clearOnboardingDebut,
+  consumeOnboardingDebut,
+  hasConsumedOnboardingDebut,
+} from "@/lib/user-profile-onboarding-session";
+import {
   needsUserProfileOnboarding,
   type UserProfileDto,
 } from "@/lib/user-profile";
 
 export type UserProfileModalApi = {
-  openProfileSettings: () => void;
+  openProfileSettings: () => Promise<void>;
 };
 
 const UserProfileModalContext = createContext<UserProfileModalApi | null>(null);
@@ -46,6 +52,7 @@ function applyBootstrapResult(
   setLoadError: (e: string | null) => void,
   setProfile: (p: UserProfileDto | null) => void,
   setModalMode: Dispatch<SetStateAction<ModalMode>>,
+  incompleteOnboardingDismissedThisMount: boolean,
 ) {
   if (!res.ok) {
     setLoadError(res.error);
@@ -55,9 +62,16 @@ function applyBootstrapResult(
   }
   setLoadError(null);
   setProfile(res.data);
+  if (!needsUserProfileOnboarding(res.data, auth0User)) {
+    clearOnboardingDebut();
+  }
   setModalMode((m) => {
     if (m === "settings") return m;
-    return needsUserProfileOnboarding(res.data, auth0User) ? "onboarding" : "closed";
+    if (!needsUserProfileOnboarding(res.data, auth0User)) return "closed";
+    if (incompleteOnboardingDismissedThisMount) return "closed";
+    if (hasConsumedOnboardingDebut()) return "closed";
+    consumeOnboardingDebut();
+    return "onboarding";
   });
 }
 
@@ -71,42 +85,56 @@ export function UserProfileProvider({
   const [profile, setProfile] = useState<UserProfileDto | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [modalMode, setModalMode] = useState<ModalMode>("closed");
+  /** After user dismisses incomplete onboarding, do not auto-open again until next full page load. */
+  const incompleteOnboardingDismissedThisMount = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const res = await getUserProfileAction();
       if (cancelled) return;
-      applyBootstrapResult(res, auth0User, setLoadError, setProfile, setModalMode);
+      applyBootstrapResult(
+        res,
+        auth0User,
+        setLoadError,
+        setProfile,
+        setModalMode,
+        incompleteOnboardingDismissedThisMount.current,
+      );
     })();
     return () => {
       cancelled = true;
     };
   }, [auth0User.name, auth0User.given_name, auth0User.email]);
 
-  useEffect(() => {
-    if (modalMode !== "closed" || !profile) return;
-    if (needsUserProfileOnboarding(profile, auth0User)) {
-      setModalMode("onboarding");
-    }
-  }, [modalMode, profile, auth0User]);
-
   const reloadProfile = useCallback(async () => {
     const res = await getUserProfileAction();
-    applyBootstrapResult(res, auth0User, setLoadError, setProfile, setModalMode);
+    applyBootstrapResult(
+      res,
+      auth0User,
+      setLoadError,
+      setProfile,
+      setModalMode,
+      incompleteOnboardingDismissedThisMount.current,
+    );
   }, [auth0User]);
 
-  const openProfileSettings = useCallback(async () => {
-    const res = await getUserProfileAction();
-    if (!res.ok) {
-      setLoadError(res.error);
-      setProfile(null);
+  const openProfileSettings = useCallback(async (): Promise<void> => {
+    try {
+      const res = await getUserProfileAction();
+      if (!res.ok) {
+        setLoadError(res.error);
+        setProfile(null);
+        setModalMode("settings");
+        return;
+      }
+      setLoadError(null);
+      setProfile(res.data);
       setModalMode("settings");
-      return;
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "Failed to open profile");
+      setModalMode("settings");
     }
-    setLoadError(null);
-    setProfile(res.data);
-    setModalMode("settings");
   }, []);
 
   const ctx = useMemo<UserProfileModalApi>(
@@ -116,14 +144,24 @@ export function UserProfileProvider({
     [openProfileSettings],
   );
 
-  const handleCloseSettings = useCallback(() => {
-    setModalMode((m) => (m === "settings" ? "closed" : m));
+  const handleDismissModal = useCallback(() => {
+    setModalMode((m) => {
+      if (m !== "settings" && m !== "onboarding") return m;
+      if (m === "onboarding") {
+        incompleteOnboardingDismissedThisMount.current = true;
+      }
+      return "closed";
+    });
   }, []);
 
   const handleSaved = useCallback(
     (dto: UserProfileDto) => {
       setProfile(dto);
       setLoadError(null);
+      if (!needsUserProfileOnboarding(dto, auth0User)) {
+        incompleteOnboardingDismissedThisMount.current = false;
+        clearOnboardingDebut();
+      }
       setModalMode((prev) => {
         if (prev === "settings") return "closed";
         if (!needsUserProfileOnboarding(dto, auth0User)) return "closed";
@@ -145,7 +183,7 @@ export function UserProfileProvider({
         profile={profile}
         auth0User={auth0User}
         loadError={loadError}
-        onClose={handleCloseSettings}
+        onClose={handleDismissModal}
         onSaved={handleSaved}
         onRetry={() => void reloadProfile()}
       />

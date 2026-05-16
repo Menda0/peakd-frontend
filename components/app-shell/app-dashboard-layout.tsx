@@ -17,6 +17,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -109,23 +110,27 @@ export function AppDashboardLayout({
               </span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="top" className="w-56">
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col gap-0.5">
-                  <span className="truncate text-sm font-medium">{user.name ?? "Signed in"}</span>
-                  {user.email ? (
-                    <span className="truncate text-xs text-muted-foreground">{user.email}</span>
-                  ) : null}
-                </div>
-              </DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="truncate text-sm font-medium">{user.name ?? "Signed in"}</span>
+                    {user.email ? (
+                      <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+                    ) : null}
+                  </div>
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                nativeButton={false}
-                render={
-                  <Link href="/auth/logout" prefetch={false} className="w-full cursor-pointer" />
-                }
-              >
-                Log out
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  nativeButton={false}
+                  render={
+                    <Link href="/auth/logout" prefetch={false} className="w-full cursor-pointer" />
+                  }
+                >
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

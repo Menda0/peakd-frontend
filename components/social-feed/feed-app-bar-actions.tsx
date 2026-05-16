@@ -1,10 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { BellIcon, LogOut, MessageCircleIcon, UploadIcon, UserIcon } from "lucide-react";
+import {
+  BellIcon,
+  ChevronDownIcon,
+  LogOut,
+  MessageCircleIcon,
+  UploadIcon,
+  UserIcon,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -62,51 +70,66 @@ export function FeedAppBarActions({
       >
         <BellIcon className="size-5" />
       </button>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger
-          className="flex size-9 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-zinc-800 outline-none ring-offset-2 ring-offset-[#040F1E] focus-visible:ring-2 focus-visible:ring-[#26c2c9]/60"
+          type="button"
+          className="group flex h-10 max-w-[12rem] shrink-0 items-center gap-1 rounded-full border border-white/15 bg-zinc-800 py-1 pl-1 pr-2 outline-none ring-offset-2 ring-offset-[#040F1E] focus-visible:ring-2 focus-visible:ring-[#26c2c9]/60 data-[popup-open]:border-white/25 data-[popup-open]:bg-zinc-800/90"
           aria-label="Account menu"
         >
-          {userPicture ? (
-            // eslint-disable-next-line @next/next/no-img-element -- Auth0 URL
-            <img src={userPicture} alt="" className="size-full object-cover" />
-          ) : (
-            <span className="flex size-full items-center justify-center text-xs font-medium text-zinc-200">
-              {initials}
-            </span>
-          )}
+          <span className="relative size-8 shrink-0 overflow-hidden rounded-full bg-zinc-900">
+            {userPicture ? (
+              // eslint-disable-next-line @next/next/no-img-element -- Auth0 URL
+              <img src={userPicture} alt="" className="size-full object-cover" />
+            ) : (
+              <span className="flex size-full items-center justify-center text-xs font-medium text-zinc-200">
+                {initials}
+              </span>
+            )}
+          </span>
+          <ChevronDownIcon
+            className="size-4 shrink-0 text-zinc-400 transition group-data-[popup-open]:rotate-180 group-data-[popup-open]:text-zinc-200"
+            aria-hidden
+          />
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
+          side="bottom"
           sideOffset={8}
-          className="min-w-52 border-white/10 bg-[#0a1218] p-1 text-zinc-100 shadow-lg ring-1 ring-white/10"
+          className="z-[100] min-w-52 border-white/10 bg-[#0a1218] p-1 text-zinc-100 shadow-lg ring-1 ring-white/10"
         >
-          <DropdownMenuLabel className="px-2 py-1.5 font-normal text-zinc-300">
-            <div className="flex flex-col gap-0.5">
-              <span className="truncate text-sm font-medium text-zinc-50">
-                {userName?.trim() || "Signed in"}
-              </span>
-              {userEmail ? (
-                <span className="truncate text-xs text-zinc-500">{userEmail}</span>
-              ) : null}
-            </div>
-          </DropdownMenuLabel>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="px-2 py-1.5 font-normal text-zinc-300">
+              <div className="flex flex-col gap-0.5">
+                <span className="truncate text-sm font-medium text-zinc-50">
+                  {userName?.trim() || "Signed in"}
+                </span>
+                {userEmail ? (
+                  <span className="truncate text-xs text-zinc-500">{userEmail}</span>
+                ) : null}
+              </div>
+            </DropdownMenuLabel>
+          </DropdownMenuGroup>
           <DropdownMenuSeparator className="bg-white/10" />
-          <DropdownMenuItem
-            className="cursor-pointer text-zinc-200 focus:bg-white/10 focus:text-zinc-50"
-            onClick={() => void openProfileSettings()}
-          >
-            <UserIcon className="size-4 opacity-80" aria-hidden />
-            Edit profile
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="cursor-pointer text-zinc-200 focus:bg-white/10 focus:text-zinc-50"
-            nativeButton={false}
-            render={<Link href="/auth/logout" prefetch={false} className="w-full" />}
-          >
-            <LogOut className="size-4 opacity-80" aria-hidden />
-            Log out
-          </DropdownMenuItem>
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              className="cursor-pointer text-zinc-200 focus:bg-white/10 focus:text-zinc-50"
+              onClick={() => {
+                void openProfileSettings().catch(() => {});
+              }}
+            >
+              <UserIcon className="size-4 opacity-80" aria-hidden />
+              Edit profile
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer text-zinc-200 focus:bg-white/10 focus:text-zinc-50"
+              onClick={() => {
+                window.location.assign("/auth/logout");
+              }}
+            >
+              <LogOut className="size-4 opacity-80" aria-hidden />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
