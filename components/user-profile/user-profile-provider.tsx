@@ -8,15 +8,15 @@ import {
   useMemo,
   useRef,
   useState,
-  type Dispatch,
   type ReactNode,
-  type SetStateAction,
 } from "react";
 import { UserProfileModal, type UserProfileModalMode } from "@/components/user-profile/user-profile-modal";
+import { getUserProfileAction } from "@/lib/user-profile-actions";
 import {
-  getUserProfileAction,
-  recordOnboardingPromptAction,
-} from "@/lib/user-profile-actions";
+  clearOnboardingPromptCookie,
+  hasOnboardingPromptCookieForToday,
+  setOnboardingPromptCookieDay,
+} from "@/lib/user-profile-onboarding-cookie";
 import {
   clearSpaOnboardingDismissed,
   isSpaOnboardingDismissed,
@@ -25,6 +25,7 @@ import {
 import {
   needsUserProfileOnboarding,
   type UserProfileDto,
+  utcCalendarDayString,
 } from "@/lib/user-profile";
 
 export type UserProfileModalApi = {
@@ -49,32 +50,61 @@ type Auth0UserProps = {
 
 type ModalMode = "closed" | UserProfileModalMode;
 
-function applyBootstrapResult(
-  res: Awaited<ReturnType<typeof getUserProfileAction>>,
-  auth0User: Auth0UserProps,
+type ProfileOk = { ok: true; data: UserProfileDto };
+
+function applyProfileLoadError(
   setLoadError: (e: string | null) => void,
   setProfile: (p: UserProfileDto | null) => void,
-  setModalMode: Dispatch<SetStateAction<ModalMode>>,
-  incompleteOnboardingDismissedThisMount: boolean,
+  setModalMode: React.Dispatch<React.SetStateAction<ModalMode>>,
+  error: string,
 ) {
-  if (!res.ok) {
-    setLoadError(res.error);
-    setProfile(null);
-    setModalMode((m) => (m === "settings" ? m : "onboarding"));
-    return;
-  }
+  setLoadError(error);
+  setProfile(null);
+  setModalMode((m) => (m === "settings" ? m : "onboarding"));
+}
+
+/**
+ * After a successful GET /users/me: set profile, then either open onboarding (at most once per UTC day
+ * in this browser via cookie) or keep the modal closed.
+ */
+function applySuccessfulProfileBootstrap(
+  res: ProfileOk,
+  auth0User: Auth0UserProps,
+  incompleteOnboardingDismissedThisMount: boolean,
+  setLoadError: (e: string | null) => void,
+  setProfile: (p: UserProfileDto | null) => void,
+  setModalMode: React.Dispatch<React.SetStateAction<ModalMode>>,
+): void {
+  const needs = needsUserProfileOnboarding(res.data, auth0User);
+  const promptedToday = hasOnboardingPromptCookieForToday();
+
   setLoadError(null);
   setProfile(res.data);
-  if (!needsUserProfileOnboarding(res.data, auth0User)) {
+
+  if (!needs) {
     clearSpaOnboardingDismissed();
+    setModalMode((m) => (m === "settings" ? m : "closed"));
+    return;
   }
-  setModalMode((m) => {
-    if (m === "settings") return m;
-    if (!needsUserProfileOnboarding(res.data, auth0User)) return "closed";
-    if (incompleteOnboardingDismissedThisMount) return "closed";
-    if (isSpaOnboardingDismissed()) return "closed";
-    return "onboarding";
-  });
+
+  if (incompleteOnboardingDismissedThisMount) {
+    setModalMode((m) => (m === "settings" ? m : "closed"));
+    return;
+  }
+
+  if (isSpaOnboardingDismissed()) {
+    setModalMode((m) => (m === "settings" ? m : "closed"));
+    return;
+  }
+
+  if (promptedToday) {
+    setModalMode((m) => (m === "settings" ? m : "closed"));
+    return;
+  }
+
+  const today = utcCalendarDayString();
+  setOnboardingPromptCookieDay(today);
+  setModalMode((m) => (m === "settings" ? m : "onboarding"));
 }
 
 export function UserProfileProvider({
@@ -89,7 +119,7 @@ export function UserProfileProvider({
   const [modalMode, setModalMode] = useState<ModalMode>("closed");
   /** After user dismisses incomplete onboarding, do not auto-open again until next full page load. */
   const incompleteOnboardingDismissedThisMount = useRef(false);
-  /** Increments each time the bootstrap effect runs (deps change); first run per document clears SPA dismiss. */
+  /** First bootstrap run per document clears SPA dismiss so refresh can re-evaluate the onboarding cookie. */
   const bootstrapGeneration = useRef(0);
 
   useEffect(() => {
@@ -102,13 +132,17 @@ export function UserProfileProvider({
       }
       const res = await getUserProfileAction();
       if (cancelled) return;
-      applyBootstrapResult(
+      if (!res.ok) {
+        applyProfileLoadError(setLoadError, setProfile, setModalMode, res.error);
+        return;
+      }
+      applySuccessfulProfileBootstrap(
         res,
         auth0User,
+        incompleteOnboardingDismissedThisMount.current,
         setLoadError,
         setProfile,
         setModalMode,
-        incompleteOnboardingDismissedThisMount.current,
       );
     })();
     return () => {
@@ -118,13 +152,17 @@ export function UserProfileProvider({
 
   const reloadProfile = useCallback(async () => {
     const res = await getUserProfileAction();
-    applyBootstrapResult(
+    if (!res.ok) {
+      applyProfileLoadError(setLoadError, setProfile, setModalMode, res.error);
+      return;
+    }
+    applySuccessfulProfileBootstrap(
       res,
       auth0User,
+      incompleteOnboardingDismissedThisMount.current,
       setLoadError,
       setProfile,
       setModalMode,
-      incompleteOnboardingDismissedThisMount.current,
     );
   }, [auth0User]);
 
@@ -154,23 +192,15 @@ export function UserProfileProvider({
   );
 
   const handleDismissModal = useCallback(() => {
-    let recordOnboardingPrompt = false;
     setModalMode((prev) => {
       if (prev !== "settings" && prev !== "onboarding") return prev;
       if (prev === "onboarding") {
-        recordOnboardingPrompt = true;
         incompleteOnboardingDismissedThisMount.current = true;
         setSpaOnboardingDismissed();
+        setOnboardingPromptCookieDay(utcCalendarDayString());
       }
       return "closed";
     });
-    if (recordOnboardingPrompt) {
-      void recordOnboardingPromptAction().then((r) => {
-        if (r.ok) {
-          setProfile(r.data);
-        }
-      });
-    }
   }, []);
 
   const handleSaved = useCallback(
@@ -180,6 +210,7 @@ export function UserProfileProvider({
       if (!needsUserProfileOnboarding(dto, auth0User)) {
         incompleteOnboardingDismissedThisMount.current = false;
         clearSpaOnboardingDismissed();
+        clearOnboardingPromptCookie();
       }
       setModalMode((prev) => {
         if (prev === "settings") return "closed";
