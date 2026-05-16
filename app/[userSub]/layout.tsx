@@ -34,6 +34,10 @@ export default async function UserScopedLayout({
         name: u.name ?? undefined,
         given_name: givenName,
         email: u.email ?? undefined,
+        picture:
+          u && typeof u === "object" && "picture" in u && typeof (u as { picture?: unknown }).picture === "string"
+            ? (u as { picture: string }).picture
+            : undefined,
       }}
     >
       {children}

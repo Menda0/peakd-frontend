@@ -3,6 +3,7 @@
 import { auth0 } from "@/lib/auth0";
 import {
   USER_PROFILE_PATH,
+  USER_AVATAR_UPLOAD_PATH,
   type UserProfileDto,
   normalizeUserProfileDto,
 } from "@/lib/user-profile";
@@ -112,6 +113,43 @@ export async function patchUserProfileAction(
     return { ok: true, data: dto };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Failed to save profile";
+    return { ok: false, error: msg };
+  }
+}
+
+/** Multipart upload to Nest → S3 (same pattern as partner avatar). */
+export async function uploadUserAvatarAction(
+  formData: FormData,
+): Promise<UserProfileActionResult<UserProfileDto>> {
+  try {
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) {
+      return { ok: false, error: "Missing or empty image" };
+    }
+    const outbound = new FormData();
+    outbound.append("file", file, file.name);
+
+    const res = await peakdFetch(USER_AVATAR_UPLOAD_PATH, {
+      method: "POST",
+      body: outbound,
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      return { ok: false, error: textOrStatus(res, text) };
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text) as unknown;
+    } catch {
+      return { ok: false, error: "Invalid JSON from API" };
+    }
+    const dto = normalizeUserProfileDto(parsed);
+    if (!dto) {
+      return { ok: false, error: "Unexpected profile shape from API" };
+    }
+    return { ok: true, data: dto };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Avatar upload failed";
     return { ok: false, error: msg };
   }
 }

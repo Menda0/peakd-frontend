@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CountryPicker } from "@/components/pickers/country-picker";
 import { RegionPicker } from "@/components/pickers/region-picker";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { patchUserProfileAction } from "@/lib/user-profile-actions";
+import { patchUserProfileAction, uploadUserAvatarAction } from "@/lib/user-profile-actions";
 import {
   auth0DisplayNameHint,
   type SurfLevel,
@@ -22,12 +22,16 @@ import {
 } from "@/lib/user-profile";
 import { cn } from "@/lib/utils";
 
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+const AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+
 export type UserProfileModalMode = "onboarding" | "settings";
 
 type Auth0Hints = {
   name?: string | null;
   given_name?: string | null;
   email?: string | null;
+  picture?: string | null;
 };
 
 export function UserProfileModal({
@@ -38,6 +42,7 @@ export function UserProfileModal({
   loadError,
   onClose,
   onSaved,
+  onProfileSnapshot,
   onRetry,
 }: {
   open: boolean;
@@ -47,6 +52,8 @@ export function UserProfileModal({
   loadError: string | null;
   onClose: () => void;
   onSaved: (dto: UserProfileDto) => void;
+  /** Called after avatar upload so parent state updates without closing the modal. */
+  onProfileSnapshot: (dto: UserProfileDto) => void;
   onRetry?: () => void | Promise<void>;
 }) {
   const allowDismiss = true;
@@ -56,19 +63,31 @@ export function UserProfileModal({
   const [countryCode, setCountryCode] = useState<string | null>(null);
   const [regionId, setRegionId] = useState<string | null>(null);
   const [surfLevel, setSurfLevel] = useState<SurfLevel | "">("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const seededFieldsForOpenCycleRef = useRef(false);
 
   useEffect(() => {
-    if (!open || !profile) return;
-    setDisplayName(
-      profile.displayName?.trim() || auth0DisplayNameHint(auth0User) || "",
-    );
-    setNickname(profile.nickname?.trim() ?? "");
-    setCountryCode(profile.countryCode?.trim() ? profile.countryCode : null);
-    setRegionId(profile.homeRegionId?.trim() ? profile.homeRegionId : null);
-    setSurfLevel(profile.surfLevel ?? "");
-    setSubmitError(null);
+    if (!open) {
+      seededFieldsForOpenCycleRef.current = false;
+      return;
+    }
+    if (!profile) return;
+    if (!seededFieldsForOpenCycleRef.current) {
+      seededFieldsForOpenCycleRef.current = true;
+      setDisplayName(
+        profile.displayName?.trim() || auth0DisplayNameHint(auth0User) || "",
+      );
+      setNickname(profile.nickname?.trim() ?? "");
+      setCountryCode(profile.countryCode?.trim() ? profile.countryCode : null);
+      setRegionId(profile.homeRegionId?.trim() ? profile.homeRegionId : null);
+      setSurfLevel(profile.surfLevel ?? "");
+      setSubmitError(null);
+    }
+    setAvatarUrl(profile.avatarUrl ?? null);
   }, [open, profile, auth0User]);
 
   useEffect(() => {
@@ -79,6 +98,33 @@ export function UserProfileModal({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, allowDismiss, onClose]);
+
+  const uploadAvatar = async (file: File) => {
+    setAvatarError(null);
+    if (!AVATAR_TYPES.has(file.type)) {
+      setAvatarError("Use JPEG, PNG, WebP, or GIF.");
+      return;
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      setAvatarError("Image must be 5 MB or smaller.");
+      return;
+    }
+    setAvatarBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file, file.name);
+      const result = await uploadUserAvatarAction(fd);
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+      onProfileSnapshot(result.data);
+      setAvatarUrl(result.data.avatarUrl);
+    } catch (e) {
+      setAvatarError(e instanceof Error ? e.message : "Avatar upload failed");
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
 
   const save = useCallback(async () => {
     setSubmitError(null);
@@ -112,6 +158,12 @@ export function UserProfileModal({
     }
   }, [countryCode, displayName, nickname, onSaved, regionId, surfLevel]);
 
+  const displayPicture =
+    avatarUrl?.trim() ||
+    (typeof auth0User.picture === "string" && auth0User.picture.trim() !== ""
+      ? auth0User.picture
+      : null);
+
   if (!open) {
     return null;
   }
@@ -131,7 +183,7 @@ export function UserProfileModal({
       )}
       role="presentation"
       onMouseDown={(e) => {
-        if (allowDismiss && e.target === e.currentTarget && !saving) {
+        if (allowDismiss && e.target === e.currentTarget && !saving && !avatarBusy) {
           onClose();
         }
       }}
@@ -165,6 +217,48 @@ export function UserProfileModal({
           ) : null}
           {profile || loadError ? (
             <>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                <div className="flex flex-col items-center gap-2 sm:w-40">
+                  <div className="relative size-24 overflow-hidden rounded-full border border-white/15 bg-zinc-800">
+                    {displayPicture ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- Auth0 / S3 URL
+                      <img
+                        src={displayPicture}
+                        alt=""
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex size-full items-center justify-center text-xs text-zinc-500">
+                        No photo
+                      </div>
+                    )}
+                  </div>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="sr-only"
+                      disabled={saving || avatarBusy || !profile}
+                      onChange={(ev) => {
+                        const f = ev.target.files?.[0];
+                        ev.target.value = "";
+                        if (f) void uploadAvatar(f);
+                      }}
+                    />
+                    <span
+                      className={cn(
+                        "inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-white/10",
+                        (saving || avatarBusy || !profile) && "pointer-events-none opacity-50",
+                      )}
+                    >
+                      {avatarBusy ? "Uploading…" : "Change photo"}
+                    </span>
+                  </label>
+                  {avatarError ? (
+                    <p className="text-center text-xs text-red-400">{avatarError}</p>
+                  ) : null}
+                </div>
+                <div className="min-w-0 flex-1 space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="user-profile-name" className="text-zinc-300">
                   Name
@@ -232,6 +326,8 @@ export function UserProfileModal({
                   <option value="advanced">Advanced</option>
                 </select>
               </div>
+                </div>
+              </div>
             </>
           ) : null}
         </CardContent>
@@ -247,7 +343,7 @@ export function UserProfileModal({
                 type="button"
                 variant="outline"
                 className="border-white/20 bg-white/5 text-zinc-100 hover:bg-white/10 hover:text-zinc-50"
-                disabled={saving}
+                disabled={saving || avatarBusy}
                 onClick={() => void onRetry()}
               >
                 Retry
@@ -258,7 +354,7 @@ export function UserProfileModal({
                 type="button"
                 variant="outline"
                 className="border-white/20 bg-white/5 text-zinc-100 hover:bg-white/10 hover:text-zinc-50"
-                disabled={saving}
+                disabled={saving || avatarBusy}
                 onClick={onClose}
               >
                 {mode === "onboarding" ? "Not now" : "Cancel"}
@@ -268,7 +364,7 @@ export function UserProfileModal({
           <Button
             type="button"
             className="bg-[#26c2c9] text-zinc-950 hover:bg-[#22adb4]"
-            disabled={saving || !profile}
+            disabled={saving || avatarBusy || !profile}
             onClick={() => void save()}
           >
             {saving ? "Saving…" : "Save"}

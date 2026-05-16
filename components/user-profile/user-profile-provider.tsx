@@ -46,6 +46,7 @@ type Auth0UserProps = {
   name?: string | null;
   given_name?: string | null;
   email?: string | null;
+  picture?: string | null;
 };
 
 type ModalMode = "closed" | UserProfileModalMode;
@@ -148,7 +149,7 @@ export function UserProfileProvider({
     return () => {
       cancelled = true;
     };
-  }, [auth0User.name, auth0User.given_name, auth0User.email]);
+  }, [auth0User.name, auth0User.given_name, auth0User.email, auth0User.picture]);
 
   const reloadProfile = useCallback(async () => {
     const res = await getUserProfileAction();
@@ -203,6 +204,11 @@ export function UserProfileProvider({
     });
   }, []);
 
+  const handleProfileSnapshot = useCallback((dto: UserProfileDto) => {
+    setProfile(dto);
+    setLoadError(null);
+  }, []);
+
   const handleSaved = useCallback(
     (dto: UserProfileDto) => {
       setProfile(dto);
@@ -235,6 +241,7 @@ export function UserProfileProvider({
         loadError={loadError}
         onClose={handleDismissModal}
         onSaved={handleSaved}
+        onProfileSnapshot={handleProfileSnapshot}
         onRetry={() => void reloadProfile()}
       />
     </UserProfileModalContext.Provider>

@@ -9,9 +9,11 @@ export type UserProfileDto = {
   countryCode: string | null;
   homeRegionId: string | null;
   surfLevel: SurfLevel | null;
+  avatarUrl: string | null;
 };
 
 export const USER_PROFILE_PATH = "users/me";
+export const USER_AVATAR_UPLOAD_PATH = "users/me/avatar";
 
 /** UTC calendar day `YYYY-MM-DD` (e.g. cookie / comparisons). */
 export function utcCalendarDayString(date = new Date()): string {
@@ -32,6 +34,7 @@ export function normalizeUserProfileDto(raw: unknown): UserProfileDto | null {
     countryCode: o.countryCode == null ? null : String(o.countryCode),
     homeRegionId: o.homeRegionId == null ? null : String(o.homeRegionId),
     surfLevel,
+    avatarUrl: o.avatarUrl == null ? null : String(o.avatarUrl),
   };
 }
 
