@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AdminCreateSpotModal,
+  type AdminCreateSpotInput,
+} from "@/components/admin/admin-create-spot-modal";
 import {
   Card,
   CardContent,
@@ -54,8 +59,9 @@ export function AdminRegionEdit({
   const [countryCode, setCountryCode] = useState<string | null>(null);
   const [verified, setVerified] = useState(false);
 
-  const [spotForm, setSpotForm] = useState(emptySpotForm);
+  const [createSpotOpen, setCreateSpotOpen] = useState(false);
   const [spotCreateBusy, setSpotCreateBusy] = useState(false);
+  const [spotCreateError, setSpotCreateError] = useState<string | null>(null);
   const [editingSpotId, setEditingSpotId] = useState<string | null>(null);
   const [spotEdit, setSpotEdit] = useState(emptySpotForm());
   const [spotRowBusy, setSpotRowBusy] = useState<string | null>(null);
@@ -135,23 +141,17 @@ export function AdminRegionEdit({
     applyRegion(res.data);
   };
 
-  const handleCreateSpot = async () => {
-    if (!spotForm.name.trim()) return;
+  const handleCreateSpot = async (input: AdminCreateSpotInput) => {
+    if (!input.name.trim()) return;
     setSpotCreateBusy(true);
-    setError(null);
-    const res = await createAdminSpotAction(regionId, {
-      name: spotForm.name,
-      level: spotForm.level.trim() || null,
-      breakType: spotForm.breakType.trim() || null,
-      consistency: spotForm.consistency.trim() || null,
-      verified: spotForm.verified,
-    });
+    setSpotCreateError(null);
+    const res = await createAdminSpotAction(regionId, input);
     setSpotCreateBusy(false);
     if (!res.ok) {
-      setError(res.error);
+      setSpotCreateError(res.error);
       return;
     }
-    setSpotForm(emptySpotForm());
+    setCreateSpotOpen(false);
     const spotsRes = await listAdminSpotsAction(regionId);
     if (spotsRes.ok) setSpots(spotsRes.data);
   };
@@ -333,76 +333,28 @@ export function AdminRegionEdit({
         </CardContent>
       </Card>
 
-      <Card className="border-white/10 bg-white/5">
-        <CardHeader>
-          <CardTitle className="text-zinc-100">Create spot</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="space-y-1 sm:col-span-2 lg:col-span-3">
-            <label className="text-sm text-zinc-400">Name</label>
-            <Input
-              value={spotForm.name}
-              onChange={(e) => setSpotForm((f) => ({ ...f, name: e.target.value }))}
-              placeholder="Spot name"
-              disabled={spotCreateBusy}
-              className="border-white/15 bg-white/5 text-zinc-100"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm text-zinc-400">Level</label>
-            <Input
-              value={spotForm.level}
-              onChange={(e) => setSpotForm((f) => ({ ...f, level: e.target.value }))}
-              disabled={spotCreateBusy}
-              className="border-white/15 bg-white/5 text-zinc-100"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm text-zinc-400">Break type</label>
-            <Input
-              value={spotForm.breakType}
-              onChange={(e) => setSpotForm((f) => ({ ...f, breakType: e.target.value }))}
-              disabled={spotCreateBusy}
-              className="border-white/15 bg-white/5 text-zinc-100"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm text-zinc-400">Consistency</label>
-            <Input
-              value={spotForm.consistency}
-              onChange={(e) => setSpotForm((f) => ({ ...f, consistency: e.target.value }))}
-              disabled={spotCreateBusy}
-              className="border-white/15 bg-white/5 text-zinc-100"
-            />
-          </div>
-          <label className="flex items-center gap-2 self-end text-sm text-zinc-300">
-            <input
-              type="checkbox"
-              checked={spotForm.verified}
-              onChange={(e) => setSpotForm((f) => ({ ...f, verified: e.target.checked }))}
-              disabled={spotCreateBusy}
-              className="rounded border-white/20"
-            />
-            Verified
-          </label>
-          <div className="flex items-end sm:col-span-2 lg:col-span-3">
-            <Button
-              type="button"
-              onClick={() => void handleCreateSpot()}
-              disabled={spotCreateBusy || !spotForm.name.trim()}
-            >
-              {spotCreateBusy ? "Creating…" : "Add spot"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       <Card className="border-white/10 bg-white/5">
-        <CardHeader>
-          <CardTitle className="text-zinc-100">Spots</CardTitle>
-          <CardDescription className="text-zinc-400">
-            {spots.length} spot{spots.length === 1 ? "" : "s"} in this region
-          </CardDescription>
+        <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0">
+          <div>
+            <CardTitle className="text-zinc-100">Spots</CardTitle>
+            <CardDescription className="text-zinc-400">
+              {spots.length} spot{spots.length === 1 ? "" : "s"} in this region
+            </CardDescription>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              setSpotCreateError(null);
+              setCreateSpotOpen(true);
+            }}
+            disabled={region.disabled}
+            className="gap-1.5"
+          >
+            <Plus className="size-4" aria-hidden />
+            Add spot
+          </Button>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {spots.length === 0 ? (
@@ -571,6 +523,17 @@ export function AdminRegionEdit({
           )}
         </CardContent>
       </Card>
+
+      <AdminCreateSpotModal
+        open={createSpotOpen}
+        regionName={region.name}
+        onClose={() => {
+          if (!spotCreateBusy) setCreateSpotOpen(false);
+        }}
+        onCreate={(input) => void handleCreateSpot(input)}
+        isSubmitting={spotCreateBusy}
+        error={spotCreateError}
+      />
     </div>
   );
 }
