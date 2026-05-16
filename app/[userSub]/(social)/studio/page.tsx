@@ -1,3 +1,4 @@
+import { getPartnerProfileAction } from "@/app/[userSub]/(social)/partner/profile/actions";
 import { auth0 } from "@/lib/auth0";
 import { getSocialFeedNavProps } from "@/lib/social-feed-nav";
 import { SocialFeedLayout } from "@/components/social-feed/social-feed-layout";
@@ -16,6 +17,17 @@ export default async function StudioPage({
 
   const nav = await getSocialFeedNavProps(session);
 
+  let defaultCountryCode: string | null = null;
+  if (nav.showPartnerNav) {
+    const profileRes = await getPartnerProfileAction();
+    if (profileRes.ok) {
+      const cc = profileRes.data.countryCode?.trim().toUpperCase();
+      if (cc && /^[A-Z]{2}$/.test(cc)) {
+        defaultCountryCode = cc;
+      }
+    }
+  }
+
   return (
     <SocialFeedLayout
       {...nav}
@@ -23,7 +35,7 @@ export default async function StudioPage({
       userName={session.user.name}
       userEmail={session.user.email}
     >
-      <StudioSessionsDashboard />
+      <StudioSessionsDashboard defaultCountryCode={defaultCountryCode} />
     </SocialFeedLayout>
   );
 }

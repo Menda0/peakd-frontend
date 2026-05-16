@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,8 +22,15 @@ function todayYmd(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-const initialFormValues = (): StudioSessionFormValues => ({
-  countryCode: null,
+function normalizeCountryCode(code: string | null | undefined): string | null {
+  const cc = code?.trim().toUpperCase();
+  return cc && /^[A-Z]{2}$/.test(cc) ? cc : null;
+}
+
+const initialFormValues = (
+  defaultCountryCode?: string | null,
+): StudioSessionFormValues => ({
+  countryCode: normalizeCountryCode(defaultCountryCode),
   regionId: null,
   spotId: null,
   sessionDate: todayYmd(),
@@ -37,19 +44,31 @@ export function StudioNewSessionDialog({
   open,
   onOpenChange,
   onCreated,
+  defaultCountryCode = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: (sessionId: string) => void;
+  /** Pre-select country (e.g. partner profile country). */
+  defaultCountryCode?: string | null;
 }) {
-  const [values, setValues] = useState<StudioSessionFormValues>(initialFormValues);
+  const [values, setValues] = useState<StudioSessionFormValues>(() =>
+    initialFormValues(defaultCountryCode),
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const reset = useCallback(() => {
-    setValues(initialFormValues());
+    setValues(initialFormValues(defaultCountryCode));
     setError(null);
-  }, []);
+  }, [defaultCountryCode]);
+
+  useEffect(() => {
+    if (open) {
+      setValues(initialFormValues(defaultCountryCode));
+      setError(null);
+    }
+  }, [open, defaultCountryCode]);
 
   const close = () => {
     reset();

@@ -41,7 +41,12 @@ type JobListItem = {
 };
 
 
-export function StudioSessionsDashboard() {
+export function StudioSessionsDashboard({
+  defaultCountryCode = null,
+}: {
+  /** Pre-select country when creating a session (partner profile country). */
+  defaultCountryCode?: string | null;
+} = {}) {
   const router = useRouter();
   const { user } = useUser();
   const userPathPrefix = user?.sub ? `/${userSubToPathSegment(user.sub)}` : "";
@@ -105,6 +110,7 @@ export function StudioSessionsDashboard() {
       <StudioNewSessionDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        defaultCountryCode={defaultCountryCode}
         onCreated={(sessionId) => {
           void loadAll();
           router.push(`${userPathPrefix}/studio/sessions/${sessionId}`);
