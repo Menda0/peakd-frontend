@@ -25,7 +25,7 @@ export async function computeIsPartnerForSession(session: SessionData): Promise<
     process.env.AUTH0_MANAGEMENT_CLIENT_SECRET?.trim()
   ) {
     const names = await fetchAuth0UserRoleNames(session.user.sub);
-    if (names.some((n) => n.toLowerCase() === "partner")) return true;
+    if (names.some((n) => n === "partner")) return true;
   }
 
   return false;

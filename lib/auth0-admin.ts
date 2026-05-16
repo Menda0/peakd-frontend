@@ -25,7 +25,7 @@ export async function computeIsAdminForSession(session: SessionData): Promise<bo
     process.env.AUTH0_MANAGEMENT_CLIENT_SECRET?.trim()
   ) {
     const names = await fetchAuth0UserRoleNames(session.user.sub);
-    if (names.some((n) => n.toLowerCase() === "admin")) return true;
+    if (names.some((n) => n === "admin")) return true;
   }
 
   return false;

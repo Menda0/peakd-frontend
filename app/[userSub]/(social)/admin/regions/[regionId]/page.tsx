@@ -1,18 +1,20 @@
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { auth0 } from "@/lib/auth0";
 import { sessionHasAdminRole } from "@/lib/auth0-admin";
 import { getSocialFeedNavProps } from "@/lib/social-feed-nav";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 import { SocialFeedLayout } from "@/components/social-feed/social-feed-layout";
-import { AdminRegionsManager } from "@/components/admin/admin-regions-manager";
+import { AdminRegionEdit } from "@/components/admin/admin-region-edit";
 
-export default async function AdminRegionsPage({
+export default async function AdminRegionEditPage({
   params,
+  searchParams,
 }: {
-  params: Promise<{ userSub: string }>;
+  params: Promise<{ userSub: string; regionId: string }>;
+  searchParams: Promise<{ country?: string }>;
 }) {
-  await params;
+  const { regionId } = await params;
+  const { country } = await searchParams;
   const session = await auth0.getSession();
   if (!session?.user?.sub) {
     return null;
@@ -25,19 +27,23 @@ export default async function AdminRegionsPage({
   }
 
   const nav = await getSocialFeedNavProps(session);
+  const regionsBasePath = `${prefix}/admin/regions`;
+  const countryQ =
+    typeof country === "string" && country.trim()
+      ? `?country=${encodeURIComponent(country.trim().toUpperCase())}`
+      : "";
+  const regionsListHref = `${regionsBasePath}${countryQ}`;
 
   return (
     <SocialFeedLayout
       {...nav}
-      adminRegionsHref={`${prefix}/admin/regions`}
+      adminRegionsHref={`${regionsBasePath}`}
       showAdminNav
       userPicture={session.user.picture}
       userName={session.user.name}
       userEmail={session.user.email}
     >
-      <Suspense fallback={<p className="text-sm text-zinc-400">Loading regions…</p>}>
-        <AdminRegionsManager regionsBasePath={`${prefix}/admin/regions`} />
-      </Suspense>
+      <AdminRegionEdit regionId={regionId} regionsListHref={regionsListHref} />
     </SocialFeedLayout>
   );
 }

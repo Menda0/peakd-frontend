@@ -1,3 +1,5 @@
+import { normalizeRoleName } from "./auth0-roles";
+
 /**
  * Optional fallback: load role *names* from the Auth0 Management API when they are
  * not present on the access token (common if API RBAC / “Add Roles in the Access Token”
@@ -71,12 +73,15 @@ export async function fetchAuth0UserRoleNames(userSub: string): Promise<string[]
   const res = await fetch(`https://${domain}/api/v2/users/${encodeURIComponent(userSub)}/roles`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+
   if (!res.ok) {
     if (res.status === 401) mgmtTokenCache = null;
     return [];
   }
   const rows = (await res.json()) as { name?: string }[];
-  const names = rows.map((r) => String(r.name ?? "")).filter(Boolean);
+  const names = rows
+    .map((r) => normalizeRoleName(String(r.name ?? "")))
+    .filter(Boolean);
   rolesCache.set(userSub, { names, expiresAtMs: now + ROLES_TTL_MS });
   return names;
 }
