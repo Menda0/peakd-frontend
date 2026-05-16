@@ -36,6 +36,8 @@ export function RegionPicker({
   regionId,
   onRegionIdChange,
   disabled,
+  allowCreate = true,
+  verifiedOnly = false,
 }: {
   id?: string;
   label?: string;
@@ -43,6 +45,10 @@ export function RegionPicker({
   regionId: string | null;
   onRegionIdChange: (id: string | null) => void;
   disabled?: boolean;
+  /** When false, users cannot create new regions from this picker. */
+  allowCreate?: boolean;
+  /** When true, only verified regions are listed. */
+  verifiedOnly?: boolean;
 }) {
   const [items, setItems] = useState<RegionOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -70,14 +76,15 @@ export function RegionPicker({
         throw new Error(await res.text().catch(() => res.statusText));
       }
       const data = (await res.json()) as RegionOption[];
-      setItems(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setItems(verifiedOnly ? list.filter((r) => r.verified) : list);
     } catch (e) {
       setListError(e instanceof Error ? e.message : "Failed to load regions");
       setItems([]);
     } finally {
       setLoading(false);
     }
-  }, [countryCode]);
+  }, [countryCode, verifiedOnly]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -103,6 +110,7 @@ export function RegionPicker({
   }, [items, trimmedQuery]);
 
   const showAddButton =
+    allowCreate &&
     Boolean(countryCode) &&
     !disabled &&
     !loading &&
@@ -156,7 +164,7 @@ export function RegionPicker({
   return (
     <div className="space-y-2">
       <GeoCreateConfirmModal
-        open={confirmOpen}
+        open={allowCreate && confirmOpen}
         title="Create new region?"
         description={`Add “${pendingName}” as a new region for ${countryCode ?? ""}. You can use it in this session after confirming.`}
         confirmLabel="Create region"
@@ -185,11 +193,19 @@ export function RegionPicker({
       >
         <ComboboxInput
           id={id}
-          placeholder={countryCode ? "Search or type a new region…" : "Select a country first"}
+          placeholder={
+            countryCode
+              ? verifiedOnly
+                ? "Search verified regions…"
+                : allowCreate
+                  ? "Search or type a new region…"
+                  : "Search regions…"
+              : "Select a country first"
+          }
           disabled={gated || loading}
           className={cn(
             "h-10 min-h-10 border-white/15 bg-white/5 text-zinc-100 placeholder:text-zinc-500",
-            "focus-within:border-[#26c2c9]/60 focus-within:ring-2 focus-within:ring-[#26c2c9]/25",
+            "focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/25",
           )}
           onKeyDown={(e) => {
             if (e.nativeEvent.isComposing || e.key !== "Enter") return;
@@ -204,7 +220,7 @@ export function RegionPicker({
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                className="size-8 shrink-0 text-[#26c2c9] hover:bg-[#26c2c9]/15 hover:text-[#2dd4dc]"
+                className="size-8 shrink-0 text-primary hover:bg-primary/15 hover:text-primary/90"
                 title="Add as new region"
                 aria-label="Add as new region"
                 onClick={(e) => {
@@ -230,7 +246,7 @@ export function RegionPicker({
               <ComboboxItem
                 key={item.regionId}
                 value={item}
-                className="text-zinc-200 data-highlighted:bg-[#26c2c9]/15 data-highlighted:text-zinc-50"
+                className="text-zinc-200 data-highlighted:bg-primary/15 data-highlighted:text-zinc-50"
               >
                 <span className="flex w-full items-center justify-between gap-2">
                   <span>{item.name}</span>

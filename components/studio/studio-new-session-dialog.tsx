@@ -148,7 +148,7 @@ export function StudioNewSessionDialog({
             </Button>
             <Button
               type="button"
-              className="bg-[#26c2c9] text-[#040A10] hover:bg-[#2dd4dc]"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={submitting}
               onClick={() => void submit()}
             >

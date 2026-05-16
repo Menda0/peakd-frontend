@@ -283,7 +283,7 @@ export function PartnerProfileForm({
                     placeholder="Search type…"
                     className={cn(
                       "h-10 w-full min-h-10 border-white/15 bg-white/5 text-zinc-100 placeholder:text-zinc-500",
-                      "focus-within:border-[#26c2c9]/60 focus-within:ring-2 focus-within:ring-[#26c2c9]/25",
+                      "focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/25",
                     )}
                   />
                   <ComboboxContent
@@ -296,7 +296,7 @@ export function PartnerProfileForm({
                         <ComboboxItem
                           key={key}
                           value={key}
-                          className="text-zinc-200 data-highlighted:bg-[#26c2c9]/15 data-highlighted:text-zinc-50"
+                          className="text-zinc-200 data-highlighted:bg-primary/15 data-highlighted:text-zinc-50"
                         >
                           {TYPE_LABELS[key]}
                         </ComboboxItem>
@@ -324,11 +324,11 @@ export function PartnerProfileForm({
       <CardFooter className="flex flex-col items-stretch gap-3 border-t border-white/10 bg-white/[0.03] p-4 text-zinc-100 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-h-5 text-sm">
           {saveError ? <span className="text-red-400">{saveError}</span> : null}
-          {saveOk && !saveError ? <span className="text-[#26c2c9]">Saved.</span> : null}
+          {saveOk && !saveError ? <span className="text-primary">Saved.</span> : null}
         </div>
         <Button
           type="button"
-          className="bg-[#26c2c9] text-zinc-950 hover:bg-[#22adb4]"
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
           disabled={saving}
           onClick={() => void saveProfile()}
         >

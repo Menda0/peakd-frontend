@@ -883,7 +883,7 @@ export function StudioSessionFolder() {
                     </Button>
                     <Button
                       type="button"
-                      className="bg-[#26c2c9] text-[#040A10] hover:bg-[#2dd4dc]"
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
                       disabled={savingEdit}
                       onClick={() => void (async () => {
                         const validationError = validateStudioSessionFormValues(editValues);
@@ -1017,7 +1017,7 @@ export function StudioSessionFolder() {
                 uploadDisabled
                   ? "border-white/10 bg-zinc-900/20 opacity-60"
                   : dragActive
-                    ? "border-[#26c2c9]/50 bg-white/5"
+                    ? "border-primary/50 bg-white/5"
                     : "border-white/15 bg-zinc-900/30",
               )}
               onDragEnter={(e) => {
@@ -1102,7 +1102,7 @@ export function StudioSessionFolder() {
               </p>
               <Button
                 type="button"
-                className="shrink-0 bg-[#26c2c9] text-[#040A10] hover:bg-[#2dd4dc] disabled:opacity-40"
+                className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
                 disabled={uploadDisabled || stagedFiles.length === 0}
                 onClick={openUploadConfirm}
               >
@@ -1229,7 +1229,7 @@ export function StudioSessionFolder() {
                   >
                     <Card
                       className={cn(
-                        "border-white/10 bg-white/[0.03] transition-colors hover:border-[#26c2c9]/30 hover:shadow-sm",
+                        "border-white/10 bg-white/[0.03] transition-colors hover:border-primary/30 hover:shadow-sm",
                         isFailed && "hover:border-red-500/30",
                       )}
                     >

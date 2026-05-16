@@ -189,7 +189,7 @@ export function SpotPicker({
           disabled={gated || loading}
           className={cn(
             "h-10 min-h-10 border-white/15 bg-white/5 text-zinc-100 placeholder:text-zinc-500",
-            "focus-within:border-[#26c2c9]/60 focus-within:ring-2 focus-within:ring-[#26c2c9]/25",
+            "focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/25",
           )}
           onKeyDown={(e) => {
             if (e.nativeEvent.isComposing || e.key !== "Enter") return;
@@ -204,7 +204,7 @@ export function SpotPicker({
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                className="size-8 shrink-0 text-[#26c2c9] hover:bg-[#26c2c9]/15 hover:text-[#2dd4dc]"
+                className="size-8 shrink-0 text-primary hover:bg-primary/15 hover:text-primary/90"
                 title="Add as new spot"
                 aria-label="Add as new spot"
                 onClick={(e) => {
@@ -230,7 +230,7 @@ export function SpotPicker({
               <ComboboxItem
                 key={item.spotId}
                 value={item}
-                className="text-zinc-200 data-highlighted:bg-[#26c2c9]/15 data-highlighted:text-zinc-50"
+                className="text-zinc-200 data-highlighted:bg-primary/15 data-highlighted:text-zinc-50"
               >
                 <span className="flex w-full items-center justify-between gap-2">
                   <span>{item.name}</span>

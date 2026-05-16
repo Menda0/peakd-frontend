@@ -15,7 +15,7 @@ export function NavItem({
   const className = cn(
     "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition",
     active
-      ? "bg-[#26c2c9]/15 font-medium text-[#26c2c9]"
+      ? "bg-primary/15 font-medium text-primary"
       : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200",
   );
 

@@ -20,7 +20,7 @@ const compactPickerStyle = {
   "--rdp-dropdown-gap": "0.3rem",
   "--rdp-months-gap": "0.75rem",
   "--rdp-weekday-padding": "0.125rem 0",
-  "--rdp-accent-color": "#26c2c9",
+  "--rdp-accent-color": "#16b8d3",
   "--rdp-accent-background-color": "rgb(38 194 201 / 0.16)",
   "--rdp-today-color": "#5eead4",
   "--rdp-outside-opacity": "0.45",

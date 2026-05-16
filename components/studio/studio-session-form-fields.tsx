@@ -124,7 +124,7 @@ export function StudioSessionFormFields({
             className={cn(
               "border-white/15",
               values.conditionsRating === null
-                ? "bg-[#26c2c9]/20 text-zinc-50"
+                ? "bg-primary/20 text-zinc-50"
                 : "bg-transparent text-zinc-300",
             )}
             onClick={() => onChange({ conditionsRating: null })}
@@ -140,7 +140,7 @@ export function StudioSessionFormFields({
               className={cn(
                 "min-w-9 border-white/15",
                 values.conditionsRating === n
-                  ? "bg-[#26c2c9]/25 text-[#2dd4dc]"
+                  ? "bg-primary/25 text-primary"
                   : "bg-transparent text-zinc-300",
               )}
               onClick={() => onChange({ conditionsRating: n })}
@@ -166,7 +166,7 @@ export function StudioSessionFormFields({
                   type="checkbox"
                   checked={checked}
                   onChange={() => toggleWaveType(w.id)}
-                  className="mt-1 size-4 shrink-0 rounded border-white/30 bg-zinc-900 text-[#26c2c9] accent-[#26c2c9]"
+                  className="mt-1 size-4 shrink-0 rounded border-white/30 bg-zinc-900 text-primary accent-primary"
                 />
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-zinc-100">{w.title}</span>

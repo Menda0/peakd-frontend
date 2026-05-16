@@ -122,7 +122,7 @@ export function StudioSessionsDashboard() {
           </div>
           <Button
             type="button"
-            className="shrink-0 bg-[#26c2c9] text-[#040A10] hover:bg-[#2dd4dc]"
+            className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={() => setDialogOpen(true)}
           >
             New surf session
@@ -163,7 +163,7 @@ export function StudioSessionsDashboard() {
               <li key={s.sessionId}>
                 <Link
                   href={`${userPathPrefix}/studio/sessions/${s.sessionId}`}
-                  className="block transition-colors hover:[&_.session-summary-card]:border-[#26c2c9]/30 hover:[&_.session-summary-card]:shadow-sm"
+                  className="block transition-colors hover:[&_.session-summary-card]:border-primary/30 hover:[&_.session-summary-card]:shadow-sm"
                 >
                   <SessionSummaryCard
                     session={s}
@@ -186,7 +186,7 @@ export function StudioSessionsDashboard() {
               {legacyJobs.map((job) => (
                 <li key={job.jobId}>
                   <Link href={`${userPathPrefix}/studio/${job.jobId}`} className="block">
-                    <Card className="border-white/10 bg-white/[0.03] transition-colors hover:border-[#26c2c9]/30">
+                    <Card className="border-white/10 bg-white/[0.03] transition-colors hover:border-primary/30">
                       <CardContent className="flex gap-4 p-4">
                         <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
                           {job.thumbnailUrl ? (

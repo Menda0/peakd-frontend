@@ -121,7 +121,7 @@ export function StudioJobDetail() {
           <Button
             variant="link"
             nativeButton={false}
-            className="h-auto p-0 text-[#26c2c9]"
+            className="h-auto p-0 text-primary"
             render={<Link href={`${userPathPrefix}/studio`} />}
           >
             ← Back to Studio
@@ -157,7 +157,7 @@ export function StudioJobDetail() {
           <p className="text-sm text-zinc-500">
             <Link
               href={`${userPathPrefix}/studio/sessions/${detail.surfSessionId}`}
-              className="text-[#26c2c9] underline-offset-2 hover:underline"
+              className="text-primary underline-offset-2 hover:underline"
             >
               Open this video’s session folder
             </Link>
@@ -198,7 +198,7 @@ export function StudioJobDetail() {
               <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
                 <CardContent className="py-10">
                   <div className="mx-auto max-w-md space-y-3 text-center">
-                    <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-[#26c2c9]/30 border-t-[#26c2c9]" />
+                    <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
                     <p className="text-sm text-zinc-400">Transcoding and uploading…</p>
                   </div>
                 </CardContent>
@@ -243,7 +243,7 @@ export function StudioJobDetail() {
                           href={s.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="group overflow-hidden rounded-lg border border-white/10 bg-zinc-900/50 transition hover:border-[#26c2c9]/40"
+                          className="group overflow-hidden rounded-lg border border-white/10 bg-zinc-900/50 transition hover:border-primary/40"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element -- presigned S3 URLs */}
                           <img

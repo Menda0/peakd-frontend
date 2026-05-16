@@ -50,7 +50,7 @@ export function CountryPicker({
         disabled={disabled}
         className={cn(
           "h-10 w-full min-h-10 border-white/15 bg-white/5 text-zinc-100 placeholder:text-zinc-500",
-          "focus-within:border-[#26c2c9]/60 focus-within:ring-2 focus-within:ring-[#26c2c9]/25",
+          "focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/25",
           inputClassName,
         )}
       />
@@ -64,7 +64,7 @@ export function CountryPicker({
             <ComboboxItem
               key={item.value}
               value={item}
-              className="text-zinc-200 data-highlighted:bg-[#26c2c9]/15 data-highlighted:text-zinc-50"
+              className="text-zinc-200 data-highlighted:bg-primary/15 data-highlighted:text-zinc-50"
             >
               {item.label}
             </ComboboxItem>

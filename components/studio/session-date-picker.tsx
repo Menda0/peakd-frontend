@@ -41,7 +41,7 @@ export function SessionDatePicker({
           className={cn(
             "h-10 w-full justify-start font-normal",
             "border-white/15 bg-white/5 text-zinc-100 hover:bg-white/10",
-            "focus-visible:border-[#26c2c9]/60 focus-visible:ring-2 focus-visible:ring-[#26c2c9]/25",
+            "focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/25",
           )}
         >
           {selected ? selected.toLocaleDateString() : "Select date"}

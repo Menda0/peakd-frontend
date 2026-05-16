@@ -11,7 +11,7 @@ export function FeedSearchBar() {
         type="search"
         readOnly
         placeholder="Search waves, videos, spots, people…"
-        className="h-11 w-full rounded-full border border-white/10 bg-white/5 py-2 pl-11 pr-4 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none ring-[#26c2c9]/40 focus-visible:ring-2"
+        className="h-11 w-full rounded-full border border-white/10 bg-white/5 py-2 pl-11 pr-4 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none ring-primary/40 focus-visible:ring-2"
       />
     </div>
   );

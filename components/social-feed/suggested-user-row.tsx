@@ -10,7 +10,7 @@ export function SuggestedUserRow({ user }: { user: SuggestedUser }) {
       </div>
       <button
         type="button"
-        className="shrink-0 rounded-full border border-[#26c2c9] px-3 py-1 text-xs font-semibold text-[#26c2c9] transition hover:bg-[#26c2c9]/10"
+        className="shrink-0 rounded-full border border-primary px-3 py-1 text-xs font-semibold text-primary transition hover:bg-primary/10"
       >
         Follow
       </button>

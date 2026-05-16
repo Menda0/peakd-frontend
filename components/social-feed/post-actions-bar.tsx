@@ -18,15 +18,15 @@ export function PostActionsBar({
 }) {
   return (
     <div className="mt-4 flex items-center gap-6 text-zinc-400">
-      <button type="button" className="flex items-center gap-1.5 hover:text-[#26c2c9]">
+      <button type="button" className="flex items-center gap-1.5 hover:text-primary">
         <HeartIcon className="size-5" />
         <span className="text-sm">{countLabel(likes)}</span>
       </button>
-      <button type="button" className="flex items-center gap-1.5 hover:text-[#26c2c9]">
+      <button type="button" className="flex items-center gap-1.5 hover:text-primary">
         <MessageCircleIcon className="size-5" />
         <span className="text-sm">{comments}</span>
       </button>
-      <button type="button" className="flex items-center gap-1.5 hover:text-[#26c2c9]">
+      <button type="button" className="flex items-center gap-1.5 hover:text-primary">
         <Share2Icon className="size-5" />
         <span className="text-sm">{shares}</span>
       </button>
