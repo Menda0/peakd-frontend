@@ -19,17 +19,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUserProfileModal } from "@/components/user-profile/user-profile-provider";
+import { englishCountryLabel } from "@/lib/countries";
+import { auth0DisplayNameHint } from "@/lib/user-profile";
+import { cn } from "@/lib/utils";
 
-function initialsFrom(name: string | undefined, email: string | undefined) {
-  const n = name?.trim();
-  if (n) {
-    const parts = n.split(/\s+/);
+function initialsFromDisplayName(displayName: string, email: string | null | undefined) {
+  const d = displayName.trim();
+  if (d) {
+    const parts = d.split(/\s+/).filter(Boolean);
     if (parts.length >= 2) {
-      return `${parts[0]!.charAt(0)}${parts[1]!.charAt(0)}`.toUpperCase();
+      return `${parts[0]!.charAt(0)}${parts[parts.length - 1]!.charAt(0)}`.toUpperCase();
     }
-    return n.charAt(0).toUpperCase();
+    return d.charAt(0).toUpperCase();
   }
-  const e = email?.trim();
+  const e = typeof email === "string" ? email.trim() : "";
   return e ? e.charAt(0).toUpperCase() : "?";
 }
 
@@ -44,8 +47,26 @@ export function FeedAppBarActions({
   userEmail?: string | null;
   uploadHref: string;
 }) {
-  const { openProfileSettings } = useUserProfileModal();
-  const initials = initialsFrom(userName ?? undefined, userEmail ?? undefined);
+  const { openProfileSettings, profile, auth0User } = useUserProfileModal();
+
+  const displayName =
+    profile?.displayName?.trim() ||
+    profile?.nickname?.trim() ||
+    userName?.trim() ||
+    auth0DisplayNameHint(auth0User) ||
+    "";
+
+  const email = userEmail?.trim() || auth0User.email?.trim() || null;
+
+  const avatarImageUrl =
+    profile?.avatarUrl?.trim() ||
+    userPicture?.trim() ||
+    auth0User.picture?.trim() ||
+    null;
+
+  const countryLabel = englishCountryLabel(profile?.countryCode ?? null);
+
+  const initials = initialsFromDisplayName(displayName, email);
 
   return (
     <div className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -73,19 +94,30 @@ export function FeedAppBarActions({
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger
           type="button"
-          className="group flex h-10 max-w-[12rem] shrink-0 items-center gap-1 rounded-full border border-white/15 bg-zinc-800 py-1 pl-1 pr-2 outline-none ring-offset-2 ring-offset-[#040F1E] focus-visible:ring-2 focus-visible:ring-[#26c2c9]/60 data-[popup-open]:border-white/25 data-[popup-open]:bg-zinc-800/90"
+          className={cn(
+            "group flex h-10 max-w-[min(22rem,calc(100vw-10rem))] shrink-0 items-center gap-2 rounded-full border border-white/15 bg-zinc-800 py-1 pl-1 pr-2 outline-none ring-offset-2 ring-offset-[#040F1E] focus-visible:ring-2 focus-visible:ring-[#26c2c9]/60 data-[popup-open]:border-white/25 data-[popup-open]:bg-zinc-800/90",
+            "min-w-0",
+          )}
           aria-label="Account menu"
         >
           <span className="relative size-8 shrink-0 overflow-hidden rounded-full bg-zinc-900">
-            {userPicture ? (
-              // eslint-disable-next-line @next/next/no-img-element -- Auth0 URL
-              <img src={userPicture} alt="" className="size-full object-cover" />
+            {avatarImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- Auth0 / S3 URL
+              <img src={avatarImageUrl} alt="" className="size-full object-cover" />
             ) : (
-              <span className="flex size-full items-center justify-center text-xs font-medium text-zinc-200">
+              <span className="flex size-full items-center justify-center text-xs font-semibold tracking-tight text-zinc-200">
                 {initials}
               </span>
             )}
           </span>
+          <div className="flex min-w-0 max-w-[5.5rem] flex-1 flex-col items-start text-left sm:max-w-[14rem]">
+            <span className="w-full truncate text-sm font-medium leading-tight text-zinc-50">
+              {displayName || "Signed in"}
+            </span>
+            {countryLabel ? (
+              <span className="w-full truncate text-xs leading-tight text-zinc-500">{countryLabel}</span>
+            ) : null}
+          </div>
           <ChevronDownIcon
             className="size-4 shrink-0 text-zinc-400 transition group-data-[popup-open]:rotate-180 group-data-[popup-open]:text-zinc-200"
             aria-hidden
@@ -101,10 +133,11 @@ export function FeedAppBarActions({
             <DropdownMenuLabel className="px-2 py-1.5 font-normal text-zinc-300">
               <div className="flex flex-col gap-0.5">
                 <span className="truncate text-sm font-medium text-zinc-50">
-                  {userName?.trim() || "Signed in"}
+                  {displayName || "Signed in"}
                 </span>
-                {userEmail ? (
-                  <span className="truncate text-xs text-zinc-500">{userEmail}</span>
+                {email ? <span className="truncate text-xs text-zinc-500">{email}</span> : null}
+                {countryLabel ? (
+                  <span className="truncate text-xs text-zinc-400">{countryLabel}</span>
                 ) : null}
               </div>
             </DropdownMenuLabel>

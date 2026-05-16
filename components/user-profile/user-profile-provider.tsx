@@ -28,8 +28,18 @@ import {
   utcCalendarDayString,
 } from "@/lib/user-profile";
 
+export type UserProfileAuth0Hints = {
+  name?: string | null;
+  given_name?: string | null;
+  email?: string | null;
+  picture?: string | null;
+};
+
 export type UserProfileModalApi = {
   openProfileSettings: () => Promise<void>;
+  /** Latest app profile from GET /users/me (or null before load / on hard failure). */
+  profile: UserProfileDto | null;
+  auth0User: UserProfileAuth0Hints;
 };
 
 const UserProfileModalContext = createContext<UserProfileModalApi | null>(null);
@@ -41,13 +51,6 @@ export function useUserProfileModal(): UserProfileModalApi {
   }
   return ctx;
 }
-
-type Auth0UserProps = {
-  name?: string | null;
-  given_name?: string | null;
-  email?: string | null;
-  picture?: string | null;
-};
 
 type ModalMode = "closed" | UserProfileModalMode;
 
@@ -70,7 +73,7 @@ function applyProfileLoadError(
  */
 function applySuccessfulProfileBootstrap(
   res: ProfileOk,
-  auth0User: Auth0UserProps,
+  auth0User: UserProfileAuth0Hints,
   incompleteOnboardingDismissedThisMount: boolean,
   setLoadError: (e: string | null) => void,
   setProfile: (p: UserProfileDto | null) => void,
@@ -113,7 +116,7 @@ export function UserProfileProvider({
   auth0User,
 }: {
   children: ReactNode;
-  auth0User: Auth0UserProps;
+  auth0User: UserProfileAuth0Hints;
 }) {
   const [profile, setProfile] = useState<UserProfileDto | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -188,8 +191,10 @@ export function UserProfileProvider({
   const ctx = useMemo<UserProfileModalApi>(
     () => ({
       openProfileSettings,
+      profile,
+      auth0User,
     }),
-    [openProfileSettings],
+    [openProfileSettings, profile, auth0User],
   );
 
   const handleDismissModal = useCallback(() => {
