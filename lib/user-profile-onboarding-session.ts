@@ -1,30 +1,33 @@
-/** Session flag: we already auto-opened the onboarding modal once this tab (survives layout remounts). */
-const ONBOARDING_DEBUT_KEY = "peakd:user-profile:onboarding-debut";
+/**
+ * SPA-only: after the user dismisses the onboarding modal, do not auto-open it again
+ * until a full page load (refresh, direct URL entry, new tab). sessionStorage survives
+ * soft client navigations but is cleared on the first profile bootstrap of a new document.
+ */
+const SPA_ONBOARDING_DISMISS_KEY = "peakd:user-profile:onboarding-spa-dismiss";
 
-export function hasConsumedOnboardingDebut(): boolean {
+export function isSpaOnboardingDismissed(): boolean {
   if (typeof window === "undefined") return false;
   try {
-    return window.sessionStorage.getItem(ONBOARDING_DEBUT_KEY) === "1";
+    return window.sessionStorage.getItem(SPA_ONBOARDING_DISMISS_KEY) === "1";
   } catch {
     return false;
   }
 }
 
-/** Call when we decide to auto-show onboarding so it will not re-open on every client navigation. */
-export function consumeOnboardingDebut(): void {
+export function setSpaOnboardingDismissed(): void {
   if (typeof window === "undefined") return;
   try {
-    window.sessionStorage.setItem(ONBOARDING_DEBUT_KEY, "1");
+    window.sessionStorage.setItem(SPA_ONBOARDING_DISMISS_KEY, "1");
   } catch {
     /* private mode / quota */
   }
 }
 
-/** Clear when profile is complete so a future incomplete state can prompt again in a new session. */
-export function clearOnboardingDebut(): void {
+/** Cleared once per full page load on first bootstrap (see UserProfileProvider). */
+export function clearSpaOnboardingDismissed(): void {
   if (typeof window === "undefined") return;
   try {
-    window.sessionStorage.removeItem(ONBOARDING_DEBUT_KEY);
+    window.sessionStorage.removeItem(SPA_ONBOARDING_DISMISS_KEY);
   } catch {
     /* ignore */
   }

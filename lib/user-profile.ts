@@ -9,9 +9,12 @@ export type UserProfileDto = {
   countryCode: string | null;
   homeRegionId: string | null;
   surfLevel: SurfLevel | null;
+  /** UTC YYYY-MM-DD when onboarding prompt was last recorded (server). */
+  onboardingPromptDayUtc: string | null;
 };
 
 export const USER_PROFILE_PATH = "users/me";
+export const USER_ONBOARDING_PROMPT_PATH = "users/me/onboarding-prompt";
 
 export function isSurfLevel(value: unknown): value is SurfLevel {
   return typeof value === "string" && (SURF_LEVELS as readonly string[]).includes(value);
@@ -27,6 +30,10 @@ export function normalizeUserProfileDto(raw: unknown): UserProfileDto | null {
     countryCode: o.countryCode == null ? null : String(o.countryCode),
     homeRegionId: o.homeRegionId == null ? null : String(o.homeRegionId),
     surfLevel,
+    onboardingPromptDayUtc:
+      o.onboardingPromptDayUtc == null || o.onboardingPromptDayUtc === ""
+        ? null
+        : String(o.onboardingPromptDayUtc),
   };
 }
 

@@ -2,6 +2,7 @@
 
 import { auth0 } from "@/lib/auth0";
 import {
+  USER_ONBOARDING_PROMPT_PATH,
   USER_PROFILE_PATH,
   type UserProfileDto,
   normalizeUserProfileDto,
@@ -112,6 +113,32 @@ export async function patchUserProfileAction(
     return { ok: true, data: dto };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Failed to save profile";
+    return { ok: false, error: msg };
+  }
+}
+
+export async function recordOnboardingPromptAction(): Promise<
+  UserProfileActionResult<UserProfileDto>
+> {
+  try {
+    const res = await peakdFetch(USER_ONBOARDING_PROMPT_PATH, { method: "POST" });
+    const text = await res.text();
+    if (!res.ok) {
+      return { ok: false, error: textOrStatus(res, text) };
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text) as unknown;
+    } catch {
+      return { ok: false, error: "Invalid JSON from API" };
+    }
+    const dto = normalizeUserProfileDto(parsed);
+    if (!dto) {
+      return { ok: false, error: "Unexpected profile shape from API" };
+    }
+    return { ok: true, data: dto };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Failed to record onboarding prompt";
     return { ok: false, error: msg };
   }
 }

@@ -13,11 +13,14 @@ import {
   type SetStateAction,
 } from "react";
 import { UserProfileModal, type UserProfileModalMode } from "@/components/user-profile/user-profile-modal";
-import { getUserProfileAction } from "@/lib/user-profile-actions";
 import {
-  clearOnboardingDebut,
-  consumeOnboardingDebut,
-  hasConsumedOnboardingDebut,
+  getUserProfileAction,
+  recordOnboardingPromptAction,
+} from "@/lib/user-profile-actions";
+import {
+  clearSpaOnboardingDismissed,
+  isSpaOnboardingDismissed,
+  setSpaOnboardingDismissed,
 } from "@/lib/user-profile-onboarding-session";
 import {
   needsUserProfileOnboarding,
@@ -63,14 +66,13 @@ function applyBootstrapResult(
   setLoadError(null);
   setProfile(res.data);
   if (!needsUserProfileOnboarding(res.data, auth0User)) {
-    clearOnboardingDebut();
+    clearSpaOnboardingDismissed();
   }
   setModalMode((m) => {
     if (m === "settings") return m;
     if (!needsUserProfileOnboarding(res.data, auth0User)) return "closed";
     if (incompleteOnboardingDismissedThisMount) return "closed";
-    if (hasConsumedOnboardingDebut()) return "closed";
-    consumeOnboardingDebut();
+    if (isSpaOnboardingDismissed()) return "closed";
     return "onboarding";
   });
 }
@@ -87,10 +89,17 @@ export function UserProfileProvider({
   const [modalMode, setModalMode] = useState<ModalMode>("closed");
   /** After user dismisses incomplete onboarding, do not auto-open again until next full page load. */
   const incompleteOnboardingDismissedThisMount = useRef(false);
+  /** Increments each time the bootstrap effect runs (deps change); first run per document clears SPA dismiss. */
+  const bootstrapGeneration = useRef(0);
 
   useEffect(() => {
+    bootstrapGeneration.current += 1;
+    const isFirstBootstrapRun = bootstrapGeneration.current === 1;
     let cancelled = false;
     (async () => {
+      if (isFirstBootstrapRun) {
+        clearSpaOnboardingDismissed();
+      }
       const res = await getUserProfileAction();
       if (cancelled) return;
       applyBootstrapResult(
@@ -145,13 +154,23 @@ export function UserProfileProvider({
   );
 
   const handleDismissModal = useCallback(() => {
-    setModalMode((m) => {
-      if (m !== "settings" && m !== "onboarding") return m;
-      if (m === "onboarding") {
+    let recordOnboardingPrompt = false;
+    setModalMode((prev) => {
+      if (prev !== "settings" && prev !== "onboarding") return prev;
+      if (prev === "onboarding") {
+        recordOnboardingPrompt = true;
         incompleteOnboardingDismissedThisMount.current = true;
+        setSpaOnboardingDismissed();
       }
       return "closed";
     });
+    if (recordOnboardingPrompt) {
+      void recordOnboardingPromptAction().then((r) => {
+        if (r.ok) {
+          setProfile(r.data);
+        }
+      });
+    }
   }, []);
 
   const handleSaved = useCallback(
@@ -160,7 +179,7 @@ export function UserProfileProvider({
       setLoadError(null);
       if (!needsUserProfileOnboarding(dto, auth0User)) {
         incompleteOnboardingDismissedThisMount.current = false;
-        clearOnboardingDebut();
+        clearSpaOnboardingDismissed();
       }
       setModalMode((prev) => {
         if (prev === "settings") return "closed";
