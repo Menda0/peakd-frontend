@@ -47,6 +47,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(target, request.url));
   }
 
+  if (session?.user?.sub && (pathname === "/admin" || pathname.startsWith("/admin/"))) {
+    const rest = pathname === "/admin" ? "" : pathname.slice("/admin".length);
+    const target = `/${encodeURIComponent(session.user.sub)}/admin${rest}${search}`;
+    return NextResponse.redirect(new URL(target, request.url));
+  }
+
   if (!session) {
     const returnTo = encodeURIComponent(pathname + search);
     return NextResponse.redirect(new URL(`/auth/login?returnTo=${returnTo}`, request.url));

@@ -15,7 +15,9 @@ export function SocialFeedLayout({
   homeHref,
   studioHref,
   partnerProfileHref,
+  adminRegionsHref,
   showPartnerNav,
+  showAdminNav,
   userPicture,
   userName,
   userEmail,
@@ -24,7 +26,9 @@ export function SocialFeedLayout({
   homeHref: string;
   studioHref: string;
   partnerProfileHref?: string;
+  adminRegionsHref?: string;
   showPartnerNav: boolean;
+  showAdminNav: boolean;
   userPicture?: string | null;
   userName?: string | null;
   userEmail?: string | null;
@@ -43,7 +47,9 @@ export function SocialFeedLayout({
         <FeedNavSidebar
           studioHref={studioHref}
           partnerProfileHref={partnerProfileHref}
+          adminRegionsHref={adminRegionsHref}
           showPartnerNav={showPartnerNav}
+          showAdminNav={showAdminNav}
         />
         {children ? (
           <main className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">

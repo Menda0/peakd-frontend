@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth0 } from "@/lib/auth0";
 import { sessionHasPartnerRole } from "@/lib/auth0-partner";
+import { getSocialFeedNavProps } from "@/lib/social-feed-nav";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 import { SocialFeedLayout } from "@/components/social-feed/social-feed-layout";
 import { PartnerProfileForm } from "@/components/partner/partner-profile-form";
@@ -27,11 +28,11 @@ export default async function PartnerProfilePage({
     session.user.name && session.user.name.trim() !== "" ? session.user.name : session.user.email ?? "";
 
   const initialProfile = await getPartnerProfileAction();
+  const nav = await getSocialFeedNavProps(session);
 
   return (
     <SocialFeedLayout
-      homeHref={prefix}
-      studioHref={`${prefix}/studio`}
+      {...nav}
       partnerProfileHref={`${prefix}/partner/profile`}
       showPartnerNav
       userPicture={session.user.picture}

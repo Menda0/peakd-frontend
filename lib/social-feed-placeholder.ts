@@ -5,6 +5,7 @@ import {
   ClapperboardIcon,
   CompassIcon,
   LayoutDashboardIcon,
+  MapPinIcon,
   NewspaperIcon,
   SquarePlayIcon,
   UserRoundIcon,
@@ -72,6 +73,10 @@ export const PARTNER_NAV_ITEMS: NavItemConfig[] = [
   { id: "studio", label: "Studio", icon: ClapperboardIcon },
   { id: "profile", label: "Profile", icon: UserRoundIcon },
   { id: "income", label: "Income", icon: CircleDollarSignIcon },
+];
+
+export const ADMIN_NAV_ITEMS: NavItemConfig[] = [
+  { id: "regions", label: "Regions", icon: MapPinIcon },
 ];
 
 /*

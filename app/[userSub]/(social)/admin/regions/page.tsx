@@ -1,9 +1,12 @@
+import { redirect } from "next/navigation";
 import { auth0 } from "@/lib/auth0";
+import { sessionHasAdminRole } from "@/lib/auth0-admin";
 import { getSocialFeedNavProps } from "@/lib/social-feed-nav";
+import { userSubToPathSegment } from "@/lib/user-sub-path";
 import { SocialFeedLayout } from "@/components/social-feed/social-feed-layout";
-import { StudioSessionsDashboard } from "@/components/studio/studio-sessions-dashboard";
+import { AdminRegionsManager } from "@/components/admin/admin-regions-manager";
 
-export default async function StudioPage({
+export default async function AdminRegionsPage({
   params,
 }: {
   params: Promise<{ userSub: string }>;
@@ -14,16 +17,24 @@ export default async function StudioPage({
     return null;
   }
 
+  const prefix = `/${userSubToPathSegment(session.user.sub)}`;
+  const isAdmin = await sessionHasAdminRole(session);
+  if (!isAdmin) {
+    redirect(prefix);
+  }
+
   const nav = await getSocialFeedNavProps(session);
 
   return (
     <SocialFeedLayout
       {...nav}
+      adminRegionsHref={`${prefix}/admin/regions`}
+      showAdminNav
       userPicture={session.user.picture}
       userName={session.user.name}
       userEmail={session.user.email}
     >
-      <StudioSessionsDashboard />
+      <AdminRegionsManager />
     </SocialFeedLayout>
   );
 }

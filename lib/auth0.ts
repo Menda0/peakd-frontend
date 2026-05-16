@@ -1,16 +1,21 @@
 import { Auth0Client, filterDefaultIdTokenClaims } from "@auth0/nextjs-auth0/server";
 import type { BeforeSessionSavedHook } from "@auth0/nextjs-auth0/types";
+import { computeIsAdminForSession } from "@/lib/auth0-admin";
 import { computeIsPartnerForSession } from "@/lib/auth0-partner";
 
 const audience = process.env.AUTH0_AUDIENCE;
 
 const beforeSessionSaved: BeforeSessionSavedHook = async (session) => {
-  const isPartner = await computeIsPartnerForSession(session);
+  const [isPartner, isAdmin] = await Promise.all([
+    computeIsPartnerForSession(session),
+    computeIsAdminForSession(session),
+  ]);
   return {
     ...session,
     user: {
       ...filterDefaultIdTokenClaims(session.user),
       ...(isPartner ? { isPartner: true as const } : {}),
+      ...(isAdmin ? { isAdmin: true as const } : {}),
     },
   };
 };
