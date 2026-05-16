@@ -90,6 +90,7 @@ function ComboboxInput({
 
 function ComboboxContent({
   className,
+  positionerClassName,
   side = "bottom",
   sideOffset = 6,
   align = "start",
@@ -100,7 +101,10 @@ function ComboboxContent({
   Pick<
     ComboboxPrimitive.Positioner.Props,
     "side" | "align" | "sideOffset" | "alignOffset" | "anchor"
-  >) {
+  > & {
+    /** Merged with the portal positioner (e.g. `z-[130]` when the combobox opens inside a high z-index modal). */
+    positionerClassName?: string;
+  }) {
   return (
     <ComboboxPrimitive.Portal>
       <ComboboxPrimitive.Positioner
@@ -109,7 +113,7 @@ function ComboboxContent({
         align={align}
         alignOffset={alignOffset}
         anchor={anchor}
-        className="isolate z-50"
+        className={cn("isolate z-50", positionerClassName)}
       >
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"

@@ -38,6 +38,7 @@ export function RegionPicker({
   disabled,
   allowCreate = true,
   verifiedOnly = false,
+  positionerClassName,
 }: {
   id?: string;
   label?: string;
@@ -49,6 +50,8 @@ export function RegionPicker({
   allowCreate?: boolean;
   /** When true, only verified regions are listed. */
   verifiedOnly?: boolean;
+  /** Forwarded to combobox portal so the list appears above high z-index modals. */
+  positionerClassName?: string;
 }) {
   const [items, setItems] = useState<RegionOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -236,6 +239,7 @@ export function RegionPicker({
         />
         <ComboboxContent
           className="border-white/10 bg-[#0a1218] text-zinc-100 ring-white/10"
+          positionerClassName={positionerClassName}
           align="start"
         >
           <ComboboxEmpty className="text-zinc-500">

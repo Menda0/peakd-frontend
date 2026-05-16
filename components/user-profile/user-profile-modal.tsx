@@ -200,7 +200,7 @@ export function UserProfileModal({
                   setRegionId(null);
                 }}
                 disabled={saving}
-                inputClassName="h-10"
+                positionerClassName="z-[130]"
               />
               <RegionPicker
                 id="user-profile-region"
@@ -211,6 +211,7 @@ export function UserProfileModal({
                 disabled={saving}
                 allowCreate={false}
                 verifiedOnly
+                positionerClassName="z-[130]"
               />
               <div className="space-y-2">
                 <Label htmlFor="user-profile-surf" className="text-zinc-300">

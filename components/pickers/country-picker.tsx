@@ -19,6 +19,7 @@ export function CountryPicker({
   onCountryCodeChange,
   disabled,
   inputClassName,
+  positionerClassName,
 }: {
   id?: string;
   label?: string;
@@ -26,6 +27,8 @@ export function CountryPicker({
   onCountryCodeChange: (code: string | null) => void;
   disabled?: boolean;
   inputClassName?: string;
+  /** Forwarded to combobox portal so the list appears above high z-index modals. */
+  positionerClassName?: string;
 }) {
   const items = useMemo(() => getEnglishCountryOptions(), []);
   const value = useMemo(
@@ -56,6 +59,7 @@ export function CountryPicker({
       />
       <ComboboxContent
         className="border-white/10 bg-[#0a1218] text-zinc-100 ring-white/10"
+        positionerClassName={positionerClassName}
         align="start"
       >
         <ComboboxEmpty className="text-zinc-500">No matches.</ComboboxEmpty>
