@@ -148,8 +148,8 @@ export function UploadVideoModal({
             Upload video
           </DialogTitle>
           <DialogDescription className="text-zinc-500">
-            Add your surf video to the feed. Country is prefilled from your profile when
-            available; region and spot default to Undisclosed.
+            Add your surf video to the feed. Country and region are prefilled from your
+            profile when available; spot defaults to Undisclosed when no region is set.
           </DialogDescription>
         </DialogHeader>
 
