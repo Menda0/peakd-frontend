@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PERSONAL_UPLOAD_EVENT } from "@/lib/discover-feed";
-import { initialStudioSessionFormValuesFromProfile } from "@/lib/studio-session-form-defaults";
+import { initialPersonalUploadFormValuesFromProfile } from "@/lib/studio-session-form-defaults";
 import { uploadPersonalVideos } from "@/lib/personal-upload";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +44,7 @@ export function UploadVideoModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [values, setValues] = useState<StudioSessionFormValues>(() =>
-    initialStudioSessionFormValuesFromProfile(profile),
+    initialPersonalUploadFormValuesFromProfile(profile),
   );
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
@@ -52,7 +52,7 @@ export function UploadVideoModal({
   const [error, setError] = useState<string | null>(null);
 
   const reset = useCallback(() => {
-    setValues(initialStudioSessionFormValuesFromProfile(profile));
+    setValues(initialPersonalUploadFormValuesFromProfile(profile));
     setVideoFiles([]);
     setDragActive(false);
     setError(null);
@@ -60,7 +60,7 @@ export function UploadVideoModal({
 
   useEffect(() => {
     if (open) {
-      setValues(initialStudioSessionFormValuesFromProfile(profile));
+      setValues(initialPersonalUploadFormValuesFromProfile(profile));
       setVideoFiles([]);
       setError(null);
     }
@@ -148,8 +148,8 @@ export function UploadVideoModal({
             Upload video
           </DialogTitle>
           <DialogDescription className="text-zinc-500">
-            Add your surf video to the feed. Session details are prefilled from your
-            profile when available.
+            Add your surf video to the feed. Country is prefilled from your profile when
+            available; region and spot default to Undisclosed.
           </DialogDescription>
         </DialogHeader>
 
@@ -249,6 +249,7 @@ export function UploadVideoModal({
               values={values}
               onChange={patchValues}
               idPrefix="upload"
+              includeUndisclosedOption
             />
           </div>
         </div>

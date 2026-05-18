@@ -51,3 +51,19 @@ export function initialStudioSessionFormValuesFromProfile(profile: {
   const regionId = profile?.homeRegionId?.trim() || null;
   return initialStudioSessionFormValues({ countryCode, regionId, spotId: null });
 }
+
+/** Personal upload: country from profile; region and spot default to Undisclosed. */
+export function initialPersonalUploadFormValuesFromProfile(profile: {
+  countryCode: string | null;
+} | null): StudioSessionFormValues {
+  const countryCode = normalizeCountryCode(profile?.countryCode);
+  if (!countryCode) {
+    return initialStudioSessionFormValues({ countryCode: null });
+  }
+  const undisclosed = defaultUndisclosedGeoForCountry(countryCode);
+  return initialStudioSessionFormValues({
+    countryCode,
+    regionId: undisclosed.regionId,
+    spotId: undisclosed.spotId,
+  });
+}
