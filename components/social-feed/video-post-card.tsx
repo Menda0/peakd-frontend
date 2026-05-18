@@ -47,6 +47,9 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
           thumbnailUrl={post.thumbnailUrl}
           videoUrl={post.videoUrl ?? undefined}
           surfer={surfer}
+          playbackId={post.id}
+          autoPlayInView
+          className="mt-3"
         />
       )}
       <PostSessionInfo session={post.session} />
