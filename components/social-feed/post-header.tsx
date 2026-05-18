@@ -1,15 +1,13 @@
-import { BadgeCheckIcon } from "lucide-react";
-
 export function PostHeader({
   authorName,
   authorAvatarUrl,
-  verified,
+  partnerUpload,
   location,
   timeAgo,
 }: {
   authorName: string;
   authorAvatarUrl?: string | null;
-  verified?: boolean;
+  partnerUpload?: boolean;
   location: string;
   timeAgo: string;
 }) {
@@ -28,8 +26,10 @@ export function PostHeader({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="font-semibold text-zinc-100">{authorName}</span>
-          {verified ? (
-            <BadgeCheckIcon className="size-4 shrink-0 text-sky-400" aria-label="Verified" />
+          {partnerUpload ? (
+            <span className="rounded-md border border-cyan-500/25 bg-cyan-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-cyan-300/90">
+              Partner upload
+            </span>
           ) : null}
         </div>
         <p className="text-xs text-zinc-500">

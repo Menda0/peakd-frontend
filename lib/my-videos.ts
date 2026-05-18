@@ -1,6 +1,15 @@
 import { getApiBase } from "@/lib/api";
 import type { DiscoverFeedLocation, DiscoverFeedSession } from "@/lib/discover-feed";
 import { normalizeDiscoverSession } from "@/lib/discover-feed";
+import { normalizeSurferProfile, type SurferProfile } from "@/lib/surfer-profile";
+
+export type { SurferProfile };
+
+export type FilmedByProfile = {
+  userId: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+};
 
 export type MyVideoItem = {
   jobId: string;
@@ -12,7 +21,21 @@ export type MyVideoItem = {
   session: DiscoverFeedSession;
   claimStatus: "none" | "auto" | "claimed";
   discoverPublishedAt: string | null;
+  uploadSource: "studio" | "personal";
+  surfer: SurferProfile | null;
+  filmedBy: FilmedByProfile | null;
 };
+
+function normalizeFilmedBy(raw: unknown): FilmedByProfile | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  if (typeof o.userId !== "string") return null;
+  return {
+    userId: o.userId,
+    displayName: o.displayName == null ? null : String(o.displayName),
+    avatarUrl: o.avatarUrl == null ? null : String(o.avatarUrl),
+  };
+}
 
 function normalizeMyVideoItem(raw: unknown): MyVideoItem | null {
   if (!raw || typeof raw !== "object") return null;
@@ -48,6 +71,9 @@ function normalizeMyVideoItem(raw: unknown): MyVideoItem | null {
     claimStatus: claim,
     discoverPublishedAt:
       o.discoverPublishedAt == null ? null : String(o.discoverPublishedAt),
+    uploadSource: o.uploadSource === "studio" ? "studio" : "personal",
+    surfer: normalizeSurferProfile(o.surfer),
+    filmedBy: normalizeFilmedBy(o.filmedBy),
   };
 }
 

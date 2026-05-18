@@ -1,5 +1,6 @@
 import { getApiBase } from "@/lib/api";
 import { englishCountryLabel } from "@/lib/countries";
+import { normalizeSurferProfile, type SurferProfile } from "@/lib/surfer-profile";
 
 export type DiscoverFeedAuthor = {
   userId: string;
@@ -36,6 +37,9 @@ export type DiscoverFeedItem = {
   followedByViewer: boolean;
   claimStatus: "none" | "auto" | "claimed";
   uploadSource: "studio" | "personal";
+  claimedByViewer: boolean;
+  isOwnUpload: boolean;
+  surfer: SurferProfile | null;
 };
 
 export type DiscoverFeedPage = {
@@ -48,7 +52,7 @@ export type DiscoverFeedPost = {
   id: string;
   authorName: string;
   authorAvatarUrl: string | null;
-  verified: boolean;
+  isPartnerUpload: boolean;
   location: string;
   timeAgo: string;
   createdAt: string;
@@ -57,6 +61,9 @@ export type DiscoverFeedPost = {
   thumbnailUrl: string | null;
   status: "processing" | "completed" | "failed";
   claimStatus: "none" | "auto" | "claimed";
+  claimedByViewer: boolean;
+  isOwnUpload: boolean;
+  surfer: SurferProfile | null;
   likes: number;
   comments: number;
   shares: number;
@@ -84,7 +91,7 @@ export function discoverItemToPost(
     id: item.jobId,
     authorName,
     authorAvatarUrl: item.author.avatarUrl,
-    verified: item.author.isPartner,
+    isPartnerUpload: item.uploadSource === "studio",
     location: formatLocationLabel(item.location),
     timeAgo,
     createdAt: item.createdAt,
@@ -93,6 +100,9 @@ export function discoverItemToPost(
     thumbnailUrl: item.thumbnailUrl,
     status: item.status,
     claimStatus: item.claimStatus,
+    claimedByViewer: item.claimedByViewer,
+    isOwnUpload: item.isOwnUpload,
+    surfer: item.surfer,
     likes: item.shakaCount,
     comments: 0,
     shares: 0,
@@ -166,6 +176,9 @@ function normalizeDiscoverItem(raw: unknown): DiscoverFeedItem | null {
     followedByViewer: o.followedByViewer === true,
     claimStatus: claim,
     uploadSource,
+    claimedByViewer: o.claimedByViewer === true,
+    isOwnUpload: o.isOwnUpload === true,
+    surfer: normalizeSurferProfile(o.surfer),
   };
 }
 

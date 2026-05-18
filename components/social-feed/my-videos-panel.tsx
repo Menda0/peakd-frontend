@@ -4,7 +4,9 @@ import { formatDistanceToNow } from "date-fns";
 import { Loader2Icon, VideoIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { englishCountryLabel } from "@/lib/countries";
+import { WAVE_CLAIMED_EVENT } from "@/lib/claim-wave";
 import { PERSONAL_UPLOAD_EVENT } from "@/lib/discover-feed";
+import { PostSurferBadge } from "@/components/social-feed/post-surfer-badge";
 import { fetchMyVideos, type MyVideoItem } from "@/lib/my-videos";
 import { formatDurationMinutes, waveTypeTitle } from "@/lib/surf-session-waves";
 import { cn } from "@/lib/utils";
@@ -50,6 +52,7 @@ function MyVideoCard({ item }: { item: MyVideoItem }) {
             Failed
           </span>
         ) : null}
+        {!isProcessing && item.surfer ? <PostSurferBadge surfer={item.surfer} /> : null}
       </div>
       <div className="space-y-1.5 p-4">
         <p className="text-sm font-medium text-zinc-100">
@@ -68,6 +71,13 @@ function MyVideoCard({ item }: { item: MyVideoItem }) {
         <p className="text-xs text-zinc-600">{isProcessing ? "Processing…" : timeLabel}</p>
         {item.claimStatus === "auto" ? (
           <p className="text-xs font-medium text-primary/90">Auto-claimed</p>
+        ) : item.claimStatus === "claimed" ? (
+          <p className="text-xs font-medium text-primary/90">Claimed from partner</p>
+        ) : null}
+        {item.filmedBy ? (
+          <p className="text-xs text-zinc-500">
+            Filmed by {item.filmedBy.displayName?.trim() || "Partner"}
+          </p>
         ) : null}
       </div>
     </article>
@@ -96,11 +106,15 @@ export function MyVideosPanel() {
   }, [load]);
 
   useEffect(() => {
-    const onUpload = () => {
+    const refresh = () => {
       void load();
     };
-    window.addEventListener(PERSONAL_UPLOAD_EVENT, onUpload);
-    return () => window.removeEventListener(PERSONAL_UPLOAD_EVENT, onUpload);
+    window.addEventListener(PERSONAL_UPLOAD_EVENT, refresh);
+    window.addEventListener(WAVE_CLAIMED_EVENT, refresh);
+    return () => {
+      window.removeEventListener(PERSONAL_UPLOAD_EVENT, refresh);
+      window.removeEventListener(WAVE_CLAIMED_EVENT, refresh);
+    };
   }, [load]);
 
   const hasProcessing = videos.some((v) => v.status === "processing");
@@ -144,8 +158,8 @@ export function MyVideosPanel() {
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-12 text-center">
         <p className="text-sm font-medium text-zinc-200">No videos yet</p>
         <p className="mt-2 text-sm text-zinc-500">
-          Upload a video from the top bar. Your uploads are auto-claimed and appear here while
-          processing.
+          Upload a video from the top bar, or claim a partner upload from your feed. Personal
+          uploads are auto-claimed and appear here while processing.
         </p>
       </div>
     );

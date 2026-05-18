@@ -2,17 +2,21 @@
 
 import { PlayIcon } from "lucide-react";
 import { useRef, useState } from "react";
+import type { SurferProfile } from "@/lib/surfer-profile";
+import { PostSurferBadge } from "./post-surfer-badge";
 
 export function PostMedia({
   duration,
   thumbnailUrl,
   videoUrl,
   title,
+  surfer,
 }: {
   duration?: string;
   thumbnailUrl?: string | null;
   videoUrl?: string;
   title?: string;
+  surfer?: SurferProfile | null;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -47,6 +51,7 @@ export function PostMedia({
             </span>
           </button>
         ) : null}
+        {surfer ? <PostSurferBadge surfer={surfer} /> : null}
       </div>
     );
   }
