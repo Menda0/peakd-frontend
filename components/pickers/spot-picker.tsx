@@ -21,6 +21,11 @@ import {
   isGeoVerified,
   sortGeoOptions,
 } from "@/lib/geo-picker-utils";
+import {
+  isUndisclosedRegionId,
+  undisclosedSpotId,
+  undisclosedSpotOption,
+} from "@/lib/geo-undisclosed";
 import { GeoCreateConfirmModal } from "@/components/pickers/geo-create-confirm-modal";
 
 export type SpotOption = {
@@ -50,22 +55,27 @@ function parseSpotList(data: unknown): SpotOption[] {
 export function SpotPicker({
   id,
   label = "Spot",
+  countryCode = null,
   regionId,
   spotId,
   onSpotIdChange,
   disabled,
   allowCreate = true,
   verifiedOnly = false,
+  includeUndisclosedOption = false,
   positionerClassName,
 }: {
   id?: string;
   label?: string;
+  /** Required when `includeUndisclosedOption` is true. */
+  countryCode?: string | null;
   regionId: string | null;
   spotId: string | null;
   onSpotIdChange: (id: string | null) => void;
   disabled?: boolean;
   allowCreate?: boolean;
   verifiedOnly?: boolean;
+  includeUndisclosedOption?: boolean;
   positionerClassName?: string;
 }) {
   const [items, setItems] = useState<SpotOption[]>([]);
@@ -80,6 +90,15 @@ export function SpotPicker({
   const loadSpots = useCallback(async () => {
     if (!regionId) {
       setItems([]);
+      return;
+    }
+    if (
+      includeUndisclosedOption &&
+      countryCode &&
+      isUndisclosedRegionId(regionId, countryCode)
+    ) {
+      setListError(null);
+      setItems([undisclosedSpotOption(countryCode)]);
       return;
     }
     setListError(null);
@@ -109,14 +128,26 @@ export function SpotPicker({
         }
       }
 
-      setItems(sortGeoOptions(list));
+      let sorted = sortGeoOptions(list);
+      if (
+        includeUndisclosedOption &&
+        countryCode &&
+        isUndisclosedRegionId(regionId, countryCode)
+      ) {
+        const undisclosed = undisclosedSpotOption(countryCode);
+        sorted = [
+          undisclosed,
+          ...sorted.filter((s) => s.spotId !== undisclosed.spotId),
+        ];
+      }
+      setItems(sorted);
     } catch (e) {
       setListError(e instanceof Error ? e.message : "Failed to load spots");
       setItems([]);
     } finally {
       setLoading(false);
     }
-  }, [regionId, spotId, verifiedOnly]);
+  }, [regionId, spotId, verifiedOnly, includeUndisclosedOption, countryCode]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -128,10 +159,19 @@ export function SpotPicker({
     queueMicrotask(() => setQuery(""));
   }, [regionId]);
 
-  const value = useMemo(
-    () => (spotId ? items.find((s) => s.spotId === spotId) ?? null : null),
-    [spotId, items],
-  );
+  const value = useMemo(() => {
+    if (!spotId) return null;
+    const found = items.find((s) => s.spotId === spotId);
+    if (found) return found;
+    if (
+      includeUndisclosedOption &&
+      countryCode &&
+      spotId === undisclosedSpotId(countryCode)
+    ) {
+      return undisclosedSpotOption(countryCode);
+    }
+    return null;
+  }, [spotId, items, includeUndisclosedOption, countryCode]);
 
   const gated = !regionId || disabled;
   const canCreate = allowCreate;
@@ -142,9 +182,15 @@ export function SpotPicker({
     [items, trimmedQuery],
   );
 
+  const isUndisclosedRegion =
+    includeUndisclosedOption &&
+    Boolean(countryCode && regionId) &&
+    isUndisclosedRegionId(regionId!, countryCode!);
+
   const showAddButton =
     canCreate &&
     Boolean(regionId) &&
+    !isUndisclosedRegion &&
     !disabled &&
     !loading &&
     !gated &&

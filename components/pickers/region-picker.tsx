@@ -21,6 +21,10 @@ import {
   isGeoVerified,
   sortGeoOptions,
 } from "@/lib/geo-picker-utils";
+import {
+  undisclosedRegionId,
+  undisclosedRegionOption,
+} from "@/lib/geo-undisclosed";
 import { GeoCreateConfirmModal } from "@/components/pickers/geo-create-confirm-modal";
 
 export type RegionOption = {
@@ -56,6 +60,7 @@ export function RegionPicker({
   disabled,
   allowCreate = true,
   verifiedOnly = false,
+  includeUndisclosedOption = false,
   positionerClassName,
 }: {
   id?: string;
@@ -66,6 +71,8 @@ export function RegionPicker({
   disabled?: boolean;
   allowCreate?: boolean;
   verifiedOnly?: boolean;
+  /** Prepends a default “Undisclosed” option (studio sessions). */
+  includeUndisclosedOption?: boolean;
   positionerClassName?: string;
 }) {
   const [items, setItems] = useState<RegionOption[]>([]);
@@ -113,14 +120,22 @@ export function RegionPicker({
         }
       }
 
-      setItems(sortGeoOptions(list));
+      let sorted = sortGeoOptions(list);
+      if (includeUndisclosedOption && countryCode) {
+        const undisclosed = undisclosedRegionOption(countryCode);
+        sorted = [
+          undisclosed,
+          ...sorted.filter((r) => r.regionId !== undisclosed.regionId),
+        ];
+      }
+      setItems(sorted);
     } catch (e) {
       setListError(e instanceof Error ? e.message : "Failed to load regions");
       setItems([]);
     } finally {
       setLoading(false);
     }
-  }, [countryCode, regionId, verifiedOnly]);
+  }, [countryCode, regionId, verifiedOnly, includeUndisclosedOption]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -132,10 +147,15 @@ export function RegionPicker({
     queueMicrotask(() => setQuery(""));
   }, [countryCode]);
 
-  const value = useMemo(
-    () => (regionId ? items.find((r) => r.regionId === regionId) ?? null : null),
-    [regionId, items],
-  );
+  const value = useMemo(() => {
+    if (!regionId) return null;
+    const found = items.find((r) => r.regionId === regionId);
+    if (found) return found;
+    if (includeUndisclosedOption && countryCode && regionId === undisclosedRegionId(countryCode)) {
+      return undisclosedRegionOption(countryCode);
+    }
+    return null;
+  }, [regionId, items, includeUndisclosedOption, countryCode]);
 
   const gated = !countryCode || disabled;
   const canCreate = allowCreate;
@@ -146,9 +166,15 @@ export function RegionPicker({
     [items, trimmedQuery],
   );
 
+  const isUndisclosedSelected =
+    includeUndisclosedOption &&
+    Boolean(countryCode) &&
+    regionId === undisclosedRegionId(countryCode!);
+
   const showAddButton =
     canCreate &&
     Boolean(countryCode) &&
+    !isUndisclosedSelected &&
     !disabled &&
     !loading &&
     !gated &&

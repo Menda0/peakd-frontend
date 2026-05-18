@@ -22,6 +22,10 @@ import {
   type WaveTypeId,
 } from "@/lib/surf-session-waves";
 import { cn } from "@/lib/utils";
+import {
+  defaultUndisclosedGeoForCountry,
+  isUndisclosedRegionId,
+} from "@/lib/geo-undisclosed";
 
 export type StudioSessionFormValues = {
   countryCode: string | null;
@@ -38,10 +42,13 @@ export function StudioSessionFormFields({
   values,
   onChange,
   idPrefix = "surf",
+  includeUndisclosedOption = true,
 }: {
   values: StudioSessionFormValues;
   onChange: (patch: Partial<StudioSessionFormValues>) => void;
   idPrefix?: string;
+  /** Default “Undisclosed” region/spot for sessions that should not share location. */
+  includeUndisclosedOption?: boolean;
 }) {
   const toggleWaveType = (id: WaveTypeId) => {
     onChange({
@@ -58,21 +65,45 @@ export function StudioSessionFormFields({
         label="Country"
         countryCode={values.countryCode}
         onCountryCodeChange={(code) => {
-          onChange({ countryCode: code, regionId: null, spotId: null });
+          if (!code) {
+            onChange({ countryCode: null, regionId: null, spotId: null });
+            return;
+          }
+          const undisclosed = includeUndisclosedOption
+            ? defaultUndisclosedGeoForCountry(code)
+            : { regionId: null, spotId: null };
+          onChange({
+            countryCode: code,
+            regionId: undisclosed.regionId,
+            spotId: undisclosed.spotId,
+          });
         }}
       />
       <RegionPicker
         id={`${idPrefix}-region`}
         countryCode={values.countryCode}
         regionId={values.regionId}
+        includeUndisclosedOption={includeUndisclosedOption}
         onRegionIdChange={(id) => {
-          onChange({ regionId: id, spotId: null });
+          if (!id) {
+            onChange({ regionId: null, spotId: null });
+            return;
+          }
+          const spotId =
+            includeUndisclosedOption &&
+            values.countryCode &&
+            isUndisclosedRegionId(id, values.countryCode)
+              ? defaultUndisclosedGeoForCountry(values.countryCode).spotId
+              : null;
+          onChange({ regionId: id, spotId });
         }}
       />
       <SpotPicker
         id={`${idPrefix}-spot`}
+        countryCode={values.countryCode}
         regionId={values.regionId}
         spotId={values.spotId}
+        includeUndisclosedOption={includeUndisclosedOption}
         onSpotIdChange={(spotId) => onChange({ spotId })}
       />
 

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { getApiBase } from "@/lib/api";
 import type { WaveTypeId } from "@/lib/surf-session-waves";
+import { defaultUndisclosedGeoForCountry } from "@/lib/geo-undisclosed";
 import {
   StudioSessionFormFields,
   validateStudioSessionFormValues,
@@ -29,16 +30,22 @@ function normalizeCountryCode(code: string | null | undefined): string | null {
 
 const initialFormValues = (
   defaultCountryCode?: string | null,
-): StudioSessionFormValues => ({
-  countryCode: normalizeCountryCode(defaultCountryCode),
-  regionId: null,
-  spotId: null,
+): StudioSessionFormValues => {
+  const countryCode = normalizeCountryCode(defaultCountryCode);
+  const undisclosed = countryCode
+    ? defaultUndisclosedGeoForCountry(countryCode)
+    : { regionId: null, spotId: null };
+  return {
+  countryCode,
+  regionId: undisclosed.regionId,
+  spotId: undisclosed.spotId,
   sessionDate: todayYmd(),
   sessionTime: "09:00",
   durationMinutes: 120,
   conditionsRating: null,
   waveTypes: [],
-});
+  };
+};
 
 export function StudioNewSessionDialog({
   open,
@@ -141,7 +148,8 @@ export function StudioNewSessionDialog({
         <CardHeader className="shrink-0 space-y-1 border-b border-white/10 px-6 pt-6 pb-4">
           <CardTitle id="new-session-title">New surf session</CardTitle>
           <CardDescription className="text-zinc-500">
-            Pick where and when you surfed. You can add regions and spots on the fly.
+            Pick where and when you surfed. Use Undisclosed if you prefer not to share
+            the exact region or spot.
           </CardDescription>
         </CardHeader>
 
