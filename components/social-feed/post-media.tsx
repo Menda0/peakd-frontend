@@ -1,16 +1,25 @@
 "use client";
 
 import { PlayIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent,
+} from "react";
 import type { SurferProfile } from "@/lib/surfer-profile";
 import {
-  releaseFeedVideoPlay,
-  requestFeedVideoPlay,
+  forceActiveFeedVideo,
+  getActiveFeedVideoId,
+  registerFeedVideo,
+  seekActiveFeedVideo,
+  unregisterFeedVideo,
 } from "@/lib/feed-video-controller";
 import { cn } from "@/lib/utils";
 import { PostSurferBadge } from "./post-surfer-badge";
-
-const IN_VIEW_RATIO = 0.55;
 
 export function PostMedia({
   duration,
@@ -36,15 +45,22 @@ export function PostMedia({
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioOnRef = useRef(false);
-  const [manualPlaying, setManualPlaying] = useState(false);
+  const userPausedRef = useRef(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [audioOn, setAudioOn] = useState(false);
-  const [inView, setInView] = useState(false);
+  const [isActive, setIsActive] = useState(false);
+
+  const playVideo = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !audioOnRef.current;
+    void video.play().catch(() => {});
+  }, []);
 
   const pauseVideo = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
     video.pause();
-    setManualPlaying(false);
   }, []);
 
   useEffect(() => {
@@ -59,48 +75,96 @@ export function PostMedia({
     if (!autoPlayInView || !videoUrl) return;
 
     const container = containerRef.current;
-    const video = videoRef.current;
-    if (!container || !video) return;
+    if (!container) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (!entry) return;
-
-        const visible =
-          entry.isIntersecting && entry.intersectionRatio >= IN_VIEW_RATIO;
-        setInView(visible);
-
-        if (visible) {
-          requestFeedVideoPlay(playbackId, pauseVideo);
-          video.muted = !audioOnRef.current;
-          void video.play().catch(() => {});
-        } else {
-          video.pause();
-          video.muted = true;
-          audioOnRef.current = false;
-          setAudioOn(false);
-          releaseFeedVideoPlay(playbackId);
+    registerFeedVideo({
+      id: playbackId,
+      el: container,
+      play: () => {
+        if (!userPausedRef.current) {
+          playVideo();
         }
       },
-      { threshold: [0, IN_VIEW_RATIO, 1] },
-    );
+      pause: () => {
+        pauseVideo();
+        userPausedRef.current = false;
+        audioOnRef.current = false;
+        setAudioOn(false);
+        const video = videoRef.current;
+        if (video) video.muted = true;
+      },
+      isUserPaused: () => userPausedRef.current,
+      onActiveChange: setIsActive,
+    });
 
-    observer.observe(container);
     return () => {
-      observer.disconnect();
-      releaseFeedVideoPlay(playbackId);
+      unregisterFeedVideo(playbackId);
+      setIsActive(false);
     };
-  }, [autoPlayInView, videoUrl, playbackId, pauseVideo]);
+  }, [autoPlayInView, videoUrl, playbackId, playVideo, pauseVideo]);
 
-  const toggleAudio = (e: React.MouseEvent) => {
+  useEffect(() => {
+    if (!autoPlayInView || !isActive) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (getActiveFeedVideoId() !== playbackId) return;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        seekActiveFeedVideo("back");
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        seekActiveFeedVideo("forward");
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [autoPlayInView, isActive, playbackId]);
+
+  const togglePlayPause = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.paused) {
+      userPausedRef.current = false;
+      if (autoPlayInView) {
+        forceActiveFeedVideo(playbackId);
+      } else {
+        playVideo();
+      }
+    } else {
+      userPausedRef.current = true;
+      video.pause();
+    }
+  }, [autoPlayInView, playbackId, playVideo]);
+
+  const onContainerClick = (e: MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("button")) return;
+    togglePlayPause();
+  };
+
+  const onContainerKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      togglePlayPause();
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      seekActiveFeedVideo("back");
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      seekActiveFeedVideo("forward");
+    }
+  };
+
+  const toggleAudio = (e: MouseEvent) => {
     e.stopPropagation();
     setAudioOn((prev) => {
       const next = !prev;
       const video = videoRef.current;
       if (video) {
         video.muted = !next;
-        if (next && (inView || manualPlaying)) {
+        if (next && video.paused && !userPausedRef.current) {
           void video.play().catch(() => {});
         }
       }
@@ -108,29 +172,19 @@ export function PostMedia({
     });
   };
 
-  const toggleManualPlay = () => {
-    if (autoPlayInView) return;
-    const video = videoRef.current;
-    if (!video) return;
-    if (video.paused) {
-      video.muted = !audioOnRef.current;
-      void video.play().then(() => setManualPlaying(true));
-    } else {
-      video.pause();
-      setManualPlaying(false);
-    }
-  };
-
   if (videoUrl) {
-    const showManualPlayOverlay = !autoPlayInView && !manualPlaying;
-
     return (
       <div
         ref={containerRef}
+        role="group"
+        tabIndex={0}
+        aria-label={title ?? "Surf video"}
         className={cn(
-          "relative overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/80",
+          "relative cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/80 outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
           className,
         )}
+        onClick={onContainerClick}
+        onKeyDown={onContainerKeyDown}
       >
         <video
           ref={videoRef}
@@ -141,25 +195,15 @@ export function PostMedia({
           loop
           muted
           preload="metadata"
-          aria-label={title ?? "Surf video"}
-          onPlay={() => {
-            if (!autoPlayInView) setManualPlaying(true);
-          }}
-          onPause={() => {
-            if (!autoPlayInView) setManualPlaying(false);
-          }}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
         />
-        {showManualPlayOverlay ? (
-          <button
-            type="button"
-            className="absolute inset-0 flex items-center justify-center bg-black/20"
-            onClick={toggleManualPlay}
-            aria-label="Play video"
-          >
+        {!isPlaying ? (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25">
             <span className="flex size-14 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm">
               <PlayIcon className="size-7 translate-x-0.5 fill-white" aria-hidden />
             </span>
-          </button>
+          </div>
         ) : null}
         <button
           type="button"
