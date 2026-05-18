@@ -1,14 +1,15 @@
 import { getApiBase } from "@/lib/api";
-import type { DiscoverFeedLocation } from "@/lib/discover-feed";
+import type { DiscoverFeedLocation, DiscoverFeedSession } from "@/lib/discover-feed";
+import { normalizeDiscoverSession } from "@/lib/discover-feed";
 
 export type MyVideoItem = {
   jobId: string;
   createdAt: string;
   status: "processing" | "completed" | "failed";
-  title: string;
   thumbnailUrl: string | null;
   videoUrl: string | null;
   location: DiscoverFeedLocation;
+  session: DiscoverFeedSession;
   claimStatus: "none" | "auto" | "claimed";
   discoverPublishedAt: string | null;
 };
@@ -24,6 +25,8 @@ function normalizeMyVideoItem(raw: unknown): MyVideoItem | null {
   if (status !== "processing" && status !== "completed" && status !== "failed") {
     return null;
   }
+  const session = normalizeDiscoverSession(o.session);
+  if (!session) return null;
   const claimStatus = o.claimStatus;
   const claim =
     claimStatus === "auto" || claimStatus === "claimed" || claimStatus === "none"
@@ -33,7 +36,6 @@ function normalizeMyVideoItem(raw: unknown): MyVideoItem | null {
     jobId: o.jobId,
     createdAt: o.createdAt,
     status,
-    title: typeof o.title === "string" ? o.title : "Surf video",
     thumbnailUrl: typeof o.thumbnailUrl === "string" ? o.thumbnailUrl : null,
     videoUrl: typeof o.videoUrl === "string" ? o.videoUrl : null,
     location: {
@@ -42,6 +44,7 @@ function normalizeMyVideoItem(raw: unknown): MyVideoItem | null {
       spotName: loc.spotName == null ? null : String(loc.spotName),
       isUndisclosed: loc.isUndisclosed === true,
     },
+    session,
     claimStatus: claim,
     discoverPublishedAt:
       o.discoverPublishedAt == null ? null : String(o.discoverPublishedAt),

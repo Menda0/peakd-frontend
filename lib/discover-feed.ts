@@ -15,15 +15,23 @@ export type DiscoverFeedLocation = {
   isUndisclosed: boolean;
 };
 
+export type DiscoverFeedSession = {
+  sessionDate: string;
+  sessionTime: string;
+  durationMinutes: number;
+  conditionsRating: number | null;
+  waveTypes: string[];
+};
+
 export type DiscoverFeedItem = {
   jobId: string;
   createdAt: string;
   status: "processing" | "completed" | "failed";
   videoUrl: string | null;
   thumbnailUrl: string | null;
-  title: string;
   author: DiscoverFeedAuthor;
   location: DiscoverFeedLocation;
+  session: DiscoverFeedSession;
   shakaCount: number;
   followedByViewer: boolean;
   claimStatus: "none" | "auto" | "claimed";
@@ -44,7 +52,7 @@ export type DiscoverFeedPost = {
   location: string;
   timeAgo: string;
   createdAt: string;
-  title: string;
+  session: DiscoverFeedSession;
   videoUrl: string | null;
   thumbnailUrl: string | null;
   status: "processing" | "completed" | "failed";
@@ -80,7 +88,7 @@ export function discoverItemToPost(
     location: formatLocationLabel(item.location),
     timeAgo,
     createdAt: item.createdAt,
-    title: item.title,
+    session: item.session,
     videoUrl: item.videoUrl,
     thumbnailUrl: item.thumbnailUrl,
     status: item.status,
@@ -88,6 +96,28 @@ export function discoverItemToPost(
     likes: item.shakaCount,
     comments: 0,
     shares: 0,
+  };
+}
+
+export function normalizeDiscoverSession(raw: unknown): DiscoverFeedSession | null {
+  if (!raw || typeof raw !== "object") return null;
+  const s = raw as Record<string, unknown>;
+  if (typeof s.sessionDate !== "string") return null;
+  const rating = s.conditionsRating;
+  const conditionsRating =
+    typeof rating === "number" && rating >= 1 && rating <= 5 ? rating : null;
+  const waveTypes = Array.isArray(s.waveTypes)
+    ? s.waveTypes.filter((w): w is string => typeof w === "string")
+    : [];
+  return {
+    sessionDate: s.sessionDate,
+    sessionTime: typeof s.sessionTime === "string" ? s.sessionTime : "12:00",
+    durationMinutes:
+      typeof s.durationMinutes === "number" && s.durationMinutes >= 15
+        ? s.durationMinutes
+        : 120,
+    conditionsRating,
+    waveTypes,
   };
 }
 
@@ -111,13 +141,14 @@ function normalizeDiscoverItem(raw: unknown): DiscoverFeedItem | null {
       ? claimStatus
       : "none";
   const uploadSource = o.uploadSource === "personal" ? "personal" : "studio";
+  const session = normalizeDiscoverSession(o.session);
+  if (!session) return null;
   return {
     jobId: o.jobId,
     createdAt: o.createdAt,
     status,
     videoUrl: o.videoUrl == null ? null : String(o.videoUrl),
     thumbnailUrl: typeof o.thumbnailUrl === "string" ? o.thumbnailUrl : null,
-    title: typeof o.title === "string" ? o.title : "Surf video",
     author: {
       userId: typeof a.userId === "string" ? a.userId : "",
       displayName: a.displayName == null ? null : String(a.displayName),
@@ -130,6 +161,7 @@ function normalizeDiscoverItem(raw: unknown): DiscoverFeedItem | null {
       spotName: loc.spotName == null ? null : String(loc.spotName),
       isUndisclosed: loc.isUndisclosed === true,
     },
+    session,
     shakaCount: typeof o.shakaCount === "number" ? o.shakaCount : 0,
     followedByViewer: o.followedByViewer === true,
     claimStatus: claim,

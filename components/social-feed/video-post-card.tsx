@@ -3,6 +3,7 @@ import type { DiscoverFeedPost } from "@/lib/discover-feed";
 import type { PlaceholderPost } from "@/lib/social-feed-placeholder";
 import { PostActionsBar } from "./post-actions-bar";
 import { PostContent } from "./post-content";
+import { PostSessionInfo } from "./post-session-info";
 import { PostHeader } from "./post-header";
 import { PostMedia } from "./post-media";
 
@@ -37,10 +38,9 @@ export function VideoPostCard({
           <PostMedia
             thumbnailUrl={post.thumbnailUrl}
             videoUrl={post.videoUrl ?? undefined}
-            title={post.title}
           />
         )}
-        <PostContent title={post.title} description="" hashtags={[]} />
+        <PostSessionInfo session={post.session} />
         {post.claimStatus === "auto" ? (
           <p className="mt-2 text-xs font-medium text-primary/90">Auto-claimed</p>
         ) : null}

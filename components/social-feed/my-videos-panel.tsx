@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { englishCountryLabel } from "@/lib/countries";
 import { PERSONAL_UPLOAD_EVENT } from "@/lib/discover-feed";
 import { fetchMyVideos, type MyVideoItem } from "@/lib/my-videos";
+import { formatDurationMinutes, waveTypeTitle } from "@/lib/surf-session-waves";
 import { cn } from "@/lib/utils";
 
 function formatLocation(item: MyVideoItem): string {
@@ -50,9 +51,20 @@ function MyVideoCard({ item }: { item: MyVideoItem }) {
           </span>
         ) : null}
       </div>
-      <div className="space-y-1 p-4">
-        <h3 className="line-clamp-1 text-sm font-medium text-zinc-100">{item.title}</h3>
+      <div className="space-y-1.5 p-4">
+        <p className="text-sm font-medium text-zinc-100">
+          {item.session.sessionDate} · {item.session.sessionTime}
+          <span className="font-normal text-zinc-500">
+            {" "}
+            · {formatDurationMinutes(item.session.durationMinutes)}
+          </span>
+        </p>
         <p className="text-xs text-zinc-500">{formatLocation(item)}</p>
+        {item.session.waveTypes.length > 0 ? (
+          <p className="line-clamp-2 text-xs text-zinc-400">
+            {item.session.waveTypes.map((id) => waveTypeTitle(id)).join(" · ")}
+          </p>
+        ) : null}
         <p className="text-xs text-zinc-600">{isProcessing ? "Processing…" : timeLabel}</p>
         {item.claimStatus === "auto" ? (
           <p className="text-xs font-medium text-primary/90">Auto-claimed</p>
