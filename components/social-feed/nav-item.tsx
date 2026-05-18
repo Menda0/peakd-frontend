@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export function NavItem({
@@ -17,21 +18,22 @@ export function NavItem({
     active
       ? "bg-primary/15 font-medium text-primary"
       : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200",
+    !href && "cursor-not-allowed opacity-60",
   );
 
   if (href) {
     return (
-      <a href={href} className={className}>
+      <Link href={href} className={className} aria-current={active ? "page" : undefined}>
         <Icon className="size-[18px] shrink-0 opacity-90" aria-hidden />
         <span>{label}</span>
-      </a>
+      </Link>
     );
   }
 
   return (
-    <button type="button" className={className}>
+    <span className={className} aria-disabled="true">
       <Icon className="size-[18px] shrink-0 opacity-90" aria-hidden />
       <span>{label}</span>
-    </button>
+    </span>
   );
 }

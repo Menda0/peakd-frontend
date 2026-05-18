@@ -11,41 +11,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getApiBase } from "@/lib/api";
+import {
+  initialStudioSessionFormValues,
+  normalizeCountryCode,
+} from "@/lib/studio-session-form-defaults";
 import type { WaveTypeId } from "@/lib/surf-session-waves";
-import { defaultUndisclosedGeoForCountry } from "@/lib/geo-undisclosed";
 import {
   StudioSessionFormFields,
   validateStudioSessionFormValues,
   type StudioSessionFormValues,
 } from "@/components/studio/studio-session-form-fields";
-
-function todayYmd(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function normalizeCountryCode(code: string | null | undefined): string | null {
-  const cc = code?.trim().toUpperCase();
-  return cc && /^[A-Z]{2}$/.test(cc) ? cc : null;
-}
-
-const initialFormValues = (
-  defaultCountryCode?: string | null,
-): StudioSessionFormValues => {
-  const countryCode = normalizeCountryCode(defaultCountryCode);
-  const undisclosed = countryCode
-    ? defaultUndisclosedGeoForCountry(countryCode)
-    : { regionId: null, spotId: null };
-  return {
-  countryCode,
-  regionId: undisclosed.regionId,
-  spotId: undisclosed.spotId,
-  sessionDate: todayYmd(),
-  sessionTime: "09:00",
-  durationMinutes: 120,
-  conditionsRating: null,
-  waveTypes: [],
-  };
-};
 
 export function StudioNewSessionDialog({
   open,
@@ -59,23 +34,24 @@ export function StudioNewSessionDialog({
   /** Pre-select country (e.g. partner profile country). */
   defaultCountryCode?: string | null;
 }) {
+  const countryCode = normalizeCountryCode(defaultCountryCode);
   const [values, setValues] = useState<StudioSessionFormValues>(() =>
-    initialFormValues(defaultCountryCode),
+    initialStudioSessionFormValues({ countryCode }),
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const reset = useCallback(() => {
-    setValues(initialFormValues(defaultCountryCode));
+    setValues(initialStudioSessionFormValues({ countryCode }));
     setError(null);
-  }, [defaultCountryCode]);
+  }, [countryCode]);
 
   useEffect(() => {
     if (open) {
-      setValues(initialFormValues(defaultCountryCode));
+      setValues(initialStudioSessionFormValues({ countryCode }));
       setError(null);
     }
-  }, [open, defaultCountryCode]);
+  }, [open, countryCode]);
 
   const close = () => {
     reset();

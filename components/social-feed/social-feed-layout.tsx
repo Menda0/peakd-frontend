@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import {
-  MOCK_POSTS,
   MOCK_SPOTS,
   MOCK_STORIES,
   MOCK_SUGGESTED_USERS,
@@ -38,13 +37,13 @@ export function SocialFeedLayout({
     <div className="dark flex min-h-[100dvh] flex-col bg-[#040F1E] text-zinc-100">
       <FeedAppBar
         homeHref={homeHref}
-        uploadHref={studioHref}
         userPicture={userPicture}
         userName={userName}
         userEmail={userEmail}
       />
       <div className="flex min-h-0 flex-1">
         <FeedNavSidebar
+          homeHref={homeHref}
           studioHref={studioHref}
           partnerProfileHref={partnerProfileHref}
           adminRegionsHref={adminRegionsHref}
@@ -56,7 +55,7 @@ export function SocialFeedLayout({
             <div className="mx-auto w-full max-w-4xl">{children}</div>
           </main>
         ) : (
-          <FeedMainColumn stories={MOCK_STORIES} posts={MOCK_POSTS} />
+          <FeedMainColumn stories={MOCK_STORIES} />
         )}
         <DiscoverySidebar
           trending={MOCK_TRENDING}

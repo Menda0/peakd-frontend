@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import {
   BellIcon,
   ChevronDownIcon,
@@ -18,6 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { UploadVideoModal } from "@/components/social-feed/upload-video-modal";
 import { useUserProfileModal } from "@/components/user-profile/user-profile-provider";
 import { englishCountryLabel } from "@/lib/countries";
 import { auth0DisplayNameHint } from "@/lib/user-profile";
@@ -40,14 +41,13 @@ export function FeedAppBarActions({
   userPicture,
   userName,
   userEmail,
-  uploadHref,
 }: {
   userPicture?: string | null;
   userName?: string | null;
   userEmail?: string | null;
-  uploadHref: string;
 }) {
   const { openProfileSettings, profile, auth0User } = useUserProfileModal();
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const displayName =
     profile?.displayName?.trim() ||
@@ -69,14 +69,17 @@ export function FeedAppBarActions({
   const initials = initialsFromDisplayName(displayName, email);
 
   return (
-    <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-      <Link
-        href={uploadHref}
+    <>
+      <UploadVideoModal open={uploadOpen} onOpenChange={setUploadOpen} />
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+      <button
+        type="button"
         className="inline-flex items-center gap-2 rounded-full bg-[#26c2c9] px-4 py-2 text-sm font-medium text-[#040A10] transition hover:bg-[#2dd4dc]"
+        onClick={() => setUploadOpen(true)}
       >
         <UploadIcon className="size-4" aria-hidden />
         <span className="hidden sm:inline">Upload</span>
-      </Link>
+      </button>
       <button
         type="button"
         className="rounded-full p-2.5 text-zinc-400 transition hover:bg-white/5 hover:text-zinc-200"
@@ -166,5 +169,6 @@ export function FeedAppBarActions({
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
+    </>
   );
 }

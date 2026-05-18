@@ -1,12 +1,18 @@
-import type { NavItemConfig } from "@/lib/social-feed-placeholder";
+import type { ResolvedNavItem } from "@/lib/social-feed-nav-routes";
 import { NavItem } from "./nav-item";
 import { NavSection } from "./nav-section";
 
-export function MainNav({ items }: { items: NavItemConfig[] }) {
+export function MainNav({ items }: { items: ResolvedNavItem[] }) {
   return (
     <NavSection>
       {items.map((item) => (
-        <NavItem key={item.id} label={item.label} icon={item.icon} active={item.active} />
+        <NavItem
+          key={item.id}
+          label={item.label}
+          icon={item.icon}
+          href={item.href}
+          active={item.active}
+        />
       ))}
     </NavSection>
   );

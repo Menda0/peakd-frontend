@@ -61,7 +61,7 @@ export type PopularSpot = {
 };
 
 export const MAIN_NAV_ITEMS: NavItemConfig[] = [
-  { id: "explore", label: "Explore", icon: CompassIcon, active: true },
+  { id: "explore", label: "Explore", icon: CompassIcon },
   { id: "my-videos", label: "My Videos", icon: SquarePlayIcon },
   { id: "badges", label: "Badges", icon: AwardIcon },
   { id: "surf-report", label: "Surf Report", icon: NewspaperIcon },

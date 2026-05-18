@@ -4,13 +4,11 @@ import { FeedSearchBar } from "./feed-search-bar";
 
 export function FeedAppBar({
   homeHref,
-  uploadHref,
   userPicture,
   userName,
   userEmail,
 }: {
   homeHref: string;
-  uploadHref: string;
   userPicture?: string | null;
   userName?: string | null;
   userEmail?: string | null;
@@ -28,7 +26,6 @@ export function FeedAppBar({
           userPicture={userPicture}
           userName={userName}
           userEmail={userEmail}
-          uploadHref={uploadHref}
         />
       </div>
     </header>

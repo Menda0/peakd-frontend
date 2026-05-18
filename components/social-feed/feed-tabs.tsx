@@ -9,9 +9,10 @@ export function FeedTabs() {
         <button
           key={t}
           type="button"
+          disabled={i !== 0}
           className={cn(
             "relative pb-2 text-sm font-medium transition",
-            i === 0 ? "text-primary" : "text-zinc-500 hover:text-zinc-300",
+            i === 0 ? "text-primary" : "cursor-not-allowed text-zinc-600",
           )}
         >
           {t}

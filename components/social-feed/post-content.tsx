@@ -7,15 +7,22 @@ export function PostContent({
   description: string;
   hashtags: string[];
 }) {
+  const hasDescription = Boolean(description.trim());
+  const hasHashtags = hashtags.length > 0;
+
   return (
     <div className="mt-3 space-y-2">
       <h3 className="text-base font-semibold leading-snug text-zinc-100">{title}</h3>
-      <p className="text-sm leading-relaxed text-zinc-400">{description}</p>
-      <p className="flex flex-wrap gap-2 text-sm font-medium text-primary">
-        {hashtags.map((h) => (
-          <span key={h}>{h}</span>
-        ))}
-      </p>
+      {hasDescription ? (
+        <p className="text-sm leading-relaxed text-zinc-400">{description}</p>
+      ) : null}
+      {hasHashtags ? (
+        <p className="flex flex-wrap gap-2 text-sm font-medium text-primary">
+          {hashtags.map((h) => (
+            <span key={h}>{h}</span>
+          ))}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { getApiBase } from "@/lib/api";
+import { publishVideoToDiscover } from "@/lib/discover-feed";
 import { GeoCreateConfirmModal } from "@/components/pickers/geo-create-confirm-modal";
 import {
   SESSION_PREVIEW_SLOTS_DETAIL,
@@ -193,6 +194,7 @@ type JobListItem = {
   errorMessage?: string | null;
   thumbnailUrl?: string;
   thumbnailUrls?: string[];
+  discoverPublishedAt?: string | null;
 };
 
 type PendingUpload = {
@@ -464,6 +466,10 @@ export function StudioSessionFolder() {
   const [shareModalKind, setShareModalKind] = useState<ExportKind | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const shareCopyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [publishingJobId, setPublishingJobId] = useState<string | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
+
+  const isPartner = (user as { isPartner?: boolean } | undefined)?.isPartner === true;
 
   const shareDisplayedUrl = useMemo(() => {
     if (!shareModalKind || !sessionId) return "";
@@ -564,6 +570,22 @@ export function StudioSessionFolder() {
     (session?.rawExportStatus != null && session.rawExportStatus !== "idle");
   const uploadDisabled =
     !!sessionError || loading || !session || editing || isSessionClosed;
+
+  const handlePublishToDiscover = useCallback(
+    async (jobId: string) => {
+      setPublishError(null);
+      setPublishingJobId(jobId);
+      try {
+        await publishVideoToDiscover(jobId);
+        await loadJobs();
+      } catch (e) {
+        setPublishError(e instanceof Error ? e.message : "Failed to publish");
+      } finally {
+        setPublishingJobId(null);
+      }
+    },
+    [loadJobs],
+  );
 
   useEffect(() => {
     if (!sessionId || !hasProcessingJob) return;
@@ -1168,6 +1190,12 @@ export function StudioSessionFolder() {
             </p>
           ) : null}
 
+          {publishError ? (
+            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+              {publishError}
+            </p>
+          ) : null}
+
           {!loading &&
           jobs.length === 0 &&
           pendingUploads.length === 0 &&
@@ -1221,19 +1249,26 @@ export function StudioSessionFolder() {
               const status = job.status ?? "completed";
               const isProcessing = status === "processing";
               const isFailed = status === "failed";
+              const isCompleted = status === "completed";
+              const isPublished = Boolean(job.discoverPublishedAt);
+              const showPublishButton =
+                isSessionClosed &&
+                !isPartner &&
+                isCompleted &&
+                !isPublished;
               return (
                 <li key={job.jobId}>
-                  <Link
-                    href={`${userPathPrefix}/studio/sessions/${sessionId}/videos/${job.jobId}`}
-                    className="block"
+                  <Card
+                    className={cn(
+                      "border-white/10 bg-white/[0.03]",
+                      isFailed && "border-red-500/20",
+                    )}
                   >
-                    <Card
-                      className={cn(
-                        "border-white/10 bg-white/[0.03] transition-colors hover:border-primary/30 hover:shadow-sm",
-                        isFailed && "hover:border-red-500/30",
-                      )}
-                    >
-                      <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+                    <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+                      <Link
+                        href={`${userPathPrefix}/studio/sessions/${sessionId}/videos/${job.jobId}`}
+                        className="flex min-w-0 flex-1 flex-col gap-4 transition-colors hover:opacity-90 sm:flex-row sm:items-center"
+                      >
                         <VideoThumbnailStrip
                           urls={job.thumbnailUrls ?? []}
                           isProcessing={isProcessing}
@@ -1254,12 +1289,33 @@ export function StudioSessionFolder() {
                               ? "Processing on server — safe to refresh; status is saved."
                               : isFailed
                                 ? (job.errorMessage ?? "Processing failed.")
-                                : new Date(job.createdAt).toLocaleString()}
+                                : isPublished
+                                  ? `On discover feed · ${new Date(job.createdAt).toLocaleString()}`
+                                  : new Date(job.createdAt).toLocaleString()}
                           </span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+                      </Link>
+                      {showPublishButton ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 border-white/15 text-zinc-200"
+                          disabled={publishingJobId === job.jobId}
+                          onClick={() => void handlePublishToDiscover(job.jobId)}
+                        >
+                          {publishingJobId === job.jobId ? (
+                            <>
+                              <Loader2 className="size-4 animate-spin" aria-hidden />
+                              <span className="ml-2">Publishing…</span>
+                            </>
+                          ) : (
+                            "Publish to discover"
+                          )}
+                        </Button>
+                      ) : null}
+                    </CardContent>
+                  </Card>
                 </li>
               );
             })}
