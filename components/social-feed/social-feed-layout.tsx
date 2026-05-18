@@ -12,6 +12,7 @@ import { FeedNavSidebar } from "./feed-nav-sidebar";
 
 export function SocialFeedLayout({
   homeHref,
+  myVideosHref,
   studioHref,
   partnerProfileHref,
   adminRegionsHref,
@@ -23,6 +24,7 @@ export function SocialFeedLayout({
   children,
 }: {
   homeHref: string;
+  myVideosHref: string;
   studioHref: string;
   partnerProfileHref?: string;
   adminRegionsHref?: string;
@@ -44,6 +46,7 @@ export function SocialFeedLayout({
       <div className="flex min-h-0 flex-1">
         <FeedNavSidebar
           homeHref={homeHref}
+          myVideosHref={myVideosHref}
           studioHref={studioHref}
           partnerProfileHref={partnerProfileHref}
           adminRegionsHref={adminRegionsHref}

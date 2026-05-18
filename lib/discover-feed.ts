@@ -18,13 +18,16 @@ export type DiscoverFeedLocation = {
 export type DiscoverFeedItem = {
   jobId: string;
   createdAt: string;
-  videoUrl: string;
+  status: "processing" | "completed" | "failed";
+  videoUrl: string | null;
   thumbnailUrl: string | null;
   title: string;
   author: DiscoverFeedAuthor;
   location: DiscoverFeedLocation;
   shakaCount: number;
   followedByViewer: boolean;
+  claimStatus: "none" | "auto" | "claimed";
+  uploadSource: "studio" | "personal";
 };
 
 export type DiscoverFeedPage = {
@@ -42,12 +45,16 @@ export type DiscoverFeedPost = {
   timeAgo: string;
   createdAt: string;
   title: string;
-  videoUrl: string;
+  videoUrl: string | null;
   thumbnailUrl: string | null;
+  status: "processing" | "completed" | "failed";
+  claimStatus: "none" | "auto" | "claimed";
   likes: number;
   comments: number;
   shares: number;
 };
+
+export const PERSONAL_UPLOAD_EVENT = "peakd:personal-upload";
 
 function formatLocationLabel(location: DiscoverFeedLocation): string {
   const country = englishCountryLabel(location.countryCode) ?? location.countryCode;
@@ -64,8 +71,7 @@ export function discoverItemToPost(
   item: DiscoverFeedItem,
   timeAgo: string,
 ): DiscoverFeedPost {
-  const authorName =
-    item.author.displayName?.trim() || "Surfer";
+  const authorName = item.author.displayName?.trim() || "Surfer";
   return {
     id: item.jobId,
     authorName,
@@ -77,6 +83,8 @@ export function discoverItemToPost(
     title: item.title,
     videoUrl: item.videoUrl,
     thumbnailUrl: item.thumbnailUrl,
+    status: item.status,
+    claimStatus: item.claimStatus,
     likes: item.shakaCount,
     comments: 0,
     shares: 0,
@@ -93,11 +101,21 @@ function normalizeDiscoverItem(raw: unknown): DiscoverFeedItem | null {
   if (!locationRaw || typeof locationRaw !== "object") return null;
   const loc = locationRaw as Record<string, unknown>;
   if (typeof o.jobId !== "string" || typeof o.createdAt !== "string") return null;
-  if (typeof o.videoUrl !== "string") return null;
+  const status = o.status;
+  if (status !== "processing" && status !== "completed" && status !== "failed") {
+    return null;
+  }
+  const claimStatus = o.claimStatus;
+  const claim =
+    claimStatus === "auto" || claimStatus === "claimed" || claimStatus === "none"
+      ? claimStatus
+      : "none";
+  const uploadSource = o.uploadSource === "personal" ? "personal" : "studio";
   return {
     jobId: o.jobId,
     createdAt: o.createdAt,
-    videoUrl: o.videoUrl,
+    status,
+    videoUrl: o.videoUrl == null ? null : String(o.videoUrl),
     thumbnailUrl: typeof o.thumbnailUrl === "string" ? o.thumbnailUrl : null,
     title: typeof o.title === "string" ? o.title : "Surf video",
     author: {
@@ -114,6 +132,8 @@ function normalizeDiscoverItem(raw: unknown): DiscoverFeedItem | null {
     },
     shakaCount: typeof o.shakaCount === "number" ? o.shakaCount : 0,
     followedByViewer: o.followedByViewer === true,
+    claimStatus: claim,
+    uploadSource,
   };
 }
 

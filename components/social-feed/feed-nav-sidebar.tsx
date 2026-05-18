@@ -13,6 +13,7 @@ import { SidebarPromoCard } from "./sidebar-promo-card";
 
 export function FeedNavSidebar({
   homeHref,
+  myVideosHref,
   studioHref,
   partnerProfileHref,
   adminRegionsHref,
@@ -20,6 +21,7 @@ export function FeedNavSidebar({
   showAdminNav,
 }: {
   homeHref: string;
+  myVideosHref: string;
   studioHref: string;
   partnerProfileHref?: string;
   adminRegionsHref?: string;
@@ -30,6 +32,7 @@ export function FeedNavSidebar({
 
   const mainItems = resolveMainNavItems(pathname, {
     homeHref,
+    myVideosHref,
     studioHref,
     showPartnerNav,
   });

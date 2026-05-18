@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   discoverItemToPost,
   fetchDiscoverFeed,
+  PERSONAL_UPLOAD_EVENT,
   type DiscoverFeedPost,
 } from "@/lib/discover-feed";
 import { FeedList } from "./feed-list";
@@ -29,6 +30,17 @@ function FeedSkeleton() {
         </div>
       ))}
     </div>
+  );
+}
+
+function mapDiscoverPageItems(
+  items: Awaited<ReturnType<typeof fetchDiscoverFeed>>["items"],
+): DiscoverFeedPost[] {
+  return items.map((item) =>
+    discoverItemToPost(
+      item,
+      formatDistanceToNow(new Date(item.createdAt), { addSuffix: true }),
+    ),
   );
 }
 
@@ -61,17 +73,30 @@ export function DiscoverFeed() {
     [],
   );
 
+  const refreshFirstPage = useCallback(async () => {
+    try {
+      const page = await fetchDiscoverFeed({ limit: 20 });
+      const mapped = mapDiscoverPageItems(page.items);
+      setPosts((prev) => {
+        const firstIds = new Set(mapped.map((p) => p.id));
+        const rest = prev.filter((p) => !firstIds.has(p.id));
+        return [...mapped, ...rest];
+      });
+      if (cursorRef.current === null) {
+        cursorRef.current = page.nextCursor;
+        setHasMore(page.hasMore);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to refresh feed");
+    }
+  }, []);
+
   const loadInitial = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const page = await fetchDiscoverFeed({ limit: 20 });
-      const mapped = page.items.map((item) =>
-        discoverItemToPost(
-          item,
-          formatDistanceToNow(new Date(item.createdAt), { addSuffix: true }),
-        ),
-      );
+      const mapped = mapDiscoverPageItems(page.items);
       setPosts(mapped);
       cursorRef.current = page.nextCursor;
       setHasMore(page.hasMore);
@@ -94,12 +119,7 @@ export function DiscoverFeed() {
         limit: 20,
         cursor: cursorRef.current,
       });
-      const mapped = page.items.map((item) =>
-        discoverItemToPost(
-          item,
-          formatDistanceToNow(new Date(item.createdAt), { addSuffix: true }),
-        ),
-      );
+      const mapped = mapDiscoverPageItems(page.items);
       appendPage(mapped, page.nextCursor, page.hasMore);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load more");
@@ -112,6 +132,24 @@ export function DiscoverFeed() {
   useEffect(() => {
     void loadInitial();
   }, [loadInitial]);
+
+  useEffect(() => {
+    const onUpload = () => {
+      void refreshFirstPage();
+    };
+    window.addEventListener(PERSONAL_UPLOAD_EVENT, onUpload);
+    return () => window.removeEventListener(PERSONAL_UPLOAD_EVENT, onUpload);
+  }, [refreshFirstPage]);
+
+  const hasProcessing = posts.some((p) => p.status === "processing");
+
+  useEffect(() => {
+    if (!hasProcessing) return;
+    const interval = window.setInterval(() => {
+      void refreshFirstPage();
+    }, 3000);
+    return () => window.clearInterval(interval);
+  }, [hasProcessing, refreshFirstPage]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -153,7 +191,7 @@ export function DiscoverFeed() {
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-12 text-center">
         <p className="text-sm font-medium text-zinc-200">No videos in your feed yet</p>
         <p className="mt-2 text-sm text-zinc-500">
-          When partners close sessions or you publish your own videos, they will show up here.
+          Upload a video from the top bar or browse content from partners in your region.
         </p>
       </div>
     );

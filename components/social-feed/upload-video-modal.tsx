@@ -1,7 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useUser } from "@auth0/nextjs-auth0/client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2Icon, UploadIcon } from "lucide-react";
 import { useUserProfileModal } from "@/components/user-profile/user-profile-provider";
@@ -19,10 +17,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getApiBase } from "@/lib/api";
+import { PERSONAL_UPLOAD_EVENT } from "@/lib/discover-feed";
 import { initialStudioSessionFormValuesFromProfile } from "@/lib/studio-session-form-defaults";
-import type { WaveTypeId } from "@/lib/surf-session-waves";
-import { userSubToPathSegment } from "@/lib/user-sub-path";
+import { uploadPersonalVideos } from "@/lib/personal-upload";
 import { cn } from "@/lib/utils";
 
 function isProbablyVideoFile(file: File): boolean {
@@ -36,63 +33,6 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-async function createSurfSession(values: StudioSessionFormValues): Promise<string> {
-  const base = getApiBase();
-  const res = await fetch(`${base}/studio/sessions`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      countryCode: values.countryCode,
-      regionId: values.regionId,
-      spotId: values.spotId,
-      sessionDate: values.sessionDate,
-      sessionTime: values.sessionTime,
-      durationMinutes: values.durationMinutes,
-      conditionsRating: values.conditionsRating,
-      waveTypes: values.waveTypes as WaveTypeId[],
-    }),
-  });
-  if (!res.ok) {
-    throw new Error(await res.text().catch(() => res.statusText));
-  }
-  const data = (await res.json()) as { sessionId?: string };
-  if (!data.sessionId) {
-    throw new Error("Invalid response");
-  }
-  return data.sessionId;
-}
-
-async function uploadVideoToSession(sessionId: string, file: File): Promise<void> {
-  const base = getApiBase();
-  const fd = new FormData();
-  fd.append("file", file);
-  fd.append("surfSessionId", sessionId);
-  const res = await fetch(`${base}/videos/process`, {
-    method: "POST",
-    body: fd,
-    credentials: "include",
-  });
-  const text = await res.text();
-  if (res.status === 202) {
-    try {
-      const parsed = JSON.parse(text) as { jobId?: string };
-      if (!parsed.jobId) {
-        throw new Error(text || "Invalid upload response");
-      }
-    } catch (e) {
-      if (e instanceof SyntaxError) {
-        throw new Error(text || "Invalid upload response");
-      }
-      throw e;
-    }
-    return;
-  }
-  if (!res.ok) {
-    throw new Error(text || `Upload failed (${res.status})`);
-  }
-}
-
 export function UploadVideoModal({
   open,
   onOpenChange,
@@ -100,8 +40,6 @@ export function UploadVideoModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const router = useRouter();
-  const { user } = useUser();
   const { profile } = useUserProfileModal();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -163,8 +101,6 @@ export function UploadVideoModal({
     setVideoFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const userPathPrefix = user?.sub ? `/${userSubToPathSegment(user.sub)}` : "";
-
   const submit = async () => {
     const validationError = validateStudioSessionFormValues(values);
     if (validationError) {
@@ -175,21 +111,18 @@ export function UploadVideoModal({
       setError("Add at least one video file.");
       return;
     }
-    if (!userPathPrefix) {
-      setError("Sign in to upload.");
-      return;
-    }
 
     setError(null);
     setSubmitting(true);
     try {
-      const sessionId = await createSurfSession(values);
-      for (const file of videoFiles) {
-        await uploadVideoToSession(sessionId, file);
-      }
+      const result = await uploadPersonalVideos(values, videoFiles);
       reset();
       onOpenChange(false);
-      router.push(`${userPathPrefix}/studio/sessions/${sessionId}`);
+      window.dispatchEvent(
+        new CustomEvent(PERSONAL_UPLOAD_EVENT, {
+          detail: { jobIds: result.jobs.map((j) => j.jobId) },
+        }),
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
     } finally {
@@ -215,7 +148,7 @@ export function UploadVideoModal({
             Upload video
           </DialogTitle>
           <DialogDescription className="text-zinc-500">
-            Session details match Studio — country and region are prefilled from your
+            Add your surf video to the feed. Session details are prefilled from your
             profile when available.
           </DialogDescription>
         </DialogHeader>

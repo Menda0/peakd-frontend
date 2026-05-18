@@ -5,6 +5,7 @@ import { userSubToPathSegment } from "@/lib/user-sub-path";
 
 export type SocialFeedNavProps = {
   homeHref: string;
+  myVideosHref: string;
   studioHref: string;
   partnerProfileHref?: string;
   adminRegionsHref?: string;
@@ -22,6 +23,7 @@ export async function getSocialFeedNavProps(
   ]);
   return {
     homeHref: prefix,
+    myVideosHref: `${prefix}/my-videos`,
     studioHref: `${prefix}/studio`,
     partnerProfileHref: showPartnerNav ? `${prefix}/partner/profile` : undefined,
     adminRegionsHref: showAdminNav ? `${prefix}/admin/regions` : undefined,

@@ -43,12 +43,13 @@ export function resolveMainNavItems(
   pathname: string,
   options: {
     homeHref: string;
+    myVideosHref: string;
     studioHref: string;
     showPartnerNav: boolean;
   },
 ): ResolvedNavItem[] {
   const exploreActive = pathMatches(options.homeHref, pathname);
-  const studioActive = pathMatchesOrChild(options.studioHref, pathname);
+  const myVideosActive = pathMatchesOrChild(options.myVideosHref, pathname);
 
   return MAIN_NAV_ITEMS.map((item) => {
     switch (item.id) {
@@ -61,8 +62,8 @@ export function resolveMainNavItems(
       case "my-videos":
         return {
           ...item,
-          href: options.studioHref,
-          active: studioActive && !options.showPartnerNav,
+          href: options.myVideosHref,
+          active: myVideosActive,
         };
       default:
         return { ...item, active: false };

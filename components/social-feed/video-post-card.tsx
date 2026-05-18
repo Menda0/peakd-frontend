@@ -1,3 +1,4 @@
+import { Loader2Icon } from "lucide-react";
 import type { DiscoverFeedPost } from "@/lib/discover-feed";
 import type { PlaceholderPost } from "@/lib/social-feed-placeholder";
 import { PostActionsBar } from "./post-actions-bar";
@@ -13,6 +14,9 @@ export function VideoPostCard({
   placeholder?: PlaceholderPost;
 }) {
   if (post) {
+    const isProcessing = post.status === "processing";
+    const timeLabel = isProcessing ? "Processing…" : post.timeAgo;
+
     return (
       <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
         <PostHeader
@@ -20,14 +24,26 @@ export function VideoPostCard({
           authorAvatarUrl={post.authorAvatarUrl}
           verified={post.verified}
           location={post.location}
-          timeAgo={post.timeAgo}
+          timeAgo={timeLabel}
         />
-        <PostMedia
-          thumbnailUrl={post.thumbnailUrl}
-          videoUrl={post.videoUrl}
-          title={post.title}
-        />
+        {isProcessing ? (
+          <div className="relative mt-3 overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/80">
+            <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-cyan-950/30 via-zinc-900 to-zinc-950">
+              <Loader2Icon className="size-10 animate-spin text-primary" aria-hidden />
+              <p className="text-sm text-zinc-400">Your video is being processed</p>
+            </div>
+          </div>
+        ) : (
+          <PostMedia
+            thumbnailUrl={post.thumbnailUrl}
+            videoUrl={post.videoUrl ?? undefined}
+            title={post.title}
+          />
+        )}
         <PostContent title={post.title} description="" hashtags={[]} />
+        {post.claimStatus === "auto" ? (
+          <p className="mt-2 text-xs font-medium text-primary/90">Auto-claimed</p>
+        ) : null}
         <PostActionsBar likes={post.likes} comments={post.comments} shares={post.shares} />
       </article>
     );

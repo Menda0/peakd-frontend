@@ -5,7 +5,7 @@ import { VideoPostCard } from "./video-post-card";
 export type FeedPost = PlaceholderPost | DiscoverFeedPost;
 
 function isDiscoverPost(post: FeedPost): post is DiscoverFeedPost {
-  return "videoUrl" in post && typeof (post as DiscoverFeedPost).videoUrl === "string";
+  return "status" in post;
 }
 
 export function FeedList({ posts }: { posts: FeedPost[] }) {
