@@ -10,6 +10,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent,
 } from "react";
+import type { ReactNode } from "react";
 import type { SurferProfile } from "@/lib/surfer-profile";
 import {
   forceActiveFeedVideo,
@@ -27,6 +28,7 @@ export function PostMedia({
   videoUrl,
   title,
   surfer,
+  claimWave,
   className,
   playbackId: playbackIdProp,
   autoPlayInView = false,
@@ -36,6 +38,7 @@ export function PostMedia({
   videoUrl?: string;
   title?: string;
   surfer?: SurferProfile | null;
+  claimWave?: ReactNode;
   className?: string;
   playbackId?: string;
   autoPlayInView?: boolean;
@@ -217,7 +220,11 @@ export function PostMedia({
             <VolumeXIcon className="size-4" aria-hidden />
           )}
         </button>
-        {surfer ? <PostSurferBadge surfer={surfer} /> : null}
+        {surfer ? (
+          <PostSurferBadge surfer={surfer} />
+        ) : claimWave ? (
+          claimWave
+        ) : null}
       </div>
     );
   }

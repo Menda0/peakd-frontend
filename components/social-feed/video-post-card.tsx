@@ -47,6 +47,21 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
           thumbnailUrl={post.thumbnailUrl}
           videoUrl={post.videoUrl ?? undefined}
           surfer={surfer}
+          claimWave={
+            canClaim ? (
+              <ClaimWaveButton
+                variant="overlay"
+                jobId={post.id}
+                partnerName={post.authorName}
+                location={post.location}
+                isOwnUpload={post.isOwnUpload}
+                onClaimed={(claimedSurfer) => {
+                  setClaimedLocally(true);
+                  setLocalSurfer(claimedSurfer);
+                }}
+              />
+            ) : undefined
+          }
           playbackId={post.id}
           autoPlayInView
           className="mt-3"
@@ -62,18 +77,6 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
         </p>
       ) : isClaimed ? (
         <p className="mt-2 text-xs text-zinc-500">Claimed by another surfer</p>
-      ) : null}
-      {canClaim ? (
-        <ClaimWaveButton
-          jobId={post.id}
-          partnerName={post.authorName}
-          location={post.location}
-          isOwnUpload={post.isOwnUpload}
-          onClaimed={(claimedSurfer) => {
-            setClaimedLocally(true);
-            setLocalSurfer(claimedSurfer);
-          }}
-        />
       ) : null}
       <PostActionsBar likes={post.likes} comments={post.comments} shares={post.shares} />
     </article>

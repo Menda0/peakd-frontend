@@ -1,11 +1,15 @@
-import { englishCountryLabel } from "@/lib/countries";
 import type { SurferProfile } from "@/lib/surfer-profile";
+
+function formatSurferLocation(surfer: SurferProfile): string | null {
+  const region = surfer.regionName?.trim() || null;
+  const countryCode = surfer.countryCode?.trim().toUpperCase() || null;
+  const parts = [region, countryCode].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : null;
+}
 
 export function PostSurferBadge({ surfer }: { surfer: SurferProfile }) {
   const name = surfer.displayName?.trim() || "Surfer";
-  const country = englishCountryLabel(surfer.countryCode);
-  const region = surfer.regionName?.trim() || null;
-  const locationLine = [region, country].filter(Boolean).join(", ");
+  const locationLine = formatSurferLocation(surfer);
 
   return (
     <div

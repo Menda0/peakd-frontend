@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { GeoCreateConfirmModal } from "@/components/pickers/geo-create-confirm-modal";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   claimWave,
   dispatchWaveClaimedEvent,
@@ -15,12 +16,14 @@ export function ClaimWaveButton({
   location,
   isOwnUpload,
   onClaimed,
+  variant = "default",
 }: {
   jobId: string;
   partnerName: string;
   location: string;
   isOwnUpload?: boolean;
   onClaimed: (surfer: SurferProfile) => void;
+  variant?: "default" | "overlay";
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -46,7 +49,11 @@ export function ClaimWaveButton({
       <Button
         type="button"
         size="sm"
-        className="mt-3 bg-primary text-primary-foreground hover:bg-primary/90"
+        className={cn(
+          variant === "overlay"
+            ? "absolute bottom-3 right-3 z-10 h-auto rounded-lg border border-white/15 bg-black/75 px-3 py-1.5 text-xs font-semibold text-zinc-50 shadow-lg backdrop-blur-sm hover:bg-black/85"
+            : "mt-3 bg-primary text-primary-foreground hover:bg-primary/90",
+        )}
         onClick={() => {
           setError(null);
           setConfirmOpen(true);
