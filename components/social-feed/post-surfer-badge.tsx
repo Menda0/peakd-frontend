@@ -1,4 +1,5 @@
 import type { SurferProfile } from "@/lib/surfer-profile";
+import { cn } from "@/lib/utils";
 
 function formatSurferLocation(surfer: SurferProfile): string | null {
   const region = surfer.regionName?.trim() || null;
@@ -7,13 +8,26 @@ function formatSurferLocation(surfer: SurferProfile): string | null {
   return parts.length > 0 ? parts.join(", ") : null;
 }
 
-export function PostSurferBadge({ surfer }: { surfer: SurferProfile }) {
+export function PostSurferBadge({
+  surfer,
+  variant = "overlay",
+  className,
+}: {
+  surfer: SurferProfile;
+  variant?: "overlay" | "inline";
+  className?: string;
+}) {
   const name = surfer.displayName?.trim() || "Surfer";
   const locationLine = formatSurferLocation(surfer);
 
   return (
     <div
-      className="pointer-events-none absolute bottom-3 right-3 z-10 flex max-w-[min(100%-1.5rem,14rem)] items-center gap-2 rounded-lg border border-white/15 bg-black/75 px-2 py-1.5 shadow-lg backdrop-blur-sm"
+      className={cn(
+        "flex max-w-[min(100%,14rem)] items-center gap-2 rounded-lg border border-white/15 bg-black/75 px-2 py-1.5 shadow-lg backdrop-blur-sm",
+        variant === "overlay" &&
+          "pointer-events-none absolute bottom-3 right-3 z-10 max-w-[min(100%-1.5rem,14rem)]",
+        className,
+      )}
       aria-label={`Surfer: ${name}${locationLine ? `, ${locationLine}` : ""}`}
     >
       {surfer.avatarUrl ? (

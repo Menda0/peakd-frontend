@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Download, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { PostHeader } from "@/components/social-feed/post-header";
 import { PostMedia } from "@/components/social-feed/post-media";
 import { PostSurferBadge } from "@/components/social-feed/post-surfer-badge";
 import { VideoThumbnailStrip } from "@/components/studio/session-summary-card";
+import { SharedSessionSurferList } from "@/components/share/shared-session-surfer-list";
 import {
   SharedSessionWaveClaim,
   type SharedSessionWaveClaimState,
@@ -330,6 +331,16 @@ export function SharedSessionView({ data }: { data: PublicSharedSession }) {
     setActiveJobId((current) => (current === jobId ? null : jobId));
   };
 
+  const sessionSurfers = useMemo(() => {
+    const surfers: SurferProfile[] = [];
+    for (const wave of data.waves) {
+      const override = claimOverrides[wave.jobId];
+      const surfer = override?.surfer ?? wave.surfer;
+      if (surfer) surfers.push(surfer);
+    }
+    return surfers;
+  }, [data.waves, claimOverrides]);
+
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-10 sm:px-6">
       <header className="space-y-4">
@@ -409,6 +420,8 @@ export function SharedSessionView({ data }: { data: PublicSharedSession }) {
             </div>
           </CardContent>
         </Card>
+
+        <SharedSessionSurferList surfers={sessionSurfers} />
       </header>
 
       <section className="space-y-4">
