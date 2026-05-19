@@ -29,10 +29,6 @@ export function formatEur(cents: number): string {
   }).format(cents / 100);
 }
 
-export function peaksRateLabel(peaksPerEuro: number): string {
-  return `${formatPeaksCount(peaksPerEuro)} peaks = €1`;
-}
-
 function normalizeWallet(raw: unknown): WalletResponse | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;

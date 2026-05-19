@@ -127,9 +127,7 @@ export function BuyPeaksDialog({
         <DialogHeader>
           <DialogTitle className="text-zinc-50">Buy peaks</DialogTitle>
           <DialogDescription className="text-zinc-400">
-            {wallet
-              ? `${formatPeaksCount(wallet.peaksPerEuro)} peaks = €1. Peaks are added to your balance after payment.`
-              : "Choose a pack to top up your balance."}
+            Peaks are added to your balance after payment.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
