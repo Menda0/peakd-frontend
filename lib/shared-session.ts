@@ -1,4 +1,8 @@
 import { getApiBase } from "@/lib/api";
+import {
+  normalizeSurferProfile,
+  type SurferProfile,
+} from "@/lib/surfer-profile";
 
 export type PublicSharedSessionWave = {
   jobId: string;
@@ -10,6 +14,9 @@ export type PublicSharedSessionWave = {
   processedDownloadUrl: string;
   hasOriginal: boolean;
   originalDownloadUrl: string | null;
+  claimStatus: "none" | "claimed" | "auto";
+  canClaim: boolean;
+  surfer: SurferProfile | null;
 };
 
 export type PublicSharedSession = {
@@ -83,7 +90,14 @@ export async function fetchPublicSharedSession(
   if (!res.ok) {
     throw new Error(await res.text().catch(() => res.statusText));
   }
-  return (await res.json()) as PublicSharedSession;
+  const raw = (await res.json()) as PublicSharedSession;
+  return {
+    ...raw,
+    waves: raw.waves.map((wave) => ({
+      ...wave,
+      surfer: normalizeSurferProfile(wave.surfer),
+    })),
+  };
 }
 
 export async function ensureSessionShareToken(

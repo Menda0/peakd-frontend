@@ -1,18 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Download, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PostHeader } from "@/components/social-feed/post-header";
 import { PostMedia } from "@/components/social-feed/post-media";
+import { PostSurferBadge } from "@/components/social-feed/post-surfer-badge";
 import { VideoThumbnailStrip } from "@/components/studio/session-summary-card";
+import {
+  SharedSessionWaveClaim,
+  type SharedSessionWaveClaimState,
+} from "@/components/share/shared-session-wave-claim";
 import type { PublicSharedSession, PublicSharedSessionWave } from "@/lib/shared-session";
 import {
   downloadFromUrl,
   sharedSessionZipDownloadPath,
 } from "@/lib/shared-session";
 import { formatDurationMinutes, waveTypeTitle } from "@/lib/surf-session-waves";
+import type { SurferProfile } from "@/lib/surfer-profile";
 import { cn } from "@/lib/utils";
 
 type ViewTab = "feed" | "files";
@@ -119,13 +125,21 @@ function WaveDownloadActions({ wave }: { wave: PublicSharedSessionWave }) {
 function SharedSessionFeedTab({
   data,
   partnerName,
+  location,
+  resolveWave,
+  onWaveClaimed,
 }: {
   data: PublicSharedSession;
   partnerName: string;
+  location: string;
+  resolveWave: (wave: PublicSharedSessionWave) => SharedSessionWaveClaimState;
+  onWaveClaimed: (jobId: string, surfer: SurferProfile) => void;
 }) {
   return (
     <ul className="flex flex-col gap-4">
-      {data.waves.map((wave) => (
+      {data.waves.map((wave) => {
+        const waveState = resolveWave(wave);
+        return (
         <li key={wave.jobId}>
           <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
             <PostHeader
@@ -137,6 +151,18 @@ function SharedSessionFeedTab({
             <PostMedia
               thumbnailUrl={wave.thumbnailUrl}
               videoUrl={wave.videoUrl}
+              surfer={waveState.surfer}
+              claimWave={
+                waveState.surfer ? undefined : (
+                  <SharedSessionWaveClaim
+                    variant="overlay"
+                    wave={waveState}
+                    partnerName={partnerName}
+                    location={location}
+                    onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
+                  />
+                )
+              }
               playbackId={wave.jobId}
               autoPlayInView
               className="mt-3"
@@ -155,23 +181,33 @@ function SharedSessionFeedTab({
             </div>
           </article>
         </li>
-      ))}
+        );
+      })}
     </ul>
   );
 }
 
 function SharedSessionFilesTab({
   data,
+  partnerName,
+  location,
   activeJobId,
+  resolveWave,
   onToggleWave,
+  onWaveClaimed,
 }: {
   data: PublicSharedSession;
+  partnerName: string;
+  location: string;
   activeJobId: string | null;
+  resolveWave: (wave: PublicSharedSessionWave) => SharedSessionWaveClaimState;
   onToggleWave: (jobId: string) => void;
+  onWaveClaimed: (jobId: string, surfer: SurferProfile) => void;
 }) {
   return (
     <ul className="flex flex-col gap-3">
       {data.waves.map((wave) => {
+        const waveState = resolveWave(wave);
         const isActive = activeJobId === wave.jobId;
         return (
           <li key={wave.jobId}>
@@ -204,10 +240,19 @@ function SharedSessionFilesTab({
                       </span>
                     </div>
                   </button>
-                  <WaveDownloadActions wave={wave} />
+                  <div className="flex flex-col items-stretch gap-2 sm:items-end">
+                    <SharedSessionWaveClaim
+                      variant="inline"
+                      wave={waveState}
+                      partnerName={partnerName}
+                      location={location}
+                      onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
+                    />
+                    <WaveDownloadActions wave={wave} />
+                  </div>
                 </div>
                 {isActive ? (
-                  <div className="overflow-hidden rounded-xl border border-white/10 bg-black">
+                  <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black">
                     <video
                       key={wave.videoUrl}
                       className="aspect-video w-full"
@@ -216,6 +261,17 @@ function SharedSessionFilesTab({
                       preload="metadata"
                       src={wave.videoUrl}
                     />
+                    {waveState.surfer ? (
+                      <PostSurferBadge surfer={waveState.surfer} />
+                    ) : (
+                      <SharedSessionWaveClaim
+                        variant="overlay"
+                        wave={waveState}
+                        partnerName={partnerName}
+                        location={location}
+                        onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
+                      />
+                    )}
                   </div>
                 ) : null}
               </CardContent>
@@ -227,15 +283,48 @@ function SharedSessionFilesTab({
   );
 }
 
+type WaveClaimOverride = {
+  surfer: SurferProfile;
+  canClaim: false;
+  claimStatus: "claimed";
+};
+
 export function SharedSessionView({ data }: { data: PublicSharedSession }) {
   const [tab, setTab] = useState<ViewTab>("feed");
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [claimOverrides, setClaimOverrides] = useState<
+    Record<string, WaveClaimOverride>
+  >({});
   const waveLabels = data.session.waveTypes.map((id) => waveTypeTitle(id));
   const waveCount = data.waves.length;
   const waveCountLabel =
     waveCount === 1 ? "1 wave" : `${waveCount} waves`;
   const partnerName = data.partnerName?.trim() || "Peakd session";
+  const location = sessionLocationLabel(data);
   const zipReady = data.exports.processedReady;
+
+  const resolveWave = useCallback(
+    (wave: PublicSharedSessionWave): SharedSessionWaveClaimState => {
+      const override = claimOverrides[wave.jobId];
+      if (!override) return wave;
+      return { ...wave, ...override };
+    },
+    [claimOverrides],
+  );
+
+  const handleWaveClaimed = useCallback(
+    (jobId: string, surfer: SurferProfile) => {
+      setClaimOverrides((prev) => ({
+        ...prev,
+        [jobId]: {
+          surfer,
+          canClaim: false,
+          claimStatus: "claimed",
+        },
+      }));
+    },
+    [],
+  );
 
   const toggleWave = (jobId: string) => {
     setActiveJobId((current) => (current === jobId ? null : jobId));
@@ -360,12 +449,22 @@ export function SharedSessionView({ data }: { data: PublicSharedSession }) {
         {waveCount === 0 ? (
           <p className="text-sm text-zinc-500">No waves in this session yet.</p>
         ) : tab === "feed" ? (
-          <SharedSessionFeedTab data={data} partnerName={partnerName} />
+          <SharedSessionFeedTab
+            data={data}
+            partnerName={partnerName}
+            location={location}
+            resolveWave={resolveWave}
+            onWaveClaimed={handleWaveClaimed}
+          />
         ) : (
           <SharedSessionFilesTab
             data={data}
+            partnerName={partnerName}
+            location={location}
             activeJobId={activeJobId}
+            resolveWave={resolveWave}
             onToggleWave={toggleWave}
+            onWaveClaimed={handleWaveClaimed}
           />
         )}
       </section>
