@@ -39,11 +39,8 @@ export function PostSessionInfo({ session }: { session: DiscoverFeedSession }) {
 
   return (
     <div className="mt-3 space-y-2.5">
-      <p className="text-sm text-zinc-300">
-        <span className="font-medium text-zinc-100">
-          {session.sessionDate} · {session.sessionTime}
-        </span>
-        <span className="text-zinc-500"> · {formatDurationMinutes(session.durationMinutes)}</span>
+      <p className="text-xs text-zinc-500">
+        {formatDurationMinutes(session.durationMinutes)}
       </p>
       <ConditionsStars rating={session.conditionsRating} />
       <div className="flex flex-wrap items-center gap-1.5">

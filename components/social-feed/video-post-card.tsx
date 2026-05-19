@@ -18,7 +18,6 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
   const surfer = post.surfer ?? localSurfer;
   const isProcessing = post.status === "processing";
   const timeLabel = isProcessing ? "Processing…" : post.timeAgo;
-  const isClaimed = post.claimStatus === "claimed" || claimedLocally;
   const canClaim =
     post.isPartnerUpload &&
     !isProcessing &&
@@ -33,6 +32,8 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
         authorAvatarUrl={post.authorAvatarUrl}
         partnerUpload={post.isPartnerUpload}
         location={post.location}
+        sessionDate={post.session.sessionDate}
+        sessionTime={post.session.sessionTime}
         timeAgo={timeLabel}
       />
       {isProcessing ? (
@@ -68,16 +69,6 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
         />
       )}
       <PostSessionInfo session={post.session} />
-      {post.claimStatus === "auto" ? (
-        <p className="mt-2 text-xs font-medium text-primary/90">Auto-claimed</p>
-      ) : null}
-      {isClaimed && (post.claimedByViewer || claimedLocally) ? (
-        <p className="mt-2 text-xs font-medium text-primary/90">
-          Claimed — in your videos
-        </p>
-      ) : isClaimed ? (
-        <p className="mt-2 text-xs text-zinc-500">Claimed by another surfer</p>
-      ) : null}
       <PostActionsBar likes={post.likes} comments={post.comments} shares={post.shares} />
     </article>
   );
