@@ -14,6 +14,10 @@ export async function middleware(request: NextRequest) {
     return authRes;
   }
 
+  if (pathname.startsWith("/share/")) {
+    return authRes;
+  }
+
   // Next internals and public files must not be session-redirected. The image optimizer
   // fetches /logos/* (and similar) server-side; treating the first segment as userSub breaks that.
   if (pathname.startsWith("/_next/") || pathname.startsWith("/logos/")) {

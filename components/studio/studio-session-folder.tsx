@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,6 +16,10 @@ import {
 import { cn } from "@/lib/utils";
 import { getApiBase } from "@/lib/api";
 import { publishVideoToDiscover } from "@/lib/discover-feed";
+import {
+  absoluteSharedSessionUrl,
+  ensureSessionShareToken,
+} from "@/lib/shared-session";
 import { GeoCreateConfirmModal } from "@/components/pickers/geo-create-confirm-modal";
 import {
   SESSION_PREVIEW_SLOTS_DETAIL,
@@ -48,14 +52,6 @@ function sessionExportPath(sessionId: string, kind: ExportKind): string {
   return `/studio/sessions/${sessionId}/${branch}`;
 }
 
-function absoluteSessionExportShareUrl(
-  sessionId: string,
-  kind: ExportKind,
-): string {
-  if (typeof window === "undefined") return "";
-  return `${window.location.origin}${getApiBase()}${sessionExportPath(sessionId, kind)}`;
-}
-
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -70,31 +66,24 @@ function rawDaysRemaining(expiresAt: string | null | undefined): number {
   return Math.max(0, Math.ceil((end - Date.now()) / 86_400_000));
 }
 
-function StudioExportShareModal({
-  kind,
+function SessionShareModal({
+  open,
   url,
   copied,
-  rawDaysLeft,
+  shareError,
+  loading,
   onClose,
   onCopyLink,
 }: {
-  kind: ExportKind | null;
+  open: boolean;
   url: string;
   copied: boolean;
-  rawDaysLeft: number;
+  shareError: string | null;
+  loading: boolean;
   onClose: () => void;
   onCopyLink: () => void;
 }) {
-  if (!kind) return null;
-
-  const title =
-    kind === "processed" ? "Share processed export" : "Share raw export";
-  const description =
-    kind === "processed"
-      ? "This Peakd link downloads through our site (not direct cloud storage). Anyone who opens it must be signed in as you — share only with people you trust."
-      : rawDaysLeft > 0
-        ? `Same as processed — link goes through Peakd. Raw ZIP files are removed from storage after about ${rawDaysLeft} more whole day${rawDaysLeft === 1 ? "" : "s"}; until then you can reuse this link while signed in.`
-        : "Raw export retention has ended; sharing is no longer available.";
+  if (!open) return null;
 
   return (
     <div
@@ -106,14 +95,20 @@ function StudioExportShareModal({
     >
       <Card className="w-full max-w-lg border-white/10 bg-[#0a1218] text-zinc-100">
         <CardHeader>
-          <CardTitle className="text-lg">{title}</CardTitle>
-          <CardDescription className="text-zinc-400">{description}</CardDescription>
+          <CardTitle className="text-lg">Share session</CardTitle>
+          <CardDescription className="text-zinc-400">
+            Anyone with this link can view all waves in this session — no Peakd
+            account required.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 border-t border-white/10 pt-4">
+          {shareError ? (
+            <p className="text-sm text-red-400">{shareError}</p>
+          ) : null}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
             <Input
               readOnly
-              value={url}
+              value={loading ? "Preparing link…" : url}
               className="border-white/15 bg-black/30 font-mono text-xs text-zinc-200"
               aria-label="Share link"
             />
@@ -121,6 +116,7 @@ function StudioExportShareModal({
               type="button"
               variant="outline"
               className="shrink-0 border-white/15 bg-transparent text-zinc-200 sm:w-auto"
+              disabled={loading || !url}
               onClick={onCopyLink}
             >
               <Copy className="size-4" aria-hidden />
@@ -130,9 +126,6 @@ function StudioExportShareModal({
           {copied ? (
             <p className="text-xs text-emerald-400">Link copied to clipboard.</p>
           ) : null}
-          <p className="text-xs text-zinc-500">
-            Opening the link in a browser starts a logged-in download from Peakd.
-          </p>
         </CardContent>
         <CardFooter className="justify-end border-white/10 bg-transparent py-4">
           <Button
@@ -171,6 +164,7 @@ type SessionDetail = {
   rawExportStatus?: "idle" | "processing" | "ready" | "failed";
   rawExportErrorMessage?: string | null;
   rawExportExpiresAt?: string | null;
+  shareToken?: string | null;
 };
 
 function sessionToFormValues(session: SessionDetail): StudioSessionFormValues {
@@ -237,7 +231,9 @@ function SessionActionsBar({
   onCloseClick,
   onEditClick,
   onDownloadPick,
-  onSharePick,
+  shareDisabled,
+  sharingSession,
+  onShareClick,
 }: {
   session: SessionDetail;
   hasProcessingJob: boolean;
@@ -258,7 +254,9 @@ function SessionActionsBar({
   onCloseClick: () => void;
   onEditClick: () => void;
   onDownloadPick: (kind: ExportKind) => void;
-  onSharePick: (kind: ExportKind) => void;
+  shareDisabled: boolean;
+  sharingSession: boolean;
+  onShareClick: () => void;
 }) {
   const processedDownloadDisabled =
     !exportReady || exportProcessing;
@@ -267,10 +265,6 @@ function SessionActionsBar({
     rawExportProcessing ||
     rawDaysLeft <= 0;
 
-  const processedShareDisabled = !exportReady || exportProcessing;
-  const rawShareDisabled =
-    !rawExportReady || rawExportProcessing || rawDaysLeft <= 0;
-
   const downloadTriggerLabel = anyExportProcessing
     ? "Preparing exports…"
     : "Download";
@@ -278,8 +272,9 @@ function SessionActionsBar({
   return (
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-        {showExportActions ? (
+        {showExportActions || isSessionClosed ? (
           <div className="flex flex-wrap items-center gap-2 sm:mr-auto">
+            {showExportActions ? (
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={cn(
@@ -331,53 +326,32 @@ function SessionActionsBar({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            ) : null}
 
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                  "border-white/15 bg-transparent text-zinc-200 data-popup-open:bg-white/10",
-                )}
-                disabled={processedShareDisabled && rawShareDisabled}
+            {isSessionClosed ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="border-white/15 bg-transparent text-zinc-200"
+                disabled={shareDisabled || sharingSession}
+                title={
+                  shareDisabled
+                    ? hasProcessingJob
+                      ? "Wait until all waves finish processing."
+                      : "Add at least one completed wave to share."
+                    : undefined
+                }
+                onClick={onShareClick}
               >
-                {anyExportProcessing ? (
+                {sharingSession ? (
                   <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
                 ) : (
                   <Share2 className="size-4 shrink-0" aria-hidden />
                 )}
                 <span className="ml-2">Share</span>
-                <ChevronDown className="ml-1 size-4 shrink-0 opacity-70" aria-hidden />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className={dropdownSurface}>
-                <DropdownMenuItem
-                  disabled={processedShareDisabled}
-                  className="flex cursor-pointer flex-col items-start gap-0.5 py-2 focus:bg-white/10"
-                  onClick={() => onSharePick("processed")}
-                >
-                  <span className="font-medium text-zinc-100">Processed export</span>
-                  <span className="text-xs text-zinc-500">
-                    Temporary download link (ZIP)
-                  </span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={rawShareDisabled}
-                  title={
-                    rawDaysLeft <= 0 && rawExportReady
-                      ? "Raw export retention period has ended."
-                      : undefined
-                  }
-                  className="flex cursor-pointer flex-col items-start gap-0.5 py-2 focus:bg-white/10"
-                  onClick={() => onSharePick("raw")}
-                >
-                  <span className="font-medium text-zinc-100">Raw export</span>
-                  <span className="text-xs text-zinc-500">
-                    {rawExportReady && rawDaysLeft > 0
-                      ? `Temporary link · ~${rawDaysLeft}d file retention on Peakd`
-                      : "Original uploads + snapshots"}
-                  </span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </Button>
+            ) : null}
           </div>
         ) : null}
         {!isSessionClosed ? (
@@ -463,18 +437,16 @@ export function StudioSessionFolder() {
   const [closeError, setCloseError] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [rawDownloadError, setRawDownloadError] = useState<string | null>(null);
-  const [shareModalKind, setShareModalKind] = useState<ExportKind | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [sharingSession, setSharingSession] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const shareCopyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [publishingJobId, setPublishingJobId] = useState<string | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
 
   const isPartner = (user as { isPartner?: boolean } | undefined)?.isPartner === true;
-
-  const shareDisplayedUrl = useMemo(() => {
-    if (!shareModalKind || !sessionId) return "";
-    return absoluteSessionExportShareUrl(sessionId, shareModalKind);
-  }, [shareModalKind, sessionId]);
 
   const loadSession = useCallback(async () => {
     if (!sessionId) return;
@@ -502,6 +474,7 @@ export function StudioSessionFolder() {
         rawExportErrorMessage: data.rawExportErrorMessage ?? null,
         rawExportExpiresAt: data.rawExportExpiresAt ?? null,
         closedAt: data.closedAt ?? null,
+        shareToken: data.shareToken ?? null,
       });
     } catch (e) {
       setSession(null);
@@ -555,7 +528,12 @@ export function StudioSessionFolder() {
   }, [sessionId, loadAll]);
 
   const hasProcessingJob = jobs.some((j) => (j.status ?? "completed") === "processing");
+  const completedJobCount = jobs.filter(
+    (j) => (j.status ?? "completed") === "completed",
+  ).length;
   const isSessionClosed = session?.status === "closed";
+  const shareDisabled =
+    !isSessionClosed || hasProcessingJob || completedJobCount < 1;
   const exportProcessing = session?.exportStatus === "processing";
   const exportReady = session?.exportStatus === "ready";
   const exportFailed = session?.exportStatus === "failed";
@@ -604,7 +582,8 @@ export function StudioSessionFolder() {
   }, [sessionId, exportProcessing, rawExportProcessing, loadSession]);
 
   const handleCloseShareModal = useCallback(() => {
-    setShareModalKind(null);
+    setShareModalOpen(false);
+    setShareError(null);
     setShareCopied(false);
     if (shareCopyResetRef.current) {
       clearTimeout(shareCopyResetRef.current);
@@ -613,9 +592,9 @@ export function StudioSessionFolder() {
   }, []);
 
   const handleCopyShareLink = useCallback(async () => {
-    if (!shareDisplayedUrl) return;
+    if (!shareUrl) return;
     try {
-      await navigator.clipboard.writeText(shareDisplayedUrl);
+      await navigator.clipboard.writeText(shareUrl);
       setShareCopied(true);
       if (shareCopyResetRef.current) {
         clearTimeout(shareCopyResetRef.current);
@@ -627,7 +606,34 @@ export function StudioSessionFolder() {
     } catch {
       setShareCopied(false);
     }
-  }, [shareDisplayedUrl]);
+  }, [shareUrl]);
+
+  const handleShareClick = useCallback(async () => {
+    if (!sessionId || shareDisabled) return;
+    setShareCopied(false);
+    setShareError(null);
+    setShareModalOpen(true);
+    setSharingSession(true);
+    setShareUrl("");
+    try {
+      let token =
+        typeof session?.shareToken === "string" && session.shareToken.trim()
+          ? session.shareToken.trim()
+          : null;
+      if (!token) {
+        token = await ensureSessionShareToken(sessionId);
+        setSession((prev) =>
+          prev ? { ...prev, shareToken: token } : prev,
+        );
+      }
+      const url = absoluteSharedSessionUrl(window.location.origin, token);
+      setShareUrl(url);
+    } catch (e) {
+      setShareError(e instanceof Error ? e.message : "Failed to create share link");
+    } finally {
+      setSharingSession(false);
+    }
+  }, [sessionId, shareDisabled, session?.shareToken]);
 
   const handleDownloadPick = useCallback(
     (kind: ExportKind) => {
@@ -657,11 +663,6 @@ export function StudioSessionFolder() {
       session?.rawExportExpiresAt,
     ],
   );
-
-  const handleSharePick = useCallback((kind: ExportKind) => {
-    setShareCopied(false);
-    setShareModalKind(kind);
-  }, []);
 
   const removePending = useCallback((clientId: string) => {
     setPendingUploads((rows) => rows.filter((r) => r.clientId !== clientId));
@@ -1006,7 +1007,9 @@ export function StudioSessionFolder() {
                     setEditing(true);
                   }}
                   onDownloadPick={handleDownloadPick}
-                  onSharePick={handleSharePick}
+                  shareDisabled={shareDisabled}
+                  sharingSession={sharingSession}
+                  onShareClick={() => void handleShareClick()}
                 />
                 <SessionSummaryCard
                   session={session}
@@ -1160,11 +1163,12 @@ export function StudioSessionFolder() {
           isSubmitting={closingSession}
         />
 
-        <StudioExportShareModal
-          kind={shareModalKind}
-          url={shareDisplayedUrl}
+        <SessionShareModal
+          open={shareModalOpen}
+          url={shareUrl}
           copied={shareCopied}
-          rawDaysLeft={rawDaysLeft}
+          shareError={shareError}
+          loading={sharingSession}
           onClose={handleCloseShareModal}
           onCopyLink={() => void handleCopyShareLink()}
         />
