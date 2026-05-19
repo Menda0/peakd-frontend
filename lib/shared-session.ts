@@ -5,12 +5,21 @@ export type PublicSharedSessionWave = {
   originalFilename: string;
   createdAt: string;
   thumbnailUrls: string[];
+  thumbnailUrl: string | null;
   videoUrl: string;
+  processedDownloadUrl: string;
+  hasOriginal: boolean;
+  originalDownloadUrl: string | null;
 };
 
 export type PublicSharedSession = {
+  shareToken: string;
   partnerName: string | null;
   partnerAvatarUrl: string | null;
+  exports: {
+    processedReady: boolean;
+    processedExportStatus: string;
+  };
   session: {
     sessionDate: string;
     sessionTime: string;
@@ -35,6 +44,22 @@ function apiBase(): string {
 
 export function sharedSessionPagePath(shareToken: string): string {
   return `/share/sessions/${encodeURIComponent(shareToken)}`;
+}
+
+export function sharedSessionZipDownloadPath(shareToken: string): string {
+  return `/api/public/shared-sessions/${encodeURIComponent(shareToken)}/export/download`;
+}
+
+/** Trigger browser download for a presigned URL (processed or original clip). */
+export function downloadFromUrl(url: string, filename: string): void {
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.rel = "noopener";
+  anchor.target = "_blank";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
 }
 
 export function absoluteSharedSessionUrl(
