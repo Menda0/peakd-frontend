@@ -3,23 +3,14 @@ export function PostHeader({
   authorAvatarUrl,
   partnerUpload,
   location,
-  sessionDate,
-  sessionTime,
   timeAgo,
 }: {
   authorName: string;
   authorAvatarUrl?: string | null;
   partnerUpload?: boolean;
   location: string;
-  sessionDate?: string;
-  sessionTime?: string;
   timeAgo: string;
 }) {
-  const metaParts = [
-    location,
-    sessionDate && sessionTime ? `${sessionDate} · ${sessionTime}` : null,
-    timeAgo,
-  ].filter(Boolean);
   return (
     <div className="flex items-start gap-3">
       {authorAvatarUrl ? (
@@ -41,7 +32,9 @@ export function PostHeader({
             </span>
           ) : null}
         </div>
-        <p className="text-xs text-zinc-500">{metaParts.join(" · ")}</p>
+        <p className="text-xs text-zinc-500">
+          {location} · {timeAgo}
+        </p>
       </div>
     </div>
   );

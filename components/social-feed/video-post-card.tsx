@@ -32,8 +32,6 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
         authorAvatarUrl={post.authorAvatarUrl}
         partnerUpload={post.isPartnerUpload}
         location={post.location}
-        sessionDate={post.session.sessionDate}
-        sessionTime={post.session.sessionTime}
         timeAgo={timeLabel}
       />
       {isProcessing ? (
@@ -68,7 +66,7 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
           className="mt-3"
         />
       )}
-      <PostSessionInfo session={post.session} />
+      <PostSessionInfo sessionSummary={post.sessionSummary} session={post.session} />
       <PostActionsBar likes={post.likes} comments={post.comments} shares={post.shares} />
     </article>
   );

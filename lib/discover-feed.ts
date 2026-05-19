@@ -54,6 +54,7 @@ export type DiscoverFeedPost = {
   authorAvatarUrl: string | null;
   isPartnerUpload: boolean;
   location: string;
+  sessionSummary: string;
   timeAgo: string;
   createdAt: string;
   session: DiscoverFeedSession;
@@ -82,6 +83,39 @@ function formatLocationLabel(location: DiscoverFeedLocation): string {
   return `${location.regionName}, ${country}`;
 }
 
+/** Spot and region for the session line below the video (e.g. "Morena, Costa da Caparica"). */
+export function formatSessionLocationLabel(location: DiscoverFeedLocation): string {
+  const spot = location.spotName?.trim();
+  const region = location.regionName?.trim();
+  if (spot && region) return `${spot}, ${region}`;
+  if (spot) return spot;
+  if (region) return region;
+  return formatLocationLabel(location);
+}
+
+export function formatSessionTimeRange(
+  sessionTime: string,
+  durationMinutes: number,
+): string {
+  const match = /^(\d{2}):(\d{2})$/.exec(sessionTime.trim());
+  if (!match) return sessionTime;
+  const startTotal = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+  const endTotal = (startTotal + durationMinutes) % (24 * 60);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const fmt = (total: number) =>
+    `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
+  return `${fmt(startTotal)}-${fmt(endTotal)}`;
+}
+
+export function formatSessionSummary(
+  location: DiscoverFeedLocation,
+  session: DiscoverFeedSession,
+): string {
+  const place = formatSessionLocationLabel(location);
+  const timeRange = formatSessionTimeRange(session.sessionTime, session.durationMinutes);
+  return `${place} · ${session.sessionDate} · ${timeRange}`;
+}
+
 export function discoverItemToPost(
   item: DiscoverFeedItem,
   timeAgo: string,
@@ -93,6 +127,7 @@ export function discoverItemToPost(
     authorAvatarUrl: item.author.avatarUrl,
     isPartnerUpload: item.uploadSource === "studio",
     location: formatLocationLabel(item.location),
+    sessionSummary: formatSessionSummary(item.location, item.session),
     timeAgo,
     createdAt: item.createdAt,
     session: item.session,
