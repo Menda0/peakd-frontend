@@ -29,16 +29,6 @@ function pathMatchesOrChild(href: string, pathname: string): boolean {
   return p === h || p.startsWith(`${h}/`);
 }
 
-function isStudioRoot(studioHref: string, pathname: string): boolean {
-  return pathMatches(studioHref, pathname);
-}
-
-function isStudioSubpath(studioHref: string, pathname: string): boolean {
-  const p = normalizePathname(pathname);
-  const h = normalizePathname(studioHref);
-  return p.startsWith(`${h}/`);
-}
-
 export function resolveMainNavItems(
   pathname: string,
   options: {
@@ -78,25 +68,18 @@ export function resolvePartnerNavItems(
     partnerProfileHref?: string;
   },
 ): ResolvedNavItem[] {
-  const studioRoot = isStudioRoot(options.studioHref, pathname);
-  const studioNested = isStudioSubpath(options.studioHref, pathname);
+  const studioActive = pathMatchesOrChild(options.studioHref, pathname);
   const profileActive = options.partnerProfileHref
     ? pathMatchesOrChild(options.partnerProfileHref, pathname)
     : false;
 
   return PARTNER_NAV_ITEMS.map((item) => {
     switch (item.id) {
-      case "dashboard":
-        return {
-          ...item,
-          href: options.studioHref,
-          active: studioRoot,
-        };
       case "studio":
         return {
           ...item,
           href: options.studioHref,
-          active: studioNested,
+          active: studioActive,
         };
       case "profile":
         return {

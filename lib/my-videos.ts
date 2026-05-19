@@ -1,6 +1,14 @@
 import { getApiBase } from "@/lib/api";
-import type { DiscoverFeedLocation, DiscoverFeedSession } from "@/lib/discover-feed";
-import { normalizeDiscoverSession } from "@/lib/discover-feed";
+import type {
+  DiscoverFeedLocation,
+  DiscoverFeedPost,
+  DiscoverFeedSession,
+} from "@/lib/discover-feed";
+import {
+  formatLocationLabel,
+  formatSessionSummary,
+  normalizeDiscoverSession,
+} from "@/lib/discover-feed";
 import { normalizeSurferProfile, type SurferProfile } from "@/lib/surfer-profile";
 
 export type { SurferProfile };
@@ -74,6 +82,43 @@ function normalizeMyVideoItem(raw: unknown): MyVideoItem | null {
     uploadSource: o.uploadSource === "studio" ? "studio" : "personal",
     surfer: normalizeSurferProfile(o.surfer),
     filmedBy: normalizeFilmedBy(o.filmedBy),
+  };
+}
+
+export function myVideoItemToPost(
+  item: MyVideoItem,
+  timeAgo: string,
+): DiscoverFeedPost {
+  const filmedBy = item.filmedBy;
+  const isPartnerClaim =
+    item.uploadSource === "studio" && filmedBy != null;
+  const authorName = isPartnerClaim
+    ? filmedBy.displayName?.trim() || "Partner"
+    : item.surfer?.displayName?.trim() || "You";
+  const authorAvatarUrl = isPartnerClaim
+    ? filmedBy.avatarUrl
+    : item.surfer?.avatarUrl ?? null;
+
+  return {
+    id: item.jobId,
+    authorName,
+    authorAvatarUrl,
+    isPartnerUpload: isPartnerClaim,
+    location: formatLocationLabel(item.location),
+    sessionSummary: formatSessionSummary(item.location, item.session),
+    timeAgo,
+    createdAt: item.createdAt,
+    session: item.session,
+    videoUrl: item.videoUrl,
+    thumbnailUrl: item.thumbnailUrl,
+    status: item.status,
+    claimStatus: item.claimStatus,
+    claimedByViewer: true,
+    isOwnUpload: item.uploadSource === "personal",
+    surfer: item.surfer,
+    likes: 0,
+    comments: 0,
+    shares: 0,
   };
 }
 

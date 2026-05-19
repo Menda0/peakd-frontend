@@ -1,14 +1,14 @@
+import { IconCalendar } from "@tabler/icons-react";
+
 export function PostHeader({
   authorName,
   authorAvatarUrl,
   partnerUpload,
-  location,
   timeAgo,
 }: {
   authorName: string;
   authorAvatarUrl?: string | null;
   partnerUpload?: boolean;
-  location: string;
   timeAgo: string;
 }) {
   return (
@@ -32,8 +32,9 @@ export function PostHeader({
             </span>
           ) : null}
         </div>
-        <p className="text-xs text-zinc-500">
-          {location} · {timeAgo}
+        <p className="flex items-center gap-1 text-xs text-zinc-500">
+          <IconCalendar className="size-3.5 shrink-0 opacity-80" aria-hidden />
+          <span>{timeAgo}</span>
         </p>
       </div>
     </div>

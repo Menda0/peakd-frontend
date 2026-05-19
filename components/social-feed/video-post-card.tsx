@@ -17,10 +17,12 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
   const [localSurfer, setLocalSurfer] = useState<SurferProfile | null>(null);
   const surfer = post.surfer ?? localSurfer;
   const isProcessing = post.status === "processing";
+  const isFailed = post.status === "failed";
   const timeLabel = isProcessing ? "Processing…" : post.timeAgo;
   const canClaim =
     post.isPartnerUpload &&
     !isProcessing &&
+    !isFailed &&
     post.claimStatus === "none" &&
     !post.claimedByViewer &&
     !claimedLocally;
@@ -31,7 +33,6 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
         authorName={post.authorName}
         authorAvatarUrl={post.authorAvatarUrl}
         partnerUpload={post.isPartnerUpload}
-        location={post.location}
         timeAgo={timeLabel}
       />
       {isProcessing ? (
@@ -39,6 +40,13 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
             <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-cyan-950/30 via-zinc-900 to-zinc-950">
             <Loader2Icon className="size-10 animate-spin text-primary" aria-hidden />
             <p className="text-sm text-zinc-400">Your video is being processed</p>
+          </div>
+        </div>
+      ) : isFailed ? (
+        <div className="relative mt-3 overflow-hidden rounded-2xl border border-red-500/20 bg-zinc-900/80">
+          <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-red-950/20 via-zinc-900 to-zinc-950 px-4 text-center">
+            <p className="text-sm font-medium text-red-300">Upload failed</p>
+            <p className="text-xs text-zinc-500">This video could not be processed.</p>
           </div>
         </div>
       ) : (
@@ -89,7 +97,6 @@ export function VideoPostCard({
     <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
       <PostHeader
         authorName={placeholder.authorName}
-        location={placeholder.location}
         timeAgo={placeholder.timeAgo}
       />
       <PostMedia duration={placeholder.duration} />

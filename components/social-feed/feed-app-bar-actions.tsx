@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { UploadVideoModal } from "@/components/social-feed/upload-video-modal";
+import { PeaksBalanceBar } from "@/components/peaks/peaks-balance-bar";
 import { useUserProfileModal } from "@/components/user-profile/user-profile-provider";
 import { englishCountryLabel } from "@/lib/countries";
 import { auth0DisplayNameHint } from "@/lib/user-profile";
@@ -72,6 +73,7 @@ export function FeedAppBarActions({
     <>
       <UploadVideoModal open={uploadOpen} onOpenChange={setUploadOpen} />
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+      <PeaksBalanceBar />
       <button
         type="button"
         className="inline-flex items-center gap-2 rounded-full bg-[#26c2c9] px-4 py-2 text-sm font-medium text-[#040A10] transition hover:bg-[#2dd4dc]"

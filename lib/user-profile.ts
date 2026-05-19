@@ -10,6 +10,7 @@ export type UserProfileDto = {
   homeRegionId: string | null;
   surfLevel: SurfLevel | null;
   avatarUrl: string | null;
+  peaksBalance: number;
 };
 
 export const USER_PROFILE_PATH = "users/me";
@@ -28,6 +29,11 @@ export function normalizeUserProfileDto(raw: unknown): UserProfileDto | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
   const surfLevel: SurfLevel | null = isSurfLevel(o.surfLevel) ? o.surfLevel : null;
+  const peaksRaw = o.peaksBalance;
+  const peaksBalance =
+    typeof peaksRaw === "number" && Number.isFinite(peaksRaw)
+      ? Math.max(0, peaksRaw)
+      : 0;
   return {
     displayName: o.displayName == null ? null : String(o.displayName),
     nickname: o.nickname == null ? null : String(o.nickname),
@@ -35,6 +41,7 @@ export function normalizeUserProfileDto(raw: unknown): UserProfileDto | null {
     homeRegionId: o.homeRegionId == null ? null : String(o.homeRegionId),
     surfLevel,
     avatarUrl: o.avatarUrl == null ? null : String(o.avatarUrl),
+    peaksBalance,
   };
 }
 

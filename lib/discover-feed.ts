@@ -72,7 +72,7 @@ export type DiscoverFeedPost = {
 
 export const PERSONAL_UPLOAD_EVENT = "peakd:personal-upload";
 
-function formatLocationLabel(location: DiscoverFeedLocation): string {
+export function formatLocationLabel(location: DiscoverFeedLocation): string {
   const country = englishCountryLabel(location.countryCode) ?? location.countryCode;
   if (location.isUndisclosed) {
     return `${location.regionName}, ${country}`;
