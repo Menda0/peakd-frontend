@@ -17,11 +17,8 @@ import {
 import { FormField } from "@/components/ui/form-fields";
 import { Input } from "@/components/ui/input";
 import { formInputClassName, formLabelClassName } from "@/lib/form-styles";
-import {
-  WAVE_TYPE_OPTIONS,
-  formatDurationMinutes,
-  type WaveTypeId,
-} from "@/lib/surf-session-waves";
+import { formatDurationMinutes, type WaveTypeId } from "@/lib/surf-session-waves";
+import { WaveTypeCheckboxGrid } from "@/components/studio/wave-type-checkbox-grid";
 import { cn } from "@/lib/utils";
 import {
   formatDiscountSummary,
@@ -31,6 +28,7 @@ import {
   defaultUndisclosedGeoForCountry,
   isUndisclosedRegionId,
 } from "@/lib/geo-undisclosed";
+import { validateWizardRegionDateStep } from "@/lib/studio-session-validation";
 
 export type StudioSessionFormValues = {
   countryCode: string | null;
@@ -46,33 +44,17 @@ export type StudioSessionFormValues = {
   commercialSettings?: CommercialSettings | null;
 };
 
-export function StudioSessionFormFields({
+export function StudioSessionRegionDateFields({
   values,
   onChange,
   idPrefix = "surf",
   includeUndisclosedOption = true,
-  showCommercialFields = false,
-  showCommercialToggle = true,
-  partnerCommercialDefaults = null,
 }: {
   values: StudioSessionFormValues;
   onChange: (patch: Partial<StudioSessionFormValues>) => void;
   idPrefix?: string;
-  /** Default “Undisclosed” region/spot for sessions that should not share location. */
   includeUndisclosedOption?: boolean;
-  showCommercialFields?: boolean;
-  /** When false, commercial is chosen earlier (e.g. new-session modal step). */
-  showCommercialToggle?: boolean;
-  partnerCommercialDefaults?: CommercialSettings | null;
 }) {
-  const toggleWaveType = (id: WaveTypeId) => {
-    onChange({
-      waveTypes: values.waveTypes.includes(id)
-        ? values.waveTypes.filter((x) => x !== id)
-        : [...values.waveTypes, id],
-    });
-  };
-
   return (
     <div className="flex flex-col gap-5">
       <CountryPicker
@@ -94,70 +76,93 @@ export function StudioSessionFormFields({
           });
         }}
       />
-      <RegionPicker
-        id={`${idPrefix}-region`}
-        countryCode={values.countryCode}
-        regionId={values.regionId}
-        includeUndisclosedOption={includeUndisclosedOption}
-        onRegionIdChange={(id) => {
-          if (!id) {
-            onChange({ regionId: null, spotId: null });
-            return;
-          }
-          const spotId =
-            includeUndisclosedOption &&
-            values.countryCode &&
-            isUndisclosedRegionId(id, values.countryCode)
-              ? defaultUndisclosedGeoForCountry(values.countryCode).spotId
-              : null;
-          onChange({ regionId: id, spotId });
-        }}
-      />
-      <SpotPicker
-        id={`${idPrefix}-spot`}
-        countryCode={values.countryCode}
-        regionId={values.regionId}
-        spotId={values.spotId}
-        includeUndisclosedOption={includeUndisclosedOption}
-        onSpotIdChange={(spotId) => onChange({ spotId })}
-      />
-
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <RegionPicker
+          id={`${idPrefix}-region`}
+          countryCode={values.countryCode}
+          regionId={values.regionId}
+          includeUndisclosedOption={includeUndisclosedOption}
+          onRegionIdChange={(id) => {
+            if (!id) {
+              onChange({ regionId: null, spotId: null });
+              return;
+            }
+            const spotId =
+              includeUndisclosedOption &&
+              values.countryCode &&
+              isUndisclosedRegionId(id, values.countryCode)
+                ? defaultUndisclosedGeoForCountry(values.countryCode).spotId
+                : null;
+            onChange({ regionId: id, spotId });
+          }}
+        />
+        <SpotPicker
+          id={`${idPrefix}-spot`}
+          countryCode={values.countryCode}
+          regionId={values.regionId}
+          spotId={values.spotId}
+          includeUndisclosedOption={includeUndisclosedOption}
+          onSpotIdChange={(spotId) => onChange({ spotId })}
+        />
+      </div>
       <SessionDatePicker
         id={`${idPrefix}-session-date`}
         label="Session date"
         valueYmd={values.sessionDate}
         onChangeYmd={(sessionDate) => onChange({ sessionDate })}
       />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FormField label="Session start" htmlFor={`${idPrefix}-session-time`}>
+          <Input
+            id={`${idPrefix}-session-time`}
+            type="time"
+            value={values.sessionTime}
+            onChange={(e) => onChange({ sessionTime: e.target.value })}
+            className={formInputClassName}
+          />
+        </FormField>
+        <FormField
+          label={`Duration (${formatDurationMinutes(values.durationMinutes)})`}
+          htmlFor={`${idPrefix}-duration`}
+          description="Minutes (15–1440)."
+        >
+          <Input
+            id={`${idPrefix}-duration`}
+            type="number"
+            min={15}
+            max={1440}
+            step={15}
+            value={values.durationMinutes}
+            onChange={(e) =>
+              onChange({ durationMinutes: parseInt(e.target.value, 10) || 0 })
+            }
+            className={formInputClassName}
+          />
+        </FormField>
+      </div>
+    </div>
+  );
+}
 
-      <FormField label="Session start time" htmlFor={`${idPrefix}-session-time`}>
-        <Input
-          id={`${idPrefix}-session-time`}
-          type="time"
-          value={values.sessionTime}
-          onChange={(e) => onChange({ sessionTime: e.target.value })}
-          className={formInputClassName}
-        />
-      </FormField>
+export function StudioSessionConditionsFields({
+  values,
+  onChange,
+  idPrefix = "surf",
+}: {
+  values: StudioSessionFormValues;
+  onChange: (patch: Partial<StudioSessionFormValues>) => void;
+  idPrefix?: string;
+}) {
+  const toggleWaveType = (id: WaveTypeId) => {
+    onChange({
+      waveTypes: values.waveTypes.includes(id)
+        ? values.waveTypes.filter((x) => x !== id)
+        : [...values.waveTypes, id],
+    });
+  };
 
-      <FormField
-        label={`Duration (${formatDurationMinutes(values.durationMinutes)})`}
-        htmlFor={`${idPrefix}-duration`}
-        description="Minutes in the water (15–1440)."
-      >
-        <Input
-          id={`${idPrefix}-duration`}
-          type="number"
-          min={15}
-          max={1440}
-          step={15}
-          value={values.durationMinutes}
-          onChange={(e) =>
-            onChange({ durationMinutes: parseInt(e.target.value, 10) || 0 })
-          }
-          className={formInputClassName}
-        />
-      </FormField>
-
+  return (
+    <div className="flex flex-col gap-5">
       <Field>
         <FieldLabel className={formLabelClassName}>Conditions rating</FieldLabel>
         <FieldDescription className="text-zinc-500">
@@ -205,35 +210,109 @@ export function StudioSessionFormFields({
         <FieldDescription className="text-zinc-500">
           Select all that match. You can pick multiple.
         </FieldDescription>
-        <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-3">
-          {WAVE_TYPE_OPTIONS.map((w) => {
-            const checked = values.waveTypes.includes(w.id);
-            const checkboxId = `${idPrefix}-wave-${w.id}`;
-            return (
-              <Field
-                key={w.id}
-                orientation="horizontal"
-                className="cursor-pointer rounded-md p-1 hover:bg-white/5"
-              >
-                <Checkbox
-                  id={checkboxId}
-                  checked={checked}
-                  onCheckedChange={() => toggleWaveType(w.id)}
-                />
-                <div className="min-w-0">
-                  <FieldLabel htmlFor={checkboxId} className="text-sm text-zinc-100">
-                    {w.title}
-                  </FieldLabel>
-                  <FieldDescription className="text-xs text-zinc-500">
-                    {w.description}
-                  </FieldDescription>
-                </div>
-              </Field>
-            );
-          })}
-        </div>
+        <WaveTypeCheckboxGrid
+          idPrefix={`${idPrefix}-wave`}
+          selected={values.waveTypes}
+          onToggle={toggleWaveType}
+        />
       </FieldSet>
+    </div>
+  );
+}
 
+export function StudioSessionCommercialPricingFields({
+  values,
+  onChange,
+  idPrefix = "surf",
+  partnerCommercialDefaults = null,
+}: {
+  values: StudioSessionFormValues;
+  onChange: (patch: Partial<StudioSessionFormValues>) => void;
+  idPrefix?: string;
+  partnerCommercialDefaults?: CommercialSettings | null;
+}) {
+  return (
+    <FieldSet className="gap-3">
+      <FieldDescription className="text-zinc-500">
+        On the discover feed, waves show snapshot images only. Surfers can claim for free or pay
+        Peaks to unlock video playback.
+      </FieldDescription>
+      <div className="space-y-3 rounded-lg border border-white/10 bg-white/[0.02] p-3">
+        {partnerCommercialDefaults && !values.customizeCommercialPricing ? (
+          <p className="text-xs text-zinc-400">
+            Using partner defaults: {formatDiscountSummary(partnerCommercialDefaults)}
+          </p>
+        ) : null}
+        {!partnerCommercialDefaults && !values.customizeCommercialPricing ? (
+          <p className="text-xs text-amber-400/90">
+            Set commercial pricing on your partner profile first, or customize below.
+          </p>
+        ) : null}
+        <Field orientation="horizontal" className="items-center gap-2">
+          <Checkbox
+            id={`${idPrefix}-commercial-custom`}
+            checked={values.customizeCommercialPricing === true}
+            onCheckedChange={(checked) =>
+              onChange({
+                customizeCommercialPricing: checked === true,
+                commercialSettings:
+                  checked === true
+                    ? values.commercialSettings ?? partnerCommercialDefaults
+                    : null,
+              })
+            }
+          />
+          <FieldLabel
+            htmlFor={`${idPrefix}-commercial-custom`}
+            className="text-sm text-zinc-100"
+          >
+            Customize pricing for this session
+          </FieldLabel>
+        </Field>
+        {values.customizeCommercialPricing && values.commercialSettings ? (
+          <CommercialSettingsFields
+            idPrefix={`${idPrefix}-commercial`}
+            values={values.commercialSettings}
+            onChange={(commercialSettings) => onChange({ commercialSettings })}
+          />
+        ) : null}
+      </div>
+    </FieldSet>
+  );
+}
+
+export function StudioSessionFormFields({
+  values,
+  onChange,
+  idPrefix = "surf",
+  includeUndisclosedOption = true,
+  showCommercialFields = false,
+  showCommercialToggle = true,
+  partnerCommercialDefaults = null,
+}: {
+  values: StudioSessionFormValues;
+  onChange: (patch: Partial<StudioSessionFormValues>) => void;
+  idPrefix?: string;
+  /** Default “Undisclosed” region/spot for sessions that should not share location. */
+  includeUndisclosedOption?: boolean;
+  showCommercialFields?: boolean;
+  /** When false, commercial is chosen earlier (e.g. new-session modal step). */
+  showCommercialToggle?: boolean;
+  partnerCommercialDefaults?: CommercialSettings | null;
+}) {
+  return (
+    <div className="flex flex-col gap-5">
+      <StudioSessionRegionDateFields
+        values={values}
+        onChange={onChange}
+        idPrefix={idPrefix}
+        includeUndisclosedOption={includeUndisclosedOption}
+      />
+      <StudioSessionConditionsFields
+        values={values}
+        onChange={onChange}
+        idPrefix={idPrefix}
+      />
       {showCommercialFields ? (
         <FieldSet className="gap-3">
           <FieldLegend className="text-sm font-medium text-zinc-200">
@@ -262,46 +341,12 @@ export function StudioSessionFormFields({
             </Field>
           ) : null}
           {values.isCommercial ? (
-            <div className="space-y-3 rounded-lg border border-white/10 bg-white/[0.02] p-3">
-              {partnerCommercialDefaults && !values.customizeCommercialPricing ? (
-                <p className="text-xs text-zinc-400">
-                  Using partner defaults: {formatDiscountSummary(partnerCommercialDefaults)}
-                </p>
-              ) : null}
-              {!partnerCommercialDefaults && !values.customizeCommercialPricing ? (
-                <p className="text-xs text-amber-400/90">
-                  Set commercial pricing on your partner profile first, or customize below.
-                </p>
-              ) : null}
-              <Field orientation="horizontal" className="items-center gap-2">
-                <Checkbox
-                  id={`${idPrefix}-commercial-custom`}
-                  checked={values.customizeCommercialPricing === true}
-                  onCheckedChange={(checked) =>
-                    onChange({
-                      customizeCommercialPricing: checked === true,
-                      commercialSettings:
-                        checked === true
-                          ? values.commercialSettings ?? partnerCommercialDefaults
-                          : null,
-                    })
-                  }
-                />
-                <FieldLabel
-                  htmlFor={`${idPrefix}-commercial-custom`}
-                  className="text-sm text-zinc-100"
-                >
-                  Customize pricing for this session
-                </FieldLabel>
-              </Field>
-              {values.customizeCommercialPricing && values.commercialSettings ? (
-                <CommercialSettingsFields
-                  idPrefix={`${idPrefix}-commercial`}
-                  values={values.commercialSettings}
-                  onChange={(commercialSettings) => onChange({ commercialSettings })}
-                />
-              ) : null}
-            </div>
+            <StudioSessionCommercialPricingFields
+              values={values}
+              onChange={onChange}
+              idPrefix={idPrefix}
+              partnerCommercialDefaults={partnerCommercialDefaults}
+            />
           ) : null}
         </FieldSet>
       ) : null}
@@ -312,18 +357,5 @@ export function StudioSessionFormFields({
 export function validateStudioSessionFormValues(
   values: StudioSessionFormValues,
 ): string | null {
-  if (!values.countryCode || !values.regionId || !values.spotId || !values.sessionDate) {
-    return "Country, region, spot, and date are required.";
-  }
-  if (!values.sessionTime || !/^([01]\d|2[0-3]):[0-5]\d$/.test(values.sessionTime)) {
-    return "Session time must be HH:mm (24-hour).";
-  }
-  if (
-    !Number.isInteger(values.durationMinutes) ||
-    values.durationMinutes < 15 ||
-    values.durationMinutes > 1440
-  ) {
-    return "Duration must be between 15 and 1440 minutes.";
-  }
-  return null;
+  return validateWizardRegionDateStep(values);
 }

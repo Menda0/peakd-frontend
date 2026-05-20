@@ -19,17 +19,17 @@ const MODE_OPTIONS: ModeOption[] = [
     id: "free",
     icon: Waves,
     title: "Free Surf",
-    description: "A standard session with no Peaks charges.",
+    description: "Standard session on Discover with no Peaks charges.",
     objective:
-      "Share waves on Discover for free claims. Surfers can claim and watch your videos without paying you.",
+      "Share waves on Discover for free claims. Surfers claim and watch your videos without paying Peaks to unlock.",
   },
   {
     id: "commercial",
     icon: BadgeDollarSign,
     title: "Commercial",
-    description: "Commercially sold assets and wave videos on Discover.",
+    description: "Commercial session selling Discover waves for Peaks.",
     objective:
-      "Waves show snapshot carousels until unlocked. Set Peaks pricing so surfers buy & claim waves or sponsors unlock video for someone who already claimed.",
+      "Waves show snapshot carousels until unlocked. Set Peaks pricing for buy & claim, or sponsor unlock for claimants.",
   },
 ];
 
@@ -41,7 +41,7 @@ export function StudioSessionModeChoice({
   onChange: (mode: StudioSessionMode) => void;
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-3 sm:grid-cols-2 sm:items-stretch">
       {MODE_OPTIONS.map((option) => {
         const selected = value === option.id;
         const Icon = option.icon;
@@ -52,7 +52,7 @@ export function StudioSessionModeChoice({
             onClick={() => onChange(option.id)}
             aria-pressed={selected}
             className={cn(
-              "flex flex-col gap-3 rounded-xl border p-4 text-left transition-colors",
+              "flex h-full flex-col gap-3 rounded-xl border p-4 text-left transition-colors",
               "hover:border-primary/40 hover:bg-white/[0.04]",
               selected
                 ? "border-primary/50 bg-primary/10 ring-1 ring-primary/30"
@@ -69,16 +69,18 @@ export function StudioSessionModeChoice({
               >
                 <Icon className="size-5" strokeWidth={1.75} />
               </span>
-              <div className="min-w-0 space-y-1">
+              <div className="min-w-0 flex-1 space-y-1">
                 <span className="block text-sm font-semibold text-zinc-50">
                   {option.title}
                 </span>
-                <span className="block text-xs leading-relaxed text-zinc-500">
+                <span className="block min-h-10 text-xs leading-relaxed text-zinc-500">
                   {option.description}
                 </span>
               </div>
             </div>
-            <p className="text-xs leading-relaxed text-zinc-400">{option.objective}</p>
+            <p className="min-h-[3.75rem] flex-1 text-xs leading-relaxed text-zinc-400">
+              {option.objective}
+            </p>
           </button>
         );
       })}
