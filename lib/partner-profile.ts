@@ -1,5 +1,10 @@
 /** DTO aligned with Nest `GET/PATCH /partners/me` and `POST /partners/me/avatar` (multipart). */
 
+import {
+  normalizeCommercialSettings,
+  type CommercialSettings,
+} from "@/lib/commercial-settings";
+
 export const PARTNER_TYPES = ["videographer", "coach", "other"] as const;
 export type PartnerType = (typeof PARTNER_TYPES)[number];
 
@@ -9,6 +14,7 @@ export type PartnerProfileDto = {
   descriptionMarkdown: string | null;
   avatarUrl: string | null;
   countryCode: string | null;
+  commercialSettings: CommercialSettings | null;
 };
 
 export type PartnerProfilePatch = Partial<PartnerProfileDto>;
@@ -30,5 +36,6 @@ export function normalizePartnerProfileDto(raw: unknown): PartnerProfileDto | nu
     descriptionMarkdown: o.descriptionMarkdown == null ? null : String(o.descriptionMarkdown),
     avatarUrl: o.avatarUrl == null ? null : String(o.avatarUrl),
     countryCode: o.countryCode == null ? null : String(o.countryCode),
+    commercialSettings: normalizeCommercialSettings(o.commercialSettings),
   };
 }

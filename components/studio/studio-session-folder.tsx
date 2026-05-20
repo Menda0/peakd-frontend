@@ -31,6 +31,12 @@ import {
   validateStudioSessionFormValues,
   type StudioSessionFormValues,
 } from "@/components/studio/studio-session-form-fields";
+import {
+  DEFAULT_COMMERCIAL_SETTINGS,
+  normalizeCommercialSettings,
+  type CommercialSettings,
+} from "@/lib/commercial-settings";
+import { normalizePartnerProfileDto } from "@/lib/partner-profile";
 import type { WaveTypeId } from "@/lib/surf-session-waves";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 import {
@@ -165,9 +171,13 @@ type SessionDetail = {
   rawExportErrorMessage?: string | null;
   rawExportExpiresAt?: string | null;
   shareToken?: string | null;
+  isCommercial?: boolean;
+  commercialSettings?: CommercialSettings | null;
+  effectiveCommercialSettings?: CommercialSettings | null;
 };
 
 function sessionToFormValues(session: SessionDetail): StudioSessionFormValues {
+  const sessionCommercial = normalizeCommercialSettings(session.commercialSettings);
   return {
     countryCode: session.countryCode,
     regionId: session.regionId,
@@ -177,6 +187,24 @@ function sessionToFormValues(session: SessionDetail): StudioSessionFormValues {
     durationMinutes: session.durationMinutes ?? 120,
     conditionsRating: session.conditionsRating,
     waveTypes: (session.waveTypes ?? []) as WaveTypeId[],
+    isCommercial: session.isCommercial === true,
+    customizeCommercialPricing: Boolean(sessionCommercial),
+    commercialSettings: sessionCommercial ?? DEFAULT_COMMERCIAL_SETTINGS,
+  };
+}
+
+function commercialFieldsForApi(values: StudioSessionFormValues): {
+  isCommercial?: boolean;
+  commercialSettings?: CommercialSettings | null;
+} {
+  if (!values.isCommercial) {
+    return { isCommercial: false, commercialSettings: null };
+  }
+  return {
+    isCommercial: true,
+    commercialSettings: values.customizeCommercialPricing
+      ? values.commercialSettings ?? null
+      : null,
   };
 }
 
@@ -447,6 +475,23 @@ export function StudioSessionFolder() {
   const [publishError, setPublishError] = useState<string | null>(null);
 
   const isPartner = (user as { isPartner?: boolean } | undefined)?.isPartner === true;
+  const [partnerCommercialDefaults, setPartnerCommercialDefaults] =
+    useState<CommercialSettings | null>(null);
+
+  useEffect(() => {
+    if (!isPartner) return;
+    void (async () => {
+      try {
+        const base = getApiBase();
+        const res = await fetch(`${base}/partners/me`, { credentials: "include" });
+        if (!res.ok) return;
+        const dto = normalizePartnerProfileDto(await res.json());
+        setPartnerCommercialDefaults(dto?.commercialSettings ?? null);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [isPartner]);
 
   const loadSession = useCallback(async () => {
     if (!sessionId) return;
@@ -886,6 +931,8 @@ export function StudioSessionFolder() {
                     onChange={(patch) =>
                       setEditValues((prev) => (prev ? { ...prev, ...patch } : prev))
                     }
+                    showCommercialFields={isPartner}
+                    partnerCommercialDefaults={partnerCommercialDefaults}
                   />
                   {editError ? (
                     <p className="text-sm text-red-400">{editError}</p>
@@ -933,6 +980,7 @@ export function StudioSessionFolder() {
                                 durationMinutes: editValues.durationMinutes,
                                 conditionsRating: editValues.conditionsRating,
                                 waveTypes: editValues.waveTypes,
+                                ...commercialFieldsForApi(editValues),
                               }),
                             },
                           );

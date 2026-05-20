@@ -18,6 +18,7 @@ export default async function StudioPage({
   const nav = await getSocialFeedNavProps(session);
 
   let defaultCountryCode: string | null = null;
+  let partnerCommercialDefaults = null;
   if (nav.showPartnerNav) {
     const profileRes = await getPartnerProfileAction();
     if (profileRes.ok) {
@@ -25,6 +26,7 @@ export default async function StudioPage({
       if (cc && /^[A-Z]{2}$/.test(cc)) {
         defaultCountryCode = cc;
       }
+      partnerCommercialDefaults = profileRes.data.commercialSettings;
     }
   }
 
@@ -35,7 +37,11 @@ export default async function StudioPage({
       userName={session.user.name}
       userEmail={session.user.email}
     >
-      <StudioSessionsDashboard defaultCountryCode={defaultCountryCode} />
+      <StudioSessionsDashboard
+        defaultCountryCode={defaultCountryCode}
+        showCommercialFields={nav.showPartnerNav}
+        partnerCommercialDefaults={partnerCommercialDefaults}
+      />
     </SocialFeedLayout>
   );
 }

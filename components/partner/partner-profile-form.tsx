@@ -31,6 +31,11 @@ import {
 import type { PartnerProfileDto, PartnerType } from "@/lib/partner-profile";
 import { isPartnerType } from "@/lib/partner-profile";
 import { cn } from "@/lib/utils";
+import { CommercialSettingsFields } from "@/components/commercial/commercial-settings-fields";
+import {
+  DEFAULT_COMMERCIAL_SETTINGS,
+  type CommercialSettings,
+} from "@/lib/commercial-settings";
 import { PartnerCountryCombobox } from "./partner-country-combobox";
 import { PartnerMarkdownField } from "./partner-markdown-field";
 
@@ -54,6 +59,7 @@ function formStateFromDto(
   descriptionMarkdown: string;
   avatarUrl: string | null;
   countryCode: string | null;
+  commercialSettings: CommercialSettings;
 } {
   const name =
     dto.partnerName != null && dto.partnerName.trim() !== ""
@@ -65,6 +71,7 @@ function formStateFromDto(
     descriptionMarkdown: dto.descriptionMarkdown ?? "",
     avatarUrl: dto.avatarUrl,
     countryCode: dto.countryCode,
+    commercialSettings: dto.commercialSettings ?? DEFAULT_COMMERCIAL_SETTINGS,
   };
 }
 
@@ -98,6 +105,9 @@ export function PartnerProfileForm({
   const [descriptionMarkdown, setDescriptionMarkdown] = useState(seed?.descriptionMarkdown ?? "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(seed?.avatarUrl ?? null);
   const [countryCode, setCountryCode] = useState<string | null>(seed?.countryCode ?? null);
+  const [commercialSettings, setCommercialSettings] = useState<CommercialSettings>(
+    seed?.commercialSettings ?? DEFAULT_COMMERCIAL_SETTINGS,
+  );
 
   const applyDto = useCallback(
     (dto: PartnerProfileDto) => {
@@ -107,6 +117,7 @@ export function PartnerProfileForm({
       setDescriptionMarkdown(next.descriptionMarkdown);
       setAvatarUrl(next.avatarUrl);
       setCountryCode(next.countryCode);
+      setCommercialSettings(next.commercialSettings);
     },
     [defaultPartnerName],
   );
@@ -166,6 +177,7 @@ export function PartnerProfileForm({
         partnerType,
         descriptionMarkdown: descriptionMarkdown.trim() || null,
         countryCode,
+        commercialSettings,
       });
       if (!r.ok) {
         throw new Error(r.error);
@@ -319,6 +331,19 @@ export function PartnerProfileForm({
         <FormField label="Description">
           <PartnerMarkdownField value={descriptionMarkdown} onChange={setDescriptionMarkdown} />
         </FormField>
+
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+          <h3 className="text-sm font-semibold text-zinc-100">Commercial</h3>
+          <p className="mt-1 mb-4 text-xs text-zinc-500">
+            Default pricing for commercial studio sessions. Surfers can claim waves for free or
+            buy to unlock video playback.
+          </p>
+          <CommercialSettingsFields
+            idPrefix={`${idPrefix}-commercial`}
+            values={commercialSettings}
+            onChange={setCommercialSettings}
+          />
+        </div>
       </CardContent>
       <CardFooter className="flex flex-col items-stretch gap-3 border-t border-white/10 bg-white/[0.03] p-4 text-zinc-100 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-h-5 text-sm">

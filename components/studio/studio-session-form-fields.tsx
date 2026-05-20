@@ -5,6 +5,7 @@ import { RegionPicker } from "@/components/pickers/region-picker";
 import { SpotPicker } from "@/components/pickers/spot-picker";
 import { SessionDatePicker } from "@/components/studio/session-date-picker";
 import { Button } from "@/components/ui/button";
+import { CommercialSettingsFields } from "@/components/commercial/commercial-settings-fields";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Field,
@@ -23,6 +24,10 @@ import {
 } from "@/lib/surf-session-waves";
 import { cn } from "@/lib/utils";
 import {
+  formatDiscountSummary,
+  type CommercialSettings,
+} from "@/lib/commercial-settings";
+import {
   defaultUndisclosedGeoForCountry,
   isUndisclosedRegionId,
 } from "@/lib/geo-undisclosed";
@@ -36,6 +41,9 @@ export type StudioSessionFormValues = {
   durationMinutes: number;
   conditionsRating: number | null;
   waveTypes: WaveTypeId[];
+  isCommercial?: boolean;
+  customizeCommercialPricing?: boolean;
+  commercialSettings?: CommercialSettings | null;
 };
 
 export function StudioSessionFormFields({
@@ -43,12 +51,16 @@ export function StudioSessionFormFields({
   onChange,
   idPrefix = "surf",
   includeUndisclosedOption = true,
+  showCommercialFields = false,
+  partnerCommercialDefaults = null,
 }: {
   values: StudioSessionFormValues;
   onChange: (patch: Partial<StudioSessionFormValues>) => void;
   idPrefix?: string;
   /** Default “Undisclosed” region/spot for sessions that should not share location. */
   includeUndisclosedOption?: boolean;
+  showCommercialFields?: boolean;
+  partnerCommercialDefaults?: CommercialSettings | null;
 }) {
   const toggleWaveType = (id: WaveTypeId) => {
     onChange({
@@ -218,6 +230,75 @@ export function StudioSessionFormFields({
           })}
         </div>
       </FieldSet>
+
+      {showCommercialFields ? (
+        <FieldSet className="gap-3">
+          <FieldLegend className="text-sm font-medium text-zinc-200">
+            Commercial session
+          </FieldLegend>
+          <FieldDescription className="text-zinc-500">
+            On the discover feed, waves show snapshot images only. Surfers can claim for free or
+            pay Peaks to unlock video playback.
+          </FieldDescription>
+          <Field orientation="horizontal" className="items-center gap-2">
+            <Checkbox
+              id={`${idPrefix}-commercial`}
+              checked={values.isCommercial === true}
+              onCheckedChange={(checked) =>
+                onChange({
+                  isCommercial: checked === true,
+                  customizeCommercialPricing: checked === true ? values.customizeCommercialPricing : false,
+                })
+              }
+            />
+            <FieldLabel htmlFor={`${idPrefix}-commercial`} className="text-sm text-zinc-100">
+              Mark as commercial
+            </FieldLabel>
+          </Field>
+          {values.isCommercial ? (
+            <div className="space-y-3 rounded-lg border border-white/10 bg-white/[0.02] p-3">
+              {partnerCommercialDefaults && !values.customizeCommercialPricing ? (
+                <p className="text-xs text-zinc-400">
+                  Using partner defaults: {formatDiscountSummary(partnerCommercialDefaults)}
+                </p>
+              ) : null}
+              {!partnerCommercialDefaults && !values.customizeCommercialPricing ? (
+                <p className="text-xs text-amber-400/90">
+                  Set commercial pricing on your partner profile first, or customize below.
+                </p>
+              ) : null}
+              <Field orientation="horizontal" className="items-center gap-2">
+                <Checkbox
+                  id={`${idPrefix}-commercial-custom`}
+                  checked={values.customizeCommercialPricing === true}
+                  onCheckedChange={(checked) =>
+                    onChange({
+                      customizeCommercialPricing: checked === true,
+                      commercialSettings:
+                        checked === true
+                          ? values.commercialSettings ?? partnerCommercialDefaults
+                          : null,
+                    })
+                  }
+                />
+                <FieldLabel
+                  htmlFor={`${idPrefix}-commercial-custom`}
+                  className="text-sm text-zinc-100"
+                >
+                  Customize pricing for this session
+                </FieldLabel>
+              </Field>
+              {values.customizeCommercialPricing && values.commercialSettings ? (
+                <CommercialSettingsFields
+                  idPrefix={`${idPrefix}-commercial`}
+                  values={values.commercialSettings}
+                  onChange={(commercialSettings) => onChange({ commercialSettings })}
+                />
+              ) : null}
+            </div>
+          ) : null}
+        </FieldSet>
+      ) : null}
     </div>
   );
 }

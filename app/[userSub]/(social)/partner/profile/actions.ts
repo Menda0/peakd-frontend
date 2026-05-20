@@ -1,6 +1,7 @@
 "use server";
 
 import { auth0 } from "@/lib/auth0";
+import type { CommercialSettings } from "@/lib/commercial-settings";
 import {
   PARTNER_AVATAR_UPLOAD_PATH,
   PARTNER_PROFILE_PATH,
@@ -89,6 +90,7 @@ export type PatchPartnerProfileInput = {
   descriptionMarkdown?: string | null;
   countryCode?: string | null;
   avatarKey?: string | null;
+  commercialSettings?: CommercialSettings | null;
 };
 
 export async function patchPartnerProfileAction(

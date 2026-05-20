@@ -15,6 +15,7 @@ import {
   initialStudioSessionFormValues,
   normalizeCountryCode,
 } from "@/lib/studio-session-form-defaults";
+import type { CommercialSettings } from "@/lib/commercial-settings";
 import type { WaveTypeId } from "@/lib/surf-session-waves";
 import {
   StudioSessionFormFields,
@@ -22,17 +23,36 @@ import {
   type StudioSessionFormValues,
 } from "@/components/studio/studio-session-form-fields";
 
+function commercialFieldsForApi(values: StudioSessionFormValues): {
+  isCommercial?: boolean;
+  commercialSettings?: CommercialSettings | null;
+} {
+  if (!values.isCommercial) {
+    return { isCommercial: false, commercialSettings: null };
+  }
+  return {
+    isCommercial: true,
+    commercialSettings: values.customizeCommercialPricing
+      ? values.commercialSettings ?? null
+      : null,
+  };
+}
+
 export function StudioNewSessionDialog({
   open,
   onOpenChange,
   onCreated,
   defaultCountryCode = null,
+  showCommercialFields = false,
+  partnerCommercialDefaults = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: (sessionId: string) => void;
   /** Pre-select country (e.g. partner profile country). */
   defaultCountryCode?: string | null;
+  showCommercialFields?: boolean;
+  partnerCommercialDefaults?: CommercialSettings | null;
 }) {
   const countryCode = normalizeCountryCode(defaultCountryCode);
   const [values, setValues] = useState<StudioSessionFormValues>(() =>
@@ -89,6 +109,7 @@ export function StudioNewSessionDialog({
           durationMinutes: values.durationMinutes,
           conditionsRating: values.conditionsRating,
           waveTypes: values.waveTypes as WaveTypeId[],
+          ...commercialFieldsForApi(values),
         }),
       });
       if (!res.ok) {
@@ -130,7 +151,12 @@ export function StudioNewSessionDialog({
         </CardHeader>
 
         <CardContent className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          <StudioSessionFormFields values={values} onChange={patchValues} />
+          <StudioSessionFormFields
+            values={values}
+            onChange={patchValues}
+            showCommercialFields={showCommercialFields}
+            partnerCommercialDefaults={partnerCommercialDefaults}
+          />
         </CardContent>
 
         <CardFooter className="shrink-0 flex-col items-stretch gap-3 border-white/10 bg-[#0a1218] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
