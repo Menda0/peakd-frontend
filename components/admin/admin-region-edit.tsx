@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -128,9 +129,11 @@ export function AdminRegionEdit({
     setRegionBusy(false);
     if (!res.ok) {
       setError(res.error);
+      toast.error(res.error);
       return;
     }
     applyRegion(res.data);
+    toast.success("Region saved");
   };
 
   const handleDisableRegion = async () => {
@@ -206,11 +209,13 @@ export function AdminRegionEdit({
     setSpotRowBusy(null);
     if (!res.ok) {
       setError(res.error);
+      toast.error(res.error);
       return;
     }
     cancelSpotEdit();
     const spotsRes = await listAdminSpotsAction(regionId);
     if (spotsRes.ok) setSpots(spotsRes.data);
+    toast.success("Spot saved");
   };
 
   const handleDisableSpot = async (spotId: string) => {

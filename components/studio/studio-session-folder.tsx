@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -1012,10 +1013,12 @@ export function StudioSessionFolder() {
                           });
                           setEditing(false);
                           setEditValues(null);
+                          toast.success("Session saved");
                         } catch (e) {
-                          setEditError(
-                            e instanceof Error ? e.message : "Failed to save session",
-                          );
+                          const message =
+                            e instanceof Error ? e.message : "Failed to save session";
+                          setEditError(message);
+                          toast.error(message);
                         } finally {
                           setSavingEdit(false);
                         }

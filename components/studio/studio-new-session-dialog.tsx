@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -119,10 +120,13 @@ export function StudioNewSessionDialog({
       if (!data.sessionId) {
         throw new Error("Invalid response");
       }
+      toast.success("Session created");
       close();
       onCreated(data.sessionId);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to create session");
+      const message = e instanceof Error ? e.message : "Failed to create session";
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
