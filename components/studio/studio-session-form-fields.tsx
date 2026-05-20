@@ -52,6 +52,7 @@ export function StudioSessionFormFields({
   idPrefix = "surf",
   includeUndisclosedOption = true,
   showCommercialFields = false,
+  showCommercialToggle = true,
   partnerCommercialDefaults = null,
 }: {
   values: StudioSessionFormValues;
@@ -60,6 +61,8 @@ export function StudioSessionFormFields({
   /** Default “Undisclosed” region/spot for sessions that should not share location. */
   includeUndisclosedOption?: boolean;
   showCommercialFields?: boolean;
+  /** When false, commercial is chosen earlier (e.g. new-session modal step). */
+  showCommercialToggle?: boolean;
   partnerCommercialDefaults?: CommercialSettings | null;
 }) {
   const toggleWaveType = (id: WaveTypeId) => {
@@ -234,27 +237,30 @@ export function StudioSessionFormFields({
       {showCommercialFields ? (
         <FieldSet className="gap-3">
           <FieldLegend className="text-sm font-medium text-zinc-200">
-            Commercial session
+            {showCommercialToggle ? "Commercial session" : "Commercial pricing"}
           </FieldLegend>
           <FieldDescription className="text-zinc-500">
             On the discover feed, waves show snapshot images only. Surfers can claim for free or
             pay Peaks to unlock video playback.
           </FieldDescription>
-          <Field orientation="horizontal" className="items-center gap-2">
-            <Checkbox
-              id={`${idPrefix}-commercial`}
-              checked={values.isCommercial === true}
-              onCheckedChange={(checked) =>
-                onChange({
-                  isCommercial: checked === true,
-                  customizeCommercialPricing: checked === true ? values.customizeCommercialPricing : false,
-                })
-              }
-            />
-            <FieldLabel htmlFor={`${idPrefix}-commercial`} className="text-sm text-zinc-100">
-              Mark as commercial
-            </FieldLabel>
-          </Field>
+          {showCommercialToggle ? (
+            <Field orientation="horizontal" className="items-center gap-2">
+              <Checkbox
+                id={`${idPrefix}-commercial`}
+                checked={values.isCommercial === true}
+                onCheckedChange={(checked) =>
+                  onChange({
+                    isCommercial: checked === true,
+                    customizeCommercialPricing:
+                      checked === true ? values.customizeCommercialPricing : false,
+                  })
+                }
+              />
+              <FieldLabel htmlFor={`${idPrefix}-commercial`} className="text-sm text-zinc-100">
+                Mark as commercial
+              </FieldLabel>
+            </Field>
+          ) : null}
           {values.isCommercial ? (
             <div className="space-y-3 rounded-lg border border-white/10 bg-white/[0.02] p-3">
               {partnerCommercialDefaults && !values.customizeCommercialPricing ? (

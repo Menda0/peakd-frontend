@@ -23,6 +23,10 @@ import {
   validateStudioSessionFormValues,
   type StudioSessionFormValues,
 } from "@/components/studio/studio-session-form-fields";
+import {
+  StudioSessionModeChoice,
+  type StudioSessionMode,
+} from "@/components/studio/studio-session-mode-choice";
 
 function commercialFieldsForApi(values: StudioSessionFormValues): {
   isCommercial?: boolean;
@@ -59,20 +63,26 @@ export function StudioNewSessionDialog({
   const [values, setValues] = useState<StudioSessionFormValues>(() =>
     initialStudioSessionFormValues({ countryCode }),
   );
+  const [step, setStep] = useState<"mode" | "form">(showCommercialFields ? "mode" : "form");
+  const [sessionMode, setSessionMode] = useState<StudioSessionMode | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const reset = useCallback(() => {
     setValues(initialStudioSessionFormValues({ countryCode }));
+    setStep(showCommercialFields ? "mode" : "form");
+    setSessionMode(null);
     setError(null);
-  }, [countryCode]);
+  }, [countryCode, showCommercialFields]);
 
   useEffect(() => {
     if (open) {
       setValues(initialStudioSessionFormValues({ countryCode }));
+      setStep(showCommercialFields ? "mode" : "form");
+      setSessionMode(null);
       setError(null);
     }
-  }, [open, countryCode]);
+  }, [open, countryCode, showCommercialFields]);
 
   const close = () => {
     reset();
@@ -83,9 +93,28 @@ export function StudioNewSessionDialog({
     setValues((prev) => ({ ...prev, ...patch }));
   };
 
+  const continueFromMode = () => {
+    if (!sessionMode) return;
+    setValues((prev) => ({
+      ...prev,
+      isCommercial: sessionMode === "commercial",
+      customizeCommercialPricing: false,
+      commercialSettings: null,
+    }));
+    setStep("form");
+    setError(null);
+  };
+
+  const backToMode = () => {
+    setStep("mode");
+    setError(null);
+  };
+
   if (!open) {
     return null;
   }
+
+  const onModeStep = showCommercialFields && step === "mode";
 
   const submit = async () => {
     const validationError = validateStudioSessionFormValues(values);
@@ -147,20 +176,28 @@ export function StudioNewSessionDialog({
         className="flex max-h-[min(90dvh,720px)] w-full max-w-lg flex-col gap-0 overflow-hidden border-white/10 bg-[#0a1218] py-0 text-zinc-100 ring-white/10"
       >
         <CardHeader className="shrink-0 space-y-1 border-b border-white/10 px-6 pt-6 pb-4">
-          <CardTitle id="new-session-title">New surf session</CardTitle>
+          <CardTitle id="new-session-title">
+            {onModeStep ? "Session type" : "New surf session"}
+          </CardTitle>
           <CardDescription className="text-zinc-500">
-            Pick where and when you surfed. Use Undisclosed if you prefer not to share
-            the exact region or spot.
+            {onModeStep
+              ? "Choose how this session will appear on Discover and whether surfers pay Peaks."
+              : "Pick where and when you surfed. Use Undisclosed if you prefer not to share the exact region or spot."}
           </CardDescription>
         </CardHeader>
 
         <CardContent className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          <StudioSessionFormFields
-            values={values}
-            onChange={patchValues}
-            showCommercialFields={showCommercialFields}
-            partnerCommercialDefaults={partnerCommercialDefaults}
-          />
+          {onModeStep ? (
+            <StudioSessionModeChoice value={sessionMode} onChange={setSessionMode} />
+          ) : (
+            <StudioSessionFormFields
+              values={values}
+              onChange={patchValues}
+              showCommercialFields={showCommercialFields && values.isCommercial === true}
+              showCommercialToggle={false}
+              partnerCommercialDefaults={partnerCommercialDefaults}
+            />
+          )}
         </CardContent>
 
         <CardFooter className="shrink-0 flex-col items-stretch gap-3 border-white/10 bg-[#0a1218] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -170,23 +207,57 @@ export function StudioNewSessionDialog({
             <span className="hidden sm:block sm:flex-1" aria-hidden />
           )}
           <div className="flex shrink-0 justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="border-white/15 bg-transparent text-zinc-200"
-              disabled={submitting}
-              onClick={close}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-              disabled={submitting}
-              onClick={() => void submit()}
-            >
-              {submitting ? "Creating…" : "Create session"}
-            </Button>
+            {onModeStep ? (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-white/15 bg-transparent text-zinc-200"
+                  onClick={close}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  disabled={!sessionMode}
+                  onClick={continueFromMode}
+                >
+                  Continue
+                </Button>
+              </>
+            ) : (
+              <>
+                {showCommercialFields ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-white/15 bg-transparent text-zinc-200"
+                    disabled={submitting}
+                    onClick={backToMode}
+                  >
+                    Back
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-white/15 bg-transparent text-zinc-200"
+                  disabled={submitting}
+                  onClick={close}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  disabled={submitting}
+                  onClick={() => void submit()}
+                >
+                  {submitting ? "Creating…" : "Create session"}
+                </Button>
+              </>
+            )}
           </div>
         </CardFooter>
       </Card>
