@@ -1,21 +1,30 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useUser } from "@auth0/nextjs-auth0/client";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CommercialWaveActions } from "@/components/social-feed/commercial-wave-actions";
 import { PostHeader } from "@/components/social-feed/post-header";
 import { PostMedia } from "@/components/social-feed/post-media";
 import { PostSurferBadge } from "@/components/social-feed/post-surfer-badge";
+import { VideoPostCard } from "@/components/social-feed/video-post-card";
+import { WaveSnapshotCarousel } from "@/components/social-feed/wave-snapshot-carousel";
 import { VideoThumbnailStrip } from "@/components/studio/session-summary-card";
 import { SharedSessionSurferList } from "@/components/share/shared-session-surfer-list";
 import {
   SharedSessionWaveClaim,
   type SharedSessionWaveClaimState,
 } from "@/components/share/shared-session-wave-claim";
+import type { DiscoverFeedPost } from "@/lib/discover-feed";
 import type { PublicSharedSession, PublicSharedSessionWave } from "@/lib/shared-session";
 import {
   downloadFromUrl,
+  fetchAuthenticatedSharedSession,
+  sharedSessionToFeedLocation,
+  sharedSessionToFeedSession,
+  sharedSessionWaveToDiscoverPost,
   sharedSessionZipDownloadPath,
 } from "@/lib/shared-session";
 import { formatDurationMinutes, waveTypeTitle } from "@/lib/surf-session-waves";
@@ -76,6 +85,9 @@ function OriginalAvailableTag() {
 }
 
 function WaveDownloadActions({ wave }: { wave: PublicSharedSessionWave }) {
+  if (!wave.processedDownloadUrl) {
+    return null;
+  }
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button
@@ -85,7 +97,7 @@ function WaveDownloadActions({ wave }: { wave: PublicSharedSessionWave }) {
         className="h-8 border-white/15 bg-transparent text-zinc-200"
         onClick={() =>
           downloadFromUrl(
-            wave.processedDownloadUrl,
+            wave.processedDownloadUrl!,
             downloadFilename(wave.originalFilename, ".webm"),
           )
         }
@@ -111,6 +123,28 @@ function WaveDownloadActions({ wave }: { wave: PublicSharedSessionWave }) {
         </Button>
       ) : null}
     </div>
+  );
+}
+
+function SharedSessionCommercialFeedTab({
+  posts,
+  onUnlockChanged,
+}: {
+  posts: DiscoverFeedPost[];
+  onUnlockChanged: () => void;
+}) {
+  return (
+    <ul className="flex flex-col gap-4">
+      {posts.map((post) => (
+        <li key={post.id}>
+          <VideoPostCard
+            post={post}
+            onCommercialPurchased={onUnlockChanged}
+            onCommercialClaimed={onUnlockChanged}
+          />
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -142,7 +176,7 @@ function SharedSessionFeedTab({
             />
             <PostMedia
               thumbnailUrl={wave.thumbnailUrl}
-              videoUrl={wave.videoUrl}
+              videoUrl={wave.videoUrl ?? undefined}
               surfer={waveState.surfer}
               claimWave={
                 waveState.surfer ? undefined : (
@@ -187,6 +221,8 @@ function SharedSessionFilesTab({
   resolveWave,
   onToggleWave,
   onWaveClaimed,
+  onUnlockChanged,
+  commercialPostsByJobId,
 }: {
   data: PublicSharedSession;
   partnerName: string;
@@ -195,6 +231,8 @@ function SharedSessionFilesTab({
   resolveWave: (wave: PublicSharedSessionWave) => SharedSessionWaveClaimState;
   onToggleWave: (jobId: string) => void;
   onWaveClaimed: (jobId: string, surfer: SurferProfile) => void;
+  onUnlockChanged: () => void;
+  commercialPostsByJobId: Map<string, DiscoverFeedPost>;
 }) {
   return (
     <ul className="flex flex-col gap-3">
@@ -244,27 +282,63 @@ function SharedSessionFilesTab({
                   </div>
                 </div>
                 {isActive ? (
-                  <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black">
-                    <video
-                      key={wave.videoUrl}
-                      className="aspect-video w-full"
-                      controls
-                      playsInline
-                      preload="metadata"
-                      src={wave.videoUrl}
-                    />
-                    {waveState.surfer ? (
-                      <PostSurferBadge surfer={waveState.surfer} />
-                    ) : (
-                      <SharedSessionWaveClaim
-                        variant="overlay"
-                        wave={waveState}
-                        partnerName={partnerName}
-                        location={location}
-                        onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
+                  data.isCommercial ? (
+                    <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black">
+                      {wave.videoUnlockedByViewer && wave.videoUrl ? (
+                        <video
+                          key={wave.videoUrl}
+                          className="aspect-video w-full"
+                          controls
+                          playsInline
+                          preload="metadata"
+                          src={wave.videoUrl}
+                        />
+                      ) : (
+                        <WaveSnapshotCarousel
+                          urls={
+                            wave.snapshotUrls.length > 0
+                              ? wave.snapshotUrls
+                              : wave.thumbnailUrls
+                          }
+                        />
+                      )}
+                      {waveState.surfer ? (
+                        <div className="absolute top-3 left-3 z-10">
+                          <PostSurferBadge surfer={waveState.surfer} />
+                        </div>
+                      ) : null}
+                      {commercialPostsByJobId.has(wave.jobId) ? (
+                        <CommercialWaveActions
+                          post={commercialPostsByJobId.get(wave.jobId)!}
+                          overlay
+                          onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
+                          onPurchased={onUnlockChanged}
+                        />
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black">
+                      <video
+                        key={wave.videoUrl ?? undefined}
+                        className="aspect-video w-full"
+                        controls
+                        playsInline
+                        preload="metadata"
+                        src={wave.videoUrl ?? undefined}
                       />
-                    )}
-                  </div>
+                      {waveState.surfer ? (
+                        <PostSurferBadge surfer={waveState.surfer} />
+                      ) : (
+                        <SharedSessionWaveClaim
+                          variant="overlay"
+                          wave={waveState}
+                          partnerName={partnerName}
+                          location={location}
+                          onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
+                        />
+                      )}
+                    </div>
+                  )
                 ) : null}
               </CardContent>
             </Card>
@@ -281,12 +355,35 @@ type WaveClaimOverride = {
   claimStatus: "claimed";
 };
 
-export function SharedSessionView({ data }: { data: PublicSharedSession }) {
+export function SharedSessionView({
+  data: initialData,
+  shareToken,
+}: {
+  data: PublicSharedSession;
+  shareToken: string;
+}) {
+  const { user, isLoading: authLoading } = useUser();
+  const [data, setData] = useState(initialData);
   const [tab, setTab] = useState<ViewTab>("feed");
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [claimOverrides, setClaimOverrides] = useState<
     Record<string, WaveClaimOverride>
   >({});
+
+  const refreshSession = useCallback(async () => {
+    if (!user) return;
+    try {
+      const next = await fetchAuthenticatedSharedSession(shareToken);
+      setData(next);
+    } catch {
+      /* keep current view */
+    }
+  }, [user, shareToken]);
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+    void refreshSession();
+  }, [authLoading, user, refreshSession]);
   const waveLabels = data.session.waveTypes.map((id) => waveTypeTitle(id));
   const waveCount = data.waves.length;
   const waveCountLabel =
@@ -321,6 +418,29 @@ export function SharedSessionView({ data }: { data: PublicSharedSession }) {
   const toggleWave = (jobId: string) => {
     setActiveJobId((current) => (current === jobId ? null : jobId));
   };
+
+  const feedLocation = useMemo(() => sharedSessionToFeedLocation(data.session), [data.session]);
+  const feedSession = useMemo(() => sharedSessionToFeedSession(data.session), [data.session]);
+
+  const commercialPosts = useMemo(() => {
+    if (!data.isCommercial) return [];
+    return data.waves.map((wave) =>
+      sharedSessionWaveToDiscoverPost(wave, {
+        partnerName,
+        partnerAvatarUrl: data.partnerAvatarUrl,
+        location: feedLocation,
+        feedSession,
+      }),
+    );
+  }, [data.isCommercial, data.waves, data.partnerAvatarUrl, partnerName, feedLocation, feedSession]);
+
+  const commercialPostsByJobId = useMemo(() => {
+    const map = new Map<string, DiscoverFeedPost>();
+    for (const post of commercialPosts) {
+      map.set(post.id, post);
+    }
+    return map;
+  }, [commercialPosts]);
 
   const sessionSurfers = useMemo(() => {
     const surfers: SurferProfile[] = [];
@@ -452,6 +572,11 @@ export function SharedSessionView({ data }: { data: PublicSharedSession }) {
 
         {waveCount === 0 ? (
           <p className="text-sm text-zinc-500">No waves in this session yet.</p>
+        ) : tab === "feed" && data.isCommercial ? (
+          <SharedSessionCommercialFeedTab
+            posts={commercialPosts}
+            onUnlockChanged={() => void refreshSession()}
+          />
         ) : tab === "feed" ? (
           <SharedSessionFeedTab
             data={data}
@@ -469,6 +594,8 @@ export function SharedSessionView({ data }: { data: PublicSharedSession }) {
             resolveWave={resolveWave}
             onToggleWave={toggleWave}
             onWaveClaimed={handleWaveClaimed}
+            onUnlockChanged={() => void refreshSession()}
+            commercialPostsByJobId={commercialPostsByJobId}
           />
         )}
       </section>

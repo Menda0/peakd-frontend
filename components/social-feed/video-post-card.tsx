@@ -15,7 +15,15 @@ import { PostHeader } from "./post-header";
 import { PostMedia } from "./post-media";
 import { PostSurferBadge } from "./post-surfer-badge";
 
-function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
+function DiscoverVideoPostCard({
+  post,
+  onCommercialClaimed,
+  onCommercialPurchased,
+}: {
+  post: DiscoverFeedPost;
+  onCommercialClaimed?: (surfer: SurferProfile) => void;
+  onCommercialPurchased?: () => void;
+}) {
   const [claimedLocally, setClaimedLocally] = useState(false);
   const [localSurfer, setLocalSurfer] = useState<SurferProfile | null>(null);
   const surfer = post.surfer ?? localSurfer;
@@ -88,9 +96,11 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
             onClaimed={(claimedSurfer) => {
               setClaimedLocally(true);
               setLocalSurfer(claimedSurfer);
+              onCommercialClaimed?.(claimedSurfer);
             }}
             onPurchased={() => {
               setClaimedLocally(true);
+              onCommercialPurchased?.();
             }}
           />
         </div>
@@ -128,12 +138,22 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
 export function VideoPostCard({
   post,
   placeholder,
+  onCommercialClaimed,
+  onCommercialPurchased,
 }: {
   post?: DiscoverFeedPost;
   placeholder?: PlaceholderPost;
+  onCommercialClaimed?: (surfer: SurferProfile) => void;
+  onCommercialPurchased?: () => void;
 }) {
   if (post) {
-    return <DiscoverVideoPostCard post={post} />;
+    return (
+      <DiscoverVideoPostCard
+        post={post}
+        onCommercialClaimed={onCommercialClaimed}
+        onCommercialPurchased={onCommercialPurchased}
+      />
+    );
   }
 
   if (!placeholder) return null;
