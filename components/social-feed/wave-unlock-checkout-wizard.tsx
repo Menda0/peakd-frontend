@@ -32,9 +32,17 @@ import {
 } from "@/lib/billing";
 import type { SurferProfile } from "@/lib/surfer-profile";
 import {
+  formatSessionLocationLabel,
+  formatSessionSummary,
+  type DiscoverFeedLocation,
+} from "@/lib/discover-feed";
+import {
   addToWaveUnlockCart,
+  cartTotalPeaks,
+  useWaveUnlockCart,
   type WaveUnlockCartIntent,
 } from "@/lib/wave-unlock-cart";
+import { PostSessionInfo } from "./post-session-info";
 import {
   buildUnlockWizardSteps,
   intentLabel,
@@ -101,6 +109,89 @@ function PartnerBlock({ ctx }: { ctx: WaveCheckoutContext }) {
             {description}
           </p>
         ) : null}
+      </div>
+    </div>
+  );
+}
+
+function CheckoutSummaryPanel({
+  intent,
+  breakdown,
+  communityFeePercent,
+  cartPeaks,
+  cartItemCount,
+  combinedTotal,
+}: {
+  intent: WaveUnlockCartIntent;
+  breakdown: WaveCheckoutContext["buyClaim"];
+  communityFeePercent: number;
+  cartPeaks: number;
+  cartItemCount: number;
+  combinedTotal: number;
+}) {
+  return (
+    <div className="space-y-4">
+      {cartItemCount > 0 ? (
+        <dl className="space-y-2 rounded-xl border border-white/10 bg-white/[0.02] p-4 text-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            Your cart
+          </p>
+          <div className="flex justify-between gap-4 text-zinc-400">
+            <dt>
+              Cart ({cartItemCount} {cartItemCount === 1 ? "item" : "items"})
+            </dt>
+            <dd className="text-zinc-200">{cartPeaks} Peaks</dd>
+          </div>
+        </dl>
+      ) : null}
+
+      <dl className="space-y-2 rounded-xl border border-white/10 p-4 text-sm">
+        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+          This video
+        </p>
+        <div className="flex justify-between gap-4">
+          <dt className="text-zinc-500">Unlocking as</dt>
+          <dd className="text-right text-zinc-100">{intentLabel(intent)}</dd>
+        </div>
+        <div className="flex justify-between gap-4 text-zinc-400">
+          <dt>List price</dt>
+          <dd>{breakdown.listPricePeaks} Peaks</dd>
+        </div>
+        {intent === "buy_claim" ? (
+          <div className="flex justify-between gap-4 text-zinc-400">
+            <dt>Volume discount</dt>
+            <dd className="text-right text-emerald-400/90">
+              {breakdown.discountPercent > 0
+                ? `${breakdown.discountPercent}% (−${breakdown.discountPeaksSaved} Peaks)`
+                : "None (1 wave)"}
+            </dd>
+          </div>
+        ) : (
+          <div className="flex justify-between gap-4 text-zinc-500">
+            <dt>Volume discount</dt>
+            <dd className="text-right text-xs">Not applicable for sponsors</dd>
+          </div>
+        )}
+        <div className="flex justify-between gap-4 text-zinc-400">
+          <dt>Wave price after discount</dt>
+          <dd>{breakdown.basePeaks} Peaks</dd>
+        </div>
+        <div className="flex justify-between gap-4 text-zinc-400">
+          <dt>Community fee ({communityFeePercent}%)</dt>
+          <dd>{breakdown.communityFeePeaks} Peaks</dd>
+        </div>
+        <div className="flex justify-between gap-4 border-t border-white/10 pt-2 font-semibold text-zinc-50">
+          <dt>This video total</dt>
+          <dd>{breakdown.totalPeaks} Peaks</dd>
+        </div>
+      </dl>
+
+      <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-center">
+        <p className="text-xs text-zinc-500">Combined total (cart + this video)</p>
+        <p className="text-2xl font-semibold text-zinc-50">{combinedTotal} Peaks</p>
+        <p className="mt-1 text-xs text-zinc-500">
+          Buy now charges {breakdown.totalPeaks} Peaks for this video only.
+        </p>
       </div>
     </div>
   );
@@ -176,16 +267,12 @@ export function WaveUnlockCheckoutWizard({
     ? `/share/sessions/${encodeURIComponent(ctx.shareToken)}`
     : null;
 
-  const showSessionStep = otherWaves.length > 0 || Boolean(sessionViewHref);
+  const { items: cartItems } = useWaveUnlockCart();
 
   const steps = useMemo(
     () =>
-      buildUnlockWizardSteps(
-        ctx?.canBuyClaim ?? false,
-        ctx?.canSponsor ?? false,
-        showSessionStep,
-      ),
-    [ctx?.canBuyClaim, ctx?.canSponsor, showSessionStep],
+      buildUnlockWizardSteps(ctx?.canBuyClaim ?? false, ctx?.canSponsor ?? false),
+    [ctx?.canBuyClaim, ctx?.canSponsor],
   );
 
   const communityLocation = useMemo(
@@ -255,6 +342,17 @@ export function WaveUnlockCheckoutWizard({
     if (!ctx || !intent) return null;
     return intent === "buy_claim" ? ctx.buyClaim : ctx.sponsor;
   }, [ctx, intent]);
+
+  const cartSummary = useMemo(() => {
+    const others = cartItems.filter((i) => i.jobId !== activeJobId);
+    const cartPeaks = cartTotalPeaks(others);
+    const thisTotal = breakdown?.totalPeaks ?? 0;
+    return {
+      cartPeaks,
+      cartItemCount: others.length,
+      combinedTotal: cartPeaks + thisTotal,
+    };
+  }, [cartItems, activeJobId, breakdown?.totalPeaks]);
 
   useEffect(() => {
     if (stepIndex >= steps.length) {
@@ -451,8 +549,18 @@ export function WaveUnlockCheckoutWizard({
                   </div>
                 ) : null}
 
-                {currentStep === "session" && intent ? (
+                {currentStep === "session" && intent && ctx ? (
                   <div className="space-y-4">
+                    <PostSessionInfo
+                      sessionSummary={formatSessionSummary(
+                        ctx.location as DiscoverFeedLocation,
+                        ctx.sessionSummary,
+                      )}
+                      session={ctx.sessionSummary}
+                    />
+                    <p className="text-xs text-zinc-500">
+                      {formatSessionLocationLabel(ctx.location as DiscoverFeedLocation)}
+                    </p>
                     {otherWaves.length > 0 ? (
                       <ul className="grid gap-2 sm:grid-cols-3">
                         {otherWaves.map((wave) => {
@@ -525,32 +633,14 @@ export function WaveUnlockCheckoutWizard({
                 ) : null}
 
                 {currentStep === "summary" && breakdown && intent ? (
-                  <div className="space-y-4">
-                    <dl className="space-y-2 rounded-xl border border-white/10 p-4 text-sm">
-                      <div className="flex justify-between gap-4">
-                        <dt className="text-zinc-500">Unlocking as</dt>
-                        <dd className="text-right text-zinc-100">{intentLabel(intent)}</dd>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <dt className="text-zinc-500">Partner</dt>
-                        <dd className="text-right text-zinc-100">{ctx.partner.partnerName}</dd>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <dt className="text-zinc-500">Wave price</dt>
-                        <dd className="text-zinc-200">{breakdown.basePeaks} Peaks</dd>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <dt className="text-zinc-500">
-                          Community fee ({ctx.communityFeePercent}%)
-                        </dt>
-                        <dd className="text-zinc-200">{breakdown.communityFeePeaks} Peaks</dd>
-                      </div>
-                      <div className="flex justify-between gap-4 border-t border-white/10 pt-2 font-semibold text-zinc-50">
-                        <dt>Total due</dt>
-                        <dd>{breakdown.totalPeaks} Peaks</dd>
-                      </div>
-                    </dl>
-                  </div>
+                  <CheckoutSummaryPanel
+                    intent={intent}
+                    breakdown={breakdown}
+                    communityFeePercent={ctx.communityFeePercent}
+                    cartPeaks={cartSummary.cartPeaks}
+                    cartItemCount={cartSummary.cartItemCount}
+                    combinedTotal={cartSummary.combinedTotal}
+                  />
                 ) : null}
               </div>
             ) : null}

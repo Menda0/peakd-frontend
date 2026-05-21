@@ -37,14 +37,10 @@ export const WAVE_UNLOCK_STEP_META: Record<
 export function buildUnlockWizardSteps(
   canBuyClaim: boolean,
   canSponsor: boolean,
-  showSessionStep: boolean,
 ): WaveUnlockWizardStepId[] {
   let steps: WaveUnlockWizardStepId[] = [...WAVE_UNLOCK_WIZARD_STEPS];
   if (!canBuyClaim || !canSponsor) {
     steps = steps.filter((id) => id !== "role");
-  }
-  if (!showSessionStep) {
-    steps = steps.filter((id) => id !== "session");
   }
   return steps;
 }

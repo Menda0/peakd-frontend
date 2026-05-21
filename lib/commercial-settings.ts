@@ -52,6 +52,9 @@ export type CheckoutPeaksBreakdown = {
   communityFeePeaks: number;
   totalPeaks: number;
   communityFeePercent: number;
+  listPricePeaks: number;
+  discountPercent: number;
+  discountPeaksSaved: number;
 };
 
 export function computeCheckoutTotal(basePeaks: number): CheckoutPeaksBreakdown {
@@ -65,6 +68,9 @@ export function computeCheckoutTotal(basePeaks: number): CheckoutPeaksBreakdown 
     communityFeePeaks,
     totalPeaks: base + communityFeePeaks,
     communityFeePercent: COMMUNITY_FEE_PERCENT,
+    listPricePeaks: base,
+    discountPercent: 0,
+    discountPeaksSaved: 0,
   };
 }
 

@@ -54,6 +54,9 @@ function normalizeBreakdown(raw: unknown): CheckoutPeaksBreakdown | null {
   const communityFeePeaks = Number(o.communityFeePeaks);
   const totalPeaks = Number(o.totalPeaks);
   const communityFeePercent = Number(o.communityFeePercent);
+  const listPricePeaks = Number(o.listPricePeaks);
+  const discountPercent = Number(o.discountPercent);
+  const discountPeaksSaved = Number(o.discountPeaksSaved);
   if (
     !Number.isFinite(basePeaks) ||
     !Number.isFinite(communityFeePeaks) ||
@@ -61,13 +64,22 @@ function normalizeBreakdown(raw: unknown): CheckoutPeaksBreakdown | null {
   ) {
     return null;
   }
+  const base = Math.round(basePeaks);
+  const list = Number.isFinite(listPricePeaks) ? Math.round(listPricePeaks) : base;
   return {
-    basePeaks: Math.round(basePeaks),
+    basePeaks: base,
     communityFeePeaks: Math.round(communityFeePeaks),
     totalPeaks: Math.round(totalPeaks),
     communityFeePercent: Number.isFinite(communityFeePercent)
       ? Math.round(communityFeePercent)
       : 20,
+    listPricePeaks: list,
+    discountPercent: Number.isFinite(discountPercent)
+      ? Math.round(discountPercent)
+      : 0,
+    discountPeaksSaved: Number.isFinite(discountPeaksSaved)
+      ? Math.round(discountPeaksSaved)
+      : Math.max(0, list - base),
   };
 }
 
