@@ -41,6 +41,7 @@ export type WaveCheckoutContext = {
   canClaim: boolean;
   canBuyClaim: boolean;
   canSponsor: boolean;
+  claimStatus: "none" | "auto" | "claimed";
   buyClaim: CheckoutPeaksBreakdown;
   sponsor: CheckoutPeaksBreakdown;
   surfer: SurferProfile | null;
@@ -187,6 +188,10 @@ export async function fetchWaveCheckoutContext(
     canClaim: o.canClaim === true,
     canBuyClaim: o.canBuyClaim === true,
     canSponsor: o.canSponsor === true,
+    claimStatus:
+      o.claimStatus === "claimed" || o.claimStatus === "auto"
+        ? o.claimStatus
+        : "none",
     buyClaim,
     sponsor,
     surfer: normalizeSurferProfile(o.surfer),

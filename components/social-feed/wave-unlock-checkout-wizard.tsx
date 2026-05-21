@@ -269,11 +269,7 @@ export function WaveUnlockCheckoutWizard({
 
   const { items: cartItems } = useWaveUnlockCart();
 
-  const steps = useMemo(
-    () =>
-      buildUnlockWizardSteps(ctx?.canBuyClaim ?? false, ctx?.canSponsor ?? false),
-    [ctx?.canBuyClaim, ctx?.canSponsor],
-  );
+  const steps = useMemo(() => buildUnlockWizardSteps(), []);
 
   const communityLocation = useMemo(
     () => (ctx ? communityFundLocationLabel(ctx.location) : ""),
@@ -303,14 +299,7 @@ export function WaveUnlockCheckoutWizard({
         setCtx(data);
         setActiveJobId(id);
         if (!options?.preserveStep) {
-          const pickRole = data.canBuyClaim && data.canSponsor;
-          if (pickRole) {
-            setIntent(null);
-          } else {
-            setIntent(
-              data.canBuyClaim ? "buy_claim" : data.canSponsor ? "sponsor" : null,
-            );
-          }
+          setIntent(null);
           setStepIndex(0);
         }
       } catch (e) {
@@ -367,8 +356,16 @@ export function WaveUnlockCheckoutWizard({
 
   const goNext = () => {
     if (currentStep === "role") {
+      if (intent === "buy_claim" && !ctx?.canBuyClaim) {
+        setError("Claim video is not available for this wave.");
+        return;
+      }
+      if (intent === "sponsor" && !ctx?.canSponsor) {
+        setError("Sponsor unlock is not available for this wave.");
+        return;
+      }
       if (intent !== "buy_claim" && intent !== "sponsor") {
-        setError("Choose how you are unlocking this video.");
+        setError("Choose Sponsor or Claim video to continue.");
         return;
       }
     }
@@ -483,50 +480,63 @@ export function WaveUnlockCheckoutWizard({
               <div className="space-y-4">
                 {currentStep === "role" ? (
                   <div className="grid gap-3 sm:grid-cols-2 sm:items-stretch">
-                    {ctx.canBuyClaim ? (
-                      <button
-                        type="button"
-                        aria-pressed={intent === "buy_claim"}
-                        onClick={() => setIntent("buy_claim")}
-                        className={cn(
-                          "flex h-full flex-col gap-3 rounded-xl border p-4 text-left transition-colors",
-                          intent === "buy_claim"
-                            ? "border-primary/50 bg-primary/10 ring-1 ring-primary/30"
-                            : "border-white/10 bg-white/[0.02] hover:border-primary/40",
-                        )}
-                      >
-                        <span className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
-                          <User className="size-4 text-primary" aria-hidden />
-                          I am the surfer — buy and claim
+                    <button
+                      type="button"
+                      aria-pressed={intent === "sponsor"}
+                      disabled={!ctx.canSponsor}
+                      onClick={() => setIntent("sponsor")}
+                      className={cn(
+                        "flex h-full flex-col gap-3 rounded-xl border p-4 text-left transition-colors",
+                        intent === "sponsor"
+                          ? "border-primary/50 bg-primary/10 ring-1 ring-primary/30"
+                          : "border-white/10 bg-white/[0.02] hover:border-primary/40",
+                        !ctx.canSponsor && "cursor-not-allowed opacity-50 hover:border-white/10",
+                      )}
+                    >
+                      <span className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
+                        <HeartHandshake className="size-4 text-primary" aria-hidden />
+                        Sponsor
+                      </span>
+                      <span className="text-xs leading-relaxed text-zinc-500">
+                        {ctx.claimStatus === "claimed"
+                          ? `You pay to unlock the full video for ${surferName}. You are not the surfer on this wave and do not take the claim.`
+                          : "You pay to unlock the full video for yourself without claiming the wave. A surfer can still claim it later."}
+                      </span>
+                      {!ctx.canSponsor ? (
+                        <span className="text-xs text-zinc-600">
+                          {ctx.claimStatus === "claimed"
+                            ? "You already claimed this wave — choose Claim video to buy and unlock as the surfer."
+                            : "This wave is already unlocked."}
                         </span>
-                        <span className="text-xs leading-relaxed text-zinc-500">
-                          Pay Peaks to buy this wave and claim it for yourself. You become the
-                          surfer on the video and unlock full playback in My Videos.
+                      ) : null}
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={intent === "buy_claim"}
+                      disabled={!ctx.canBuyClaim}
+                      onClick={() => setIntent("buy_claim")}
+                      className={cn(
+                        "flex h-full flex-col gap-3 rounded-xl border p-4 text-left transition-colors",
+                        intent === "buy_claim"
+                          ? "border-primary/50 bg-primary/10 ring-1 ring-primary/30"
+                          : "border-white/10 bg-white/[0.02] hover:border-primary/40",
+                        !ctx.canBuyClaim && "cursor-not-allowed opacity-50 hover:border-white/10",
+                      )}
+                    >
+                      <span className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
+                        <User className="size-4 text-primary" aria-hidden />
+                        Claim video
+                      </span>
+                      <span className="text-xs leading-relaxed text-zinc-500">
+                        You buy the video and claim it for yourself. You are the surfer on this
+                        wave and get full playback in My Videos.
+                      </span>
+                      {!ctx.canBuyClaim ? (
+                        <span className="text-xs text-zinc-600">
+                          Buy and claim is not available for this wave.
                         </span>
-                      </button>
-                    ) : null}
-                    {ctx.canSponsor ? (
-                      <button
-                        type="button"
-                        aria-pressed={intent === "sponsor"}
-                        onClick={() => setIntent("sponsor")}
-                        className={cn(
-                          "flex h-full flex-col gap-3 rounded-xl border p-4 text-left transition-colors",
-                          intent === "sponsor"
-                            ? "border-primary/50 bg-primary/10 ring-1 ring-primary/30"
-                            : "border-white/10 bg-white/[0.02] hover:border-primary/40",
-                        )}
-                      >
-                        <span className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
-                          <HeartHandshake className="size-4 text-primary" aria-hidden />
-                          I am a sponsor — buy unlock only
-                        </span>
-                        <span className="text-xs leading-relaxed text-zinc-500">
-                          Pay Peaks to unlock the video for {surferName} without claiming the
-                          wave. You do not become the surfer — they keep claim.
-                        </span>
-                      </button>
-                    ) : null}
+                      ) : null}
+                    </button>
                   </div>
                 ) : null}
 
@@ -703,8 +713,13 @@ export function WaveUnlockCheckoutWizard({
                     loading ||
                     !ctx ||
                     (currentStep === "role" &&
-                      intent !== "buy_claim" &&
-                      intent !== "sponsor") ||
+                      (intent !== "buy_claim" && intent !== "sponsor")) ||
+                    (currentStep === "role" &&
+                      intent === "buy_claim" &&
+                      !ctx.canBuyClaim) ||
+                    (currentStep === "role" &&
+                      intent === "sponsor" &&
+                      !ctx.canSponsor) ||
                     ((currentStep === "details" || currentStep === "session") && !intent)
                   }
                   onClick={goNext}

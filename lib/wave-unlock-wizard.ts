@@ -14,9 +14,9 @@ export const WAVE_UNLOCK_STEP_META: Record<
   { title: string; description: string }
 > = {
   role: {
-    title: "How are you unlocking?",
+    title: "Who is unlocking?",
     description:
-      "Choose whether you buy and claim this wave as the surfer, or buy unlock as a sponsor without claiming.",
+      "Choose whether you are sponsoring this wave or buying it to claim for yourself.",
   },
   details: {
     title: "Price & partner",
@@ -34,19 +34,10 @@ export const WAVE_UNLOCK_STEP_META: Record<
   },
 };
 
-export function buildUnlockWizardSteps(
-  canBuyClaim: boolean,
-  canSponsor: boolean,
-): WaveUnlockWizardStepId[] {
-  let steps: WaveUnlockWizardStepId[] = [...WAVE_UNLOCK_WIZARD_STEPS];
-  if (!canBuyClaim || !canSponsor) {
-    steps = steps.filter((id) => id !== "role");
-  }
-  return steps;
+export function buildUnlockWizardSteps(): WaveUnlockWizardStepId[] {
+  return [...WAVE_UNLOCK_WIZARD_STEPS];
 }
 
 export function intentLabel(intent: WaveUnlockCartIntent): string {
-  return intent === "buy_claim"
-    ? "Surfer — buy and claim"
-    : "Sponsor — buy unlock only";
+  return intent === "buy_claim" ? "Claim video" : "Sponsor";
 }
