@@ -92,6 +92,10 @@ export function WaveUnlockCartPanel({ onClose }: { onClose?: () => void }) {
     () => lines.reduce((sum, line) => sum + line.discountPeaksSaved, 0),
     [lines],
   );
+  const totalCommunityFees = useMemo(
+    () => lines.reduce((sum, line) => sum + line.communityFeePeaks, 0),
+    [lines],
+  );
 
   const refreshWallet = async () => {
     try {
@@ -238,8 +242,12 @@ export function WaveUnlockCartPanel({ onClose }: { onClose?: () => void }) {
                   <dd>−{discountSaved} Peaks</dd>
                 </div>
               ) : null}
+              <div className="flex justify-between text-zinc-400">
+                <dt>Total community fees</dt>
+                <dd>{totalCommunityFees} Peaks</dd>
+              </div>
               <div className="flex justify-between border-t border-white/10 pt-2 font-semibold text-zinc-50">
-                <dt>Total</dt>
+                <dt>Total in cart</dt>
                 <dd>{totalPeaks} Peaks</dd>
               </div>
             </dl>
