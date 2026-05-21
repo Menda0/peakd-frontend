@@ -23,7 +23,11 @@ import {
   type WaveCheckoutContext,
 } from "@/lib/commercial-checkout";
 import { buyClaimWave, fetchPeaksBalance, sponsorWave } from "@/lib/commercial-wave";
-import { formatDiscountSummary } from "@/lib/commercial-settings";
+import {
+  allocateBuyClaimLineBreakdowns,
+  formatDiscountSummary,
+  type CheckoutPeaksBreakdown,
+} from "@/lib/commercial-settings";
 import { dispatchWaveClaimedEvent } from "@/lib/claim-wave";
 import {
   fetchWallet,
@@ -38,9 +42,9 @@ import {
 } from "@/lib/discover-feed";
 import {
   addToWaveUnlockCart,
-  cartTotalPeaks,
   useWaveUnlockCart,
   type WaveUnlockCartIntent,
+  type WaveUnlockCartLine,
 } from "@/lib/wave-unlock-cart";
 import { PostSessionInfo } from "./post-session-info";
 import {
@@ -114,76 +118,151 @@ function PartnerBlock({ ctx }: { ctx: WaveCheckoutContext }) {
   );
 }
 
+function CartQuoteLineRow({ line }: { line: WaveUnlockCartLine }) {
+  return (
+    <li className="flex gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+      <div className="relative size-12 shrink-0 overflow-hidden rounded-md bg-zinc-900">
+        {line.thumbnailUrl ? (
+          <Image
+            src={line.thumbnailUrl}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="48px"
+            unoptimized
+          />
+        ) : (
+          <span className="flex size-full items-center justify-center text-[10px] text-zinc-600">
+            Wave
+          </span>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-zinc-100">{line.videoName}</p>
+        <p className="truncate text-xs text-zinc-500">{line.sessionLabel}</p>
+        <p className="mt-1 text-xs text-zinc-400">
+          {line.listPricePeaks} Peaks
+          {line.discountPercent > 0 ? (
+            <span className="text-emerald-400/90">
+              {" "}
+              → {line.totalPeaks} Peaks ({line.discountPercent}% off)
+            </span>
+          ) : (
+            <span> → {line.totalPeaks} Peaks</span>
+          )}
+        </p>
+      </div>
+    </li>
+  );
+}
+
+function PriceLineRows({
+  breakdown,
+  intent,
+  communityFeePercent,
+  sessionWaveCount,
+}: {
+  breakdown: CheckoutPeaksBreakdown;
+  intent: WaveUnlockCartIntent;
+  communityFeePercent: number;
+  sessionWaveCount?: number;
+}) {
+  return (
+    <>
+      <div className="flex justify-between gap-4 text-zinc-400">
+        <dt>List price</dt>
+        <dd>{breakdown.listPricePeaks} Peaks</dd>
+      </div>
+      {intent === "buy_claim" ? (
+        <div className="flex justify-between gap-4 text-zinc-400">
+          <dt>
+            Volume discount
+            {sessionWaveCount != null && sessionWaveCount > 1
+              ? ` (${sessionWaveCount} waves this session)`
+              : null}
+          </dt>
+          <dd className="text-right text-emerald-400/90">
+            {breakdown.discountPercent > 0
+              ? `${breakdown.discountPercent}% (−${breakdown.discountPeaksSaved} Peaks)`
+              : "None"}
+          </dd>
+        </div>
+      ) : (
+        <div className="flex justify-between gap-4 text-zinc-500">
+          <dt>Volume discount</dt>
+          <dd className="text-right text-xs">Not applicable for sponsors</dd>
+        </div>
+      )}
+      <div className="flex justify-between gap-4 text-zinc-400">
+        <dt>Price after discount</dt>
+        <dd>{breakdown.basePeaks} Peaks</dd>
+      </div>
+      <div className="flex justify-between gap-4 text-zinc-400">
+        <dt>Community fee ({communityFeePercent}%)</dt>
+        <dd>{breakdown.communityFeePeaks} Peaks</dd>
+      </div>
+      <div className="flex justify-between gap-4 border-t border-white/10 pt-2 font-semibold text-zinc-50">
+        <dt>Total</dt>
+        <dd>{breakdown.totalPeaks} Peaks</dd>
+      </div>
+    </>
+  );
+}
+
 function CheckoutSummaryPanel({
   intent,
   breakdown,
   communityFeePercent,
-  cartPeaks,
-  cartItemCount,
+  cartLines,
+  videoName,
+  sessionLabel,
+  sessionWaveCount,
   combinedTotal,
 }: {
   intent: WaveUnlockCartIntent;
-  breakdown: WaveCheckoutContext["buyClaim"];
+  breakdown: CheckoutPeaksBreakdown;
   communityFeePercent: number;
-  cartPeaks: number;
-  cartItemCount: number;
+  cartLines: WaveUnlockCartLine[];
+  videoName: string;
+  sessionLabel: string;
+  sessionWaveCount: number;
   combinedTotal: number;
 }) {
   return (
     <div className="space-y-4">
-      {cartItemCount > 0 ? (
-        <dl className="space-y-2 rounded-xl border border-white/10 bg-white/[0.02] p-4 text-sm">
+      {cartLines.length > 0 ? (
+        <div className="space-y-2 rounded-xl border border-white/10 bg-white/[0.02] p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-            Your cart
+            Your cart ({cartLines.length})
           </p>
-          <div className="flex justify-between gap-4 text-zinc-400">
-            <dt>
-              Cart ({cartItemCount} {cartItemCount === 1 ? "item" : "items"})
-            </dt>
-            <dd className="text-zinc-200">{cartPeaks} Peaks</dd>
-          </div>
-        </dl>
+          <ul className="space-y-2">
+            {cartLines.map((line) => (
+              <CartQuoteLineRow key={line.jobId} line={line} />
+            ))}
+          </ul>
+          <p className="text-right text-sm font-medium text-zinc-200">
+            Cart subtotal:{" "}
+            {cartLines.reduce((sum, line) => sum + line.totalPeaks, 0)} Peaks
+          </p>
+        </div>
       ) : null}
 
       <dl className="space-y-2 rounded-xl border border-white/10 p-4 text-sm">
         <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
           This video
         </p>
-        <div className="flex justify-between gap-4">
+        <p className="truncate text-sm font-medium text-zinc-100">{videoName}</p>
+        <p className="truncate text-xs text-zinc-500">{sessionLabel}</p>
+        <div className="flex justify-between gap-4 pt-1">
           <dt className="text-zinc-500">Unlocking as</dt>
           <dd className="text-right text-zinc-100">{intentLabel(intent)}</dd>
         </div>
-        <div className="flex justify-between gap-4 text-zinc-400">
-          <dt>List price</dt>
-          <dd>{breakdown.listPricePeaks} Peaks</dd>
-        </div>
-        {intent === "buy_claim" ? (
-          <div className="flex justify-between gap-4 text-zinc-400">
-            <dt>Volume discount</dt>
-            <dd className="text-right text-emerald-400/90">
-              {breakdown.discountPercent > 0
-                ? `${breakdown.discountPercent}% (−${breakdown.discountPeaksSaved} Peaks)`
-                : "None (1 wave)"}
-            </dd>
-          </div>
-        ) : (
-          <div className="flex justify-between gap-4 text-zinc-500">
-            <dt>Volume discount</dt>
-            <dd className="text-right text-xs">Not applicable for sponsors</dd>
-          </div>
-        )}
-        <div className="flex justify-between gap-4 text-zinc-400">
-          <dt>Wave price after discount</dt>
-          <dd>{breakdown.basePeaks} Peaks</dd>
-        </div>
-        <div className="flex justify-between gap-4 text-zinc-400">
-          <dt>Community fee ({communityFeePercent}%)</dt>
-          <dd>{breakdown.communityFeePeaks} Peaks</dd>
-        </div>
-        <div className="flex justify-between gap-4 border-t border-white/10 pt-2 font-semibold text-zinc-50">
-          <dt>This video total</dt>
-          <dd>{breakdown.totalPeaks} Peaks</dd>
-        </div>
+        <PriceLineRows
+          breakdown={breakdown}
+          intent={intent}
+          communityFeePercent={communityFeePercent}
+          sessionWaveCount={sessionWaveCount}
+        />
       </dl>
 
       <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-center">
@@ -199,12 +278,16 @@ function CheckoutSummaryPanel({
 
 function PriceBreakdown({
   breakdown,
+  intent,
   communityLocation,
   communityFeePercent,
+  sessionWaveCount,
 }: {
-  breakdown: WaveCheckoutContext["buyClaim"];
+  breakdown: CheckoutPeaksBreakdown;
+  intent: WaveUnlockCartIntent;
   communityLocation: string;
   communityFeePercent: number;
+  sessionWaveCount?: number;
 }) {
   return (
     <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-4">
@@ -212,18 +295,12 @@ function PriceBreakdown({
         Cost for this video
       </p>
       <dl className="space-y-2 text-sm">
-        <div className="flex justify-between text-zinc-400">
-          <dt>Wave price</dt>
-          <dd className="text-zinc-200">{breakdown.basePeaks} Peaks</dd>
-        </div>
-        <div className="flex justify-between text-zinc-400">
-          <dt>Community fee ({communityFeePercent}%)</dt>
-          <dd className="text-zinc-200">{breakdown.communityFeePeaks} Peaks</dd>
-        </div>
-        <div className="flex justify-between border-t border-white/10 pt-2 font-semibold text-zinc-50">
-          <dt>Total</dt>
-          <dd>{breakdown.totalPeaks} Peaks</dd>
-        </div>
+        <PriceLineRows
+          breakdown={breakdown}
+          intent={intent}
+          communityFeePercent={communityFeePercent}
+          sessionWaveCount={sessionWaveCount}
+        />
       </dl>
       <p className="text-xs leading-relaxed text-zinc-500">
         The {communityFeePercent}% community fee ({breakdown.communityFeePeaks} Peaks) supports
@@ -267,7 +344,7 @@ export function WaveUnlockCheckoutWizard({
     ? `/share/sessions/${encodeURIComponent(ctx.shareToken)}`
     : null;
 
-  const { items: cartItems } = useWaveUnlockCart();
+  const { items: cartItems, lines: cartLines } = useWaveUnlockCart();
 
   const steps = useMemo(() => buildUnlockWizardSteps(), []);
 
@@ -327,21 +404,57 @@ export function WaveUnlockCheckoutWizard({
     void refreshWallet();
   }, [open, jobId, loadContext, refreshWallet, reset]);
 
-  const breakdown = useMemo(() => {
+  const sessionBuyClaimCount = useMemo(() => {
+    if (!ctx || intent !== "buy_claim") return 0;
+    const inCart = cartItems.filter(
+      (i) =>
+        i.sessionId === ctx.sessionId &&
+        i.intent === "buy_claim" &&
+        i.jobId !== activeJobId,
+    ).length;
+    return inCart + 1;
+  }, [ctx, intent, cartItems, activeJobId]);
+
+  const breakdown = useMemo((): CheckoutPeaksBreakdown | null => {
     if (!ctx || !intent) return null;
-    return intent === "buy_claim" ? ctx.buyClaim : ctx.sponsor;
-  }, [ctx, intent]);
+    if (intent === "buy_claim") {
+      const lines = allocateBuyClaimLineBreakdowns(
+        ctx.commercialSettings,
+        sessionBuyClaimCount,
+      );
+      return lines[lines.length - 1] ?? ctx.buyClaim;
+    }
+    return ctx.sponsor;
+  }, [ctx, intent, sessionBuyClaimCount]);
+
+  const otherCartLines = useMemo(
+    () => cartLines.filter((line) => line.jobId !== activeJobId),
+    [cartLines, activeJobId],
+  );
 
   const cartSummary = useMemo(() => {
-    const others = cartItems.filter((i) => i.jobId !== activeJobId);
-    const cartPeaks = cartTotalPeaks(others);
+    const cartPeaks = otherCartLines.reduce((sum, line) => sum + line.totalPeaks, 0);
     const thisTotal = breakdown?.totalPeaks ?? 0;
     return {
       cartPeaks,
-      cartItemCount: others.length,
+      cartItemCount: otherCartLines.length,
       combinedTotal: cartPeaks + thisTotal,
     };
-  }, [cartItems, activeJobId, breakdown?.totalPeaks]);
+  }, [otherCartLines, breakdown?.totalPeaks]);
+
+  const activeWaveMeta = useMemo(() => {
+    const wave = ctx?.sessionWaves.find((w) => w.jobId === activeJobId);
+    const sessionLabel = ctx
+      ? formatSessionSummary(
+          ctx.location as DiscoverFeedLocation,
+          ctx.sessionSummary,
+        )
+      : "";
+    return {
+      videoName: wave?.originalFilename ?? "Video",
+      sessionLabel,
+    };
+  }, [ctx, activeJobId]);
 
   useEffect(() => {
     if (stepIndex >= steps.length) {
@@ -415,16 +528,14 @@ export function WaveUnlockCheckoutWizard({
 
   const handleAddToCart = () => {
     if (!ctx || !intent || !breakdown) return;
-    const label =
-      intent === "buy_claim"
-        ? `Buy & claim · ${ctx.partner.partnerName}`
-        : `Sponsor unlock · ${surferName}`;
+    const wave = ctx.sessionWaves.find((w) => w.jobId === activeJobId);
     addToWaveUnlockCart({
       jobId: activeJobId,
       intent,
-      quantity: 1,
-      label,
-      totalPeaks: breakdown.totalPeaks,
+      sessionId: ctx.sessionId,
+      sessionLabel: activeWaveMeta.sessionLabel,
+      videoName: wave?.originalFilename ?? "Video",
+      thumbnailUrl: wave?.thumbnailUrl ?? null,
       addedAt: new Date().toISOString(),
     });
     toast.success("Added to cart — checkout when you're ready");
@@ -545,8 +656,12 @@ export function WaveUnlockCheckoutWizard({
                     <PartnerBlock ctx={ctx} />
                     <PriceBreakdown
                       breakdown={breakdown}
+                      intent={intent}
                       communityLocation={communityLocation}
                       communityFeePercent={ctx.communityFeePercent}
+                      sessionWaveCount={
+                        intent === "buy_claim" ? sessionBuyClaimCount : undefined
+                      }
                     />
                     <div className="rounded-xl border border-dashed border-white/10 p-3">
                       <p className="text-xs font-medium text-zinc-400">
@@ -647,8 +762,12 @@ export function WaveUnlockCheckoutWizard({
                     intent={intent}
                     breakdown={breakdown}
                     communityFeePercent={ctx.communityFeePercent}
-                    cartPeaks={cartSummary.cartPeaks}
-                    cartItemCount={cartSummary.cartItemCount}
+                    cartLines={otherCartLines}
+                    videoName={activeWaveMeta.videoName}
+                    sessionLabel={activeWaveMeta.sessionLabel}
+                    sessionWaveCount={
+                      intent === "buy_claim" ? sessionBuyClaimCount : 1
+                    }
                     combinedTotal={cartSummary.combinedTotal}
                   />
                 ) : null}

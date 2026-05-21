@@ -57,6 +57,69 @@ export type CheckoutPeaksBreakdown = {
   discountPeaksSaved: number;
 };
 
+export function volumeDiscountPercent(
+  quantity: number,
+  tiers: VolumeDiscountTier[],
+): number {
+  if (quantity < 1 || tiers.length === 0) return 0;
+  let best = 0;
+  for (const tier of tiers) {
+    if (quantity >= tier.minVideos && tier.discountPercent > best) {
+      best = tier.discountPercent;
+    }
+  }
+  return best;
+}
+
+export function computeBuyClaimPeaks(
+  settings: CommercialSettings,
+  quantity: number,
+): { unitPricePeaks: number; discountPercent: number; totalPeaks: number } {
+  const q = Math.max(1, Math.floor(quantity));
+  const unitPricePeaks = settings.videoPricePeaks;
+  const discountPercent = volumeDiscountPercent(q, settings.volumeDiscounts);
+  const subtotal = unitPricePeaks * q;
+  const totalPeaks = Math.max(
+    1,
+    Math.round(subtotal * (1 - discountPercent / 100)),
+  );
+  return { unitPricePeaks, discountPercent, totalPeaks };
+}
+
+function splitIntegerTotal(total: number, parts: number): number[] {
+  const n = Math.max(1, Math.floor(parts));
+  const sum = Math.max(0, Math.round(total));
+  const base = Math.floor(sum / n);
+  let remainder = sum - base * n;
+  const out: number[] = [];
+  for (let i = 0; i < n; i += 1) {
+    const extra = remainder > 0 ? 1 : 0;
+    if (remainder > 0) remainder -= 1;
+    out.push(base + extra);
+  }
+  return out;
+}
+
+export function allocateBuyClaimLineBreakdowns(
+  settings: CommercialSettings,
+  waveCount: number,
+): CheckoutPeaksBreakdown[] {
+  const q = Math.max(1, Math.floor(waveCount));
+  const { unitPricePeaks, discountPercent, totalPeaks: discountedBaseTotal } =
+    computeBuyClaimPeaks(settings, q);
+  const baseShares = splitIntegerTotal(discountedBaseTotal, q);
+  return baseShares.map((basePeaks) => {
+    const checkout = computeCheckoutTotal(basePeaks);
+    const list = unitPricePeaks;
+    return {
+      ...checkout,
+      listPricePeaks: list,
+      discountPercent,
+      discountPeaksSaved: Math.max(0, list - basePeaks),
+    };
+  });
+}
+
 export function computeCheckoutTotal(basePeaks: number): CheckoutPeaksBreakdown {
   const base = Math.max(0, Math.round(basePeaks));
   const communityFeePeaks = Math.max(
