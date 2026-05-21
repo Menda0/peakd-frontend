@@ -44,7 +44,6 @@ import {
   addToWaveUnlockCart,
   useWaveUnlockCart,
   type WaveUnlockCartIntent,
-  type WaveUnlockCartLine,
 } from "@/lib/wave-unlock-cart";
 import { PostSessionInfo } from "./post-session-info";
 import {
@@ -118,44 +117,6 @@ function PartnerBlock({ ctx }: { ctx: WaveCheckoutContext }) {
   );
 }
 
-function CartQuoteLineRow({ line }: { line: WaveUnlockCartLine }) {
-  return (
-    <li className="flex gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
-      <div className="relative size-12 shrink-0 overflow-hidden rounded-md bg-zinc-900">
-        {line.thumbnailUrl ? (
-          <Image
-            src={line.thumbnailUrl}
-            alt=""
-            fill
-            className="object-cover"
-            sizes="48px"
-            unoptimized
-          />
-        ) : (
-          <span className="flex size-full items-center justify-center text-[10px] text-zinc-600">
-            Wave
-          </span>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-zinc-100">{line.videoName}</p>
-        <p className="truncate text-xs text-zinc-500">{line.sessionLabel}</p>
-        <p className="mt-1 text-xs text-zinc-400">
-          {line.listPricePeaks} Peaks
-          {line.discountPercent > 0 ? (
-            <span className="text-emerald-400/90">
-              {" "}
-              → {line.totalPeaks} Peaks ({line.discountPercent}% off)
-            </span>
-          ) : (
-            <span> → {line.totalPeaks} Peaks</span>
-          )}
-        </p>
-      </div>
-    </li>
-  );
-}
-
 function PriceLineRows({
   breakdown,
   intent,
@@ -213,40 +174,19 @@ function CheckoutSummaryPanel({
   intent,
   breakdown,
   communityFeePercent,
-  cartLines,
   videoName,
   sessionLabel,
   sessionWaveCount,
-  combinedTotal,
 }: {
   intent: WaveUnlockCartIntent;
   breakdown: CheckoutPeaksBreakdown;
   communityFeePercent: number;
-  cartLines: WaveUnlockCartLine[];
   videoName: string;
   sessionLabel: string;
   sessionWaveCount: number;
-  combinedTotal: number;
 }) {
   return (
     <div className="space-y-4">
-      {cartLines.length > 0 ? (
-        <div className="space-y-2 rounded-xl border border-white/10 bg-white/[0.02] p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-            Your cart ({cartLines.length})
-          </p>
-          <ul className="space-y-2">
-            {cartLines.map((line) => (
-              <CartQuoteLineRow key={line.jobId} line={line} />
-            ))}
-          </ul>
-          <p className="text-right text-sm font-medium text-zinc-200">
-            Cart subtotal:{" "}
-            {cartLines.reduce((sum, line) => sum + line.totalPeaks, 0)} Peaks
-          </p>
-        </div>
-      ) : null}
-
       <dl className="space-y-2 rounded-xl border border-white/10 p-4 text-sm">
         <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
           This video
@@ -264,14 +204,6 @@ function CheckoutSummaryPanel({
           sessionWaveCount={sessionWaveCount}
         />
       </dl>
-
-      <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-center">
-        <p className="text-xs text-zinc-500">Combined total (cart + this video)</p>
-        <p className="text-2xl font-semibold text-zinc-50">{combinedTotal} Peaks</p>
-        <p className="mt-1 text-xs text-zinc-500">
-          Buy now charges {breakdown.totalPeaks} Peaks for this video only.
-        </p>
-      </div>
     </div>
   );
 }
@@ -344,7 +276,7 @@ export function WaveUnlockCheckoutWizard({
     ? `/share/sessions/${encodeURIComponent(ctx.shareToken)}`
     : null;
 
-  const { items: cartItems, lines: cartLines } = useWaveUnlockCart();
+  const { items: cartItems } = useWaveUnlockCart();
 
   const steps = useMemo(() => buildUnlockWizardSteps(), []);
 
@@ -426,21 +358,6 @@ export function WaveUnlockCheckoutWizard({
     }
     return ctx.sponsor;
   }, [ctx, intent, sessionBuyClaimCount]);
-
-  const otherCartLines = useMemo(
-    () => cartLines.filter((line) => line.jobId !== activeJobId),
-    [cartLines, activeJobId],
-  );
-
-  const cartSummary = useMemo(() => {
-    const cartPeaks = otherCartLines.reduce((sum, line) => sum + line.totalPeaks, 0);
-    const thisTotal = breakdown?.totalPeaks ?? 0;
-    return {
-      cartPeaks,
-      cartItemCount: otherCartLines.length,
-      combinedTotal: cartPeaks + thisTotal,
-    };
-  }, [otherCartLines, breakdown?.totalPeaks]);
 
   const activeWaveMeta = useMemo(() => {
     const wave = ctx?.sessionWaves.find((w) => w.jobId === activeJobId);
@@ -762,13 +679,11 @@ export function WaveUnlockCheckoutWizard({
                     intent={intent}
                     breakdown={breakdown}
                     communityFeePercent={ctx.communityFeePercent}
-                    cartLines={otherCartLines}
                     videoName={activeWaveMeta.videoName}
                     sessionLabel={activeWaveMeta.sessionLabel}
                     sessionWaveCount={
                       intent === "buy_claim" ? sessionBuyClaimCount : 1
                     }
-                    combinedTotal={cartSummary.combinedTotal}
                   />
                 ) : null}
               </div>

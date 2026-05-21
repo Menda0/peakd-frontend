@@ -70,6 +70,10 @@ export function removeFromWaveUnlockCart(jobId: string): void {
   writeWaveUnlockCart(readWaveUnlockCart().filter((i) => i.jobId !== jobId));
 }
 
+export function isJobInWaveUnlockCart(jobId: string): boolean {
+  return readWaveUnlockCart().some((i) => i.jobId === jobId);
+}
+
 export function clearWaveUnlockCart(): void {
   writeWaveUnlockCart([]);
 }

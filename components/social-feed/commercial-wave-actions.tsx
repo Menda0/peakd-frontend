@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { DiscoverFeedPost } from "@/lib/discover-feed";
 import type { SurferProfile } from "@/lib/surfer-profile";
 import {
+  removeFromWaveUnlockCart,
+  useWaveUnlockCart,
+} from "@/lib/wave-unlock-cart";
+import {
   waveOverlayStackClassName,
   waveOverlayStackItemClassName,
 } from "@/lib/wave-overlay-button";
+import { cn } from "@/lib/utils";
 import { ClaimWaveButton } from "./claim-wave-button";
+import { RemoveFromCartDialog } from "./remove-from-cart-dialog";
 import { WaveUnlockCheckoutWizard } from "./wave-unlock-checkout-wizard";
 
 export function CommercialWaveActions({
@@ -23,6 +30,14 @@ export function CommercialWaveActions({
   overlay?: boolean;
 }) {
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [removeCartOpen, setRemoveCartOpen] = useState(false);
+  const { items: cartItems, refresh: refreshCart } = useWaveUnlockCart();
+
+  const cartItem = useMemo(
+    () => cartItems.find((item) => item.jobId === post.id),
+    [cartItems, post.id],
+  );
+  const inCart = Boolean(cartItem);
 
   const price = post.buyClaimPricePeaks ?? post.wavePricePeaks ?? 0;
   const sponsorPrice = post.sponsorPricePeaks ?? post.wavePricePeaks ?? 0;
@@ -51,15 +66,30 @@ export function CommercialWaveActions({
     <Button
       type="button"
       size="sm"
-      className={
+      className={cn(
         overlay
           ? waveOverlayStackItemClassName
-          : "mt-3 bg-primary text-primary-foreground hover:bg-primary/90"
-      }
-      onClick={() => setWizardOpen(true)}
+          : "mt-3",
+        inCart
+          ? overlay
+            ? "border border-white/20 bg-zinc-900/90 text-zinc-100 hover:bg-zinc-800/90"
+            : "border border-white/15 bg-zinc-800/80 text-zinc-100 hover:bg-zinc-800"
+          : overlay
+            ? undefined
+            : "bg-primary text-primary-foreground hover:bg-primary/90",
+      )}
+      onClick={() => {
+        if (inCart) {
+          setRemoveCartOpen(true);
+        } else {
+          setWizardOpen(true);
+        }
+      }}
     >
-      Unlock video
-      {!overlay && unlockFromPrice > 0 ? ` · from ${unlockFromPrice} Peaks` : null}
+      {inCart ? "Added to cart" : "Unlock video"}
+      {!inCart && !overlay && unlockFromPrice > 0
+        ? ` · from ${unlockFromPrice} Peaks`
+        : null}
     </Button>
   ) : null;
 
@@ -103,6 +133,17 @@ export function CommercialWaveActions({
         jobId={post.id}
         onPurchased={onPurchased}
         onClaimed={onClaimed}
+      />
+
+      <RemoveFromCartDialog
+        open={removeCartOpen}
+        onOpenChange={setRemoveCartOpen}
+        videoName={cartItem?.videoName ?? post.sessionSummary}
+        onConfirm={() => {
+          removeFromWaveUnlockCart(post.id);
+          refreshCart();
+          toast.success("Removed from cart");
+        }}
       />
     </>
   );

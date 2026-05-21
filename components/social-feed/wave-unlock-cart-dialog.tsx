@@ -6,14 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BuyPeaksDialog } from "@/components/peaks/buy-peaks-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { buyClaimCartBatch } from "@/lib/commercial-cart";
 import { sponsorWave, fetchPeaksBalance } from "@/lib/commercial-wave";
 import { dispatchWaveClaimedEvent } from "@/lib/claim-wave";
@@ -84,13 +76,8 @@ function CartLineRow({
   );
 }
 
-export function WaveUnlockCartDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
+/** Cart list + checkout actions (used inside app-bar popover). */
+export function WaveUnlockCartPanel({ onClose }: { onClose?: () => void }) {
   const { lines, totalPeaks, quoteLoading, refresh } = useWaveUnlockCart();
   const [submitting, setSubmitting] = useState(false);
   const [wallet, setWallet] = useState<WalletResponse | null>(null);
@@ -113,8 +100,6 @@ export function WaveUnlockCartDialog({
       setWallet(null);
     }
   };
-
-  const close = () => onOpenChange(false);
 
   const checkoutItem = async (line: WaveUnlockCartLine) => {
     if (line.intent === "buy_claim") {
@@ -190,7 +175,7 @@ export function WaveUnlockCartDialog({
         );
       }
       if (readWaveUnlockCart().length === 0) {
-        close();
+        onClose?.();
       }
     } finally {
       setSubmitting(false);
@@ -198,110 +183,96 @@ export function WaveUnlockCartDialog({
   };
 
   useEffect(() => {
-    if (open) void refreshWallet();
-  }, [open]);
+    void refreshWallet();
+  }, []);
 
   const retryAfterTopUp = async () => {
     if (!pendingCheckout) return;
-    const total = totalPeaks;
     const balance = await fetchPeaksBalance();
-    if (balance < total) return;
+    if (balance < totalPeaks) return;
     setPendingCheckout(false);
     void runCheckoutAll();
   };
 
-  if (!open) return null;
-
   return (
     <>
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-        role="presentation"
-        onMouseDown={(e) => {
-          if (e.target === e.currentTarget) close();
-        }}
-      >
-        <Card
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="cart-title"
-          className="flex max-h-[min(90dvh,720px)] w-full max-w-lg flex-col gap-0 overflow-hidden border-white/10 bg-[#0a1218] py-0 text-zinc-100 ring-white/10"
-        >
-          <CardHeader className="shrink-0 border-b border-white/10 px-6 pt-6 pb-4">
-            <CardTitle id="cart-title">Unlock cart</CardTitle>
-            <CardDescription className="text-zinc-500">
-              Volume discounts apply per session when you claim multiple waves.
-            </CardDescription>
-          </CardHeader>
+      <div className="flex max-h-[min(70dvh,520px)] w-full flex-col">
+        <div className="shrink-0 border-b border-white/10 px-4 py-3">
+          <p className="text-sm font-semibold text-zinc-100">Unlock cart</p>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            Volume discounts apply per session when you claim multiple waves.
+          </p>
+        </div>
 
-          <CardContent className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-            {lines.length === 0 ? (
-              <p className="py-8 text-center text-sm text-zinc-500">Your cart is empty.</p>
-            ) : quoteLoading ? (
-              <p className="py-8 text-center text-sm text-zinc-500">Updating prices…</p>
-            ) : (
-              <ul className="space-y-2">
-                {lines.map((line) => (
-                  <CartLineRow
-                    key={line.jobId}
-                    line={line}
-                    onRemove={() => {
-                      removeFromWaveUnlockCart(line.jobId);
-                      refresh();
-                    }}
-                  />
-                ))}
-              </ul>
-            )}
-          </CardContent>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+          {lines.length === 0 ? (
+            <p className="py-6 text-center text-sm text-zinc-500">Your cart is empty.</p>
+          ) : quoteLoading ? (
+            <p className="py-6 text-center text-sm text-zinc-500">Updating prices…</p>
+          ) : (
+            <ul className="space-y-2">
+              {lines.map((line) => (
+                <CartLineRow
+                  key={line.jobId}
+                  line={line}
+                  onRemove={() => {
+                    removeFromWaveUnlockCart(line.jobId);
+                    refresh();
+                  }}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
 
-          <CardFooter className="shrink-0 flex-col items-stretch gap-3 border-white/10 bg-[#0a1218] px-6 py-4">
-            {lines.length > 0 && !quoteLoading ? (
-              <dl className="space-y-1 text-sm text-zinc-400">
-                <div className="flex justify-between">
-                  <dt>List subtotal</dt>
-                  <dd>{listSubtotal} Peaks</dd>
+        <div className="shrink-0 space-y-3 border-t border-white/10 px-4 py-3">
+          {lines.length > 0 && !quoteLoading ? (
+            <dl className="space-y-1 text-sm text-zinc-400">
+              <div className="flex justify-between">
+                <dt>List subtotal</dt>
+                <dd>{listSubtotal} Peaks</dd>
+              </div>
+              {discountSaved > 0 ? (
+                <div className="flex justify-between text-emerald-400/90">
+                  <dt>Volume discounts</dt>
+                  <dd>−{discountSaved} Peaks</dd>
                 </div>
-                {discountSaved > 0 ? (
-                  <div className="flex justify-between text-emerald-400/90">
-                    <dt>Volume discounts</dt>
-                    <dd>−{discountSaved} Peaks</dd>
-                  </div>
-                ) : null}
-                <div className="flex justify-between border-t border-white/10 pt-2 font-semibold text-zinc-50">
-                  <dt>Total</dt>
-                  <dd>{totalPeaks} Peaks</dd>
-                </div>
-              </dl>
-            ) : null}
-            <div className="flex shrink-0 justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="border-white/15 bg-transparent text-zinc-200"
-                disabled={submitting || lines.length === 0}
-                onClick={() => {
-                  clearWaveUnlockCart();
-                  refresh();
-                  toast.success("Cart cleared");
-                }}
-              >
-                Clear
-              </Button>
-              <Button
-                type="button"
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-                disabled={submitting || lines.length === 0 || quoteLoading}
-                onClick={() => {
-                  void refreshWallet();
-                  void runCheckoutAll();
-                }}
-              >
-                {submitting ? "Processing…" : `Checkout · ${totalPeaks} Peaks`}
-              </Button>
-            </div>
-          </CardFooter>
-        </Card>
+              ) : null}
+              <div className="flex justify-between border-t border-white/10 pt-2 font-semibold text-zinc-50">
+                <dt>Total</dt>
+                <dd>{totalPeaks} Peaks</dd>
+              </div>
+            </dl>
+          ) : null}
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-white/15 bg-transparent text-zinc-200"
+              disabled={submitting || lines.length === 0}
+              onClick={() => {
+                clearWaveUnlockCart();
+                refresh();
+                toast.success("Cart cleared");
+              }}
+            >
+              Clear
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={submitting || lines.length === 0 || quoteLoading}
+              onClick={() => {
+                void refreshWallet();
+                void runCheckoutAll();
+              }}
+            >
+              {submitting ? "Processing…" : `Checkout · ${totalPeaks} Peaks`}
+            </Button>
+          </div>
+        </div>
       </div>
 
       <BuyPeaksDialog
