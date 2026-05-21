@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { UploadVideoModal } from "@/components/social-feed/upload-video-modal";
 import { PeaksBalanceBar } from "@/components/peaks/peaks-balance-bar";
+import { WaveUnlockCartButton } from "@/components/social-feed/wave-unlock-cart-button";
 import { useUserProfileModal } from "@/components/user-profile/user-profile-provider";
 import { englishCountryLabel } from "@/lib/countries";
 import { auth0DisplayNameHint } from "@/lib/user-profile";
@@ -73,6 +74,7 @@ export function FeedAppBarActions({
     <>
       <UploadVideoModal open={uploadOpen} onOpenChange={setUploadOpen} />
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+      <WaveUnlockCartButton />
       <PeaksBalanceBar />
       <button
         type="button"

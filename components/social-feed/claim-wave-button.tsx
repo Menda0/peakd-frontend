@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { GeoCreateConfirmModal } from "@/components/pickers/geo-create-confirm-modal";
 import { Button } from "@/components/ui/button";
+import {
+  waveOverlayButtonClassName,
+  waveOverlayStackItemClassName,
+} from "@/lib/wave-overlay-button";
 import { cn } from "@/lib/utils";
 import {
   claimWave,
@@ -23,7 +27,7 @@ export function ClaimWaveButton({
   location: string;
   isOwnUpload?: boolean;
   onClaimed: (surfer: SurferProfile) => void;
-  variant?: "default" | "overlay";
+  variant?: "default" | "overlay" | "overlay-stacked";
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -51,8 +55,10 @@ export function ClaimWaveButton({
         size="sm"
         className={cn(
           variant === "overlay"
-            ? "absolute bottom-3 right-3 z-10 h-auto rounded-lg border border-white/15 bg-black/75 px-3 py-1.5 text-xs font-semibold text-zinc-50 shadow-lg backdrop-blur-sm hover:bg-black/85"
-            : "mt-3 bg-primary text-primary-foreground hover:bg-primary/90",
+            ? waveOverlayButtonClassName
+            : variant === "overlay-stacked"
+              ? waveOverlayStackItemClassName
+              : "mt-3 bg-primary text-primary-foreground hover:bg-primary/90",
         )}
         onClick={() => {
           setError(null);

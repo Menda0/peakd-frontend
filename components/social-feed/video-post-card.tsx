@@ -84,7 +84,7 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
           ) : null}
           <CommercialWaveActions
             post={post}
-            className="mt-3"
+            overlay
             onClaimed={(claimedSurfer) => {
               setClaimedLocally(true);
               setLocalSurfer(claimedSurfer);

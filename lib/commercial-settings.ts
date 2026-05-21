@@ -45,6 +45,29 @@ export function normalizeCommercialSettings(raw: unknown): CommercialSettings | 
   return { videoPricePeaks: Math.round(videoPricePeaks), volumeDiscounts };
 }
 
+export const COMMUNITY_FEE_PERCENT = 20;
+
+export type CheckoutPeaksBreakdown = {
+  basePeaks: number;
+  communityFeePeaks: number;
+  totalPeaks: number;
+  communityFeePercent: number;
+};
+
+export function computeCheckoutTotal(basePeaks: number): CheckoutPeaksBreakdown {
+  const base = Math.max(0, Math.round(basePeaks));
+  const communityFeePeaks = Math.max(
+    1,
+    Math.round((base * COMMUNITY_FEE_PERCENT) / 100),
+  );
+  return {
+    basePeaks: base,
+    communityFeePeaks,
+    totalPeaks: base + communityFeePeaks,
+    communityFeePercent: COMMUNITY_FEE_PERCENT,
+  };
+}
+
 export function formatDiscountSummary(settings: CommercialSettings): string {
   const tiers = settings.volumeDiscounts;
   if (tiers.length === 0) {
