@@ -15,7 +15,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { readApiErrorMessage } from "@/lib/api-error";
 import { getApiBase } from "@/lib/api";
+import { FormattedDateTime } from "@/components/ui/formatted-datetime";
 import { publishVideoToDiscover } from "@/lib/discover-feed";
 import {
   formatSessionPublishedAt,
@@ -52,7 +54,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
-import { ChevronDown, Copy, Download, Loader2, Share2 } from "lucide-react";
+import { ChevronDown, Copy, Download, Loader2, Share2, Trash2 } from "lucide-react";
 
 type ExportKind = "processed" | "raw";
 
@@ -478,6 +480,8 @@ export function StudioSessionFolder() {
   const shareCopyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [publishingJobId, setPublishingJobId] = useState<string | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [removeConfirmJobId, setRemoveConfirmJobId] = useState<string | null>(null);
+  const [removingJobId, setRemovingJobId] = useState<string | null>(null);
 
   const isPartner = (user as { isPartner?: boolean } | undefined)?.isPartner === true;
   const [partnerCommercialDefaults, setPartnerCommercialDefaults] =
@@ -610,6 +614,34 @@ export function StudioSessionFolder() {
         setPublishError(e instanceof Error ? e.message : "Failed to publish");
       } finally {
         setPublishingJobId(null);
+      }
+    },
+    [loadJobs],
+  );
+
+  const handleRemoveVideo = useCallback(
+    async (jobId: string) => {
+      setRemovingJobId(jobId);
+      try {
+        const base = getApiBase();
+        const res = await fetch(`${base}/videos/${jobId}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+        if (!res.ok) {
+          throw new Error(
+            await readApiErrorMessage(res, "Failed to remove video"),
+          );
+        }
+        setRemoveConfirmJobId(null);
+        toast.success("Video removed");
+        await loadJobs();
+      } catch (e) {
+        const message =
+          e instanceof Error ? e.message : "Failed to remove video";
+        toast.error(message);
+      } finally {
+        setRemovingJobId(null);
       }
     },
     [loadJobs],
@@ -797,14 +829,18 @@ export function StudioSessionFolder() {
         credentials: "include",
       });
       if (!res.ok) {
-        throw new Error(await res.text().catch(() => res.statusText));
+        throw new Error(
+          await readApiErrorMessage(res, "Failed to publish session"),
+        );
       }
       setPublishConfirmOpen(false);
+      toast.success("Session published");
       await loadSession();
     } catch (e) {
-      setSessionPublishError(
-        e instanceof Error ? e.message : "Failed to publish session",
-      );
+      const message =
+        e instanceof Error ? e.message : "Failed to publish session";
+      setSessionPublishError(message);
+      toast.error(message);
     } finally {
       setPublishingSession(false);
     }
@@ -1206,6 +1242,21 @@ export function StudioSessionFolder() {
         />
 
         <GeoCreateConfirmModal
+          open={removeConfirmJobId != null}
+          title="Remove this video?"
+          description="This deletes the wave from the session and removes its files from storage. This cannot be undone."
+          confirmLabel="Remove"
+          cancelLabel="Cancel"
+          onConfirm={() => {
+            if (removeConfirmJobId) void handleRemoveVideo(removeConfirmJobId);
+          }}
+          onCancel={() => {
+            if (!removingJobId) setRemoveConfirmJobId(null);
+          }}
+          isSubmitting={removingJobId != null}
+        />
+
+        <GeoCreateConfirmModal
           open={publishConfirmOpen}
           title="Publish this session?"
           description={
@@ -1350,31 +1401,55 @@ export function StudioSessionFolder() {
                               ? "Processing on server — safe to refresh; status is saved."
                               : isFailed
                                 ? (job.errorMessage ?? "Processing failed.")
-                                : isPublished
-                                  ? `On discover feed · ${new Date(job.createdAt).toLocaleString()}`
-                                  : new Date(job.createdAt).toLocaleString()}
+                                : isPublished ? (
+                                  <>
+                                    On discover feed ·{" "}
+                                    <FormattedDateTime value={job.createdAt} />
+                                  </>
+                                ) : (
+                                  <FormattedDateTime value={job.createdAt} />
+                                )}
                           </span>
                         </div>
                       </Link>
-                      {showPublishButton ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="shrink-0 border-white/15 text-zinc-200"
-                          disabled={publishingJobId === job.jobId}
-                          onClick={() => void handlePublishToDiscover(job.jobId)}
-                        >
-                          {publishingJobId === job.jobId ? (
-                            <>
+                      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+                        {!sessionIsPublished ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-white/15 text-zinc-200 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
+                            disabled={removingJobId === job.jobId}
+                            onClick={() => setRemoveConfirmJobId(job.jobId)}
+                          >
+                            {removingJobId === job.jobId ? (
                               <Loader2 className="size-4 animate-spin" aria-hidden />
-                              <span className="ml-2">Publishing…</span>
-                            </>
-                          ) : (
-                            "Publish to discover"
-                          )}
-                        </Button>
-                      ) : null}
+                            ) : (
+                              <Trash2 className="size-4" aria-hidden />
+                            )}
+                            <span className="ml-2">Remove</span>
+                          </Button>
+                        ) : null}
+                        {showPublishButton ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-white/15 text-zinc-200"
+                            disabled={publishingJobId === job.jobId}
+                            onClick={() => void handlePublishToDiscover(job.jobId)}
+                          >
+                            {publishingJobId === job.jobId ? (
+                              <>
+                                <Loader2 className="size-4 animate-spin" aria-hidden />
+                                <span className="ml-2">Publishing…</span>
+                              </>
+                            ) : (
+                              "Publish to discover"
+                            )}
+                          </Button>
+                        ) : null}
+                      </div>
                     </CardContent>
                   </Card>
                 </li>

@@ -129,3 +129,16 @@ export async function PUT(
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> },
+) {
+  try {
+    const { path } = await ctx.params;
+    return await forward(request, path, "DELETE");
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Proxy error";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}

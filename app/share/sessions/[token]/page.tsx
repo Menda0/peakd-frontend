@@ -1,4 +1,5 @@
 import { SharedSessionView } from "@/components/share/shared-session-view";
+import { enrichSharedSessionViewData } from "@/lib/format-datetime";
 import { fetchPublicSharedSession } from "@/lib/shared-session";
 
 export default async function SharedSessionPage({
@@ -38,7 +39,7 @@ export default async function SharedSessionPage({
 
   return (
     <main className="min-h-screen bg-[#050a0f] text-zinc-100">
-      <SharedSessionView data={data} />
+      <SharedSessionView data={enrichSharedSessionViewData(data)} />
     </main>
   );
 }

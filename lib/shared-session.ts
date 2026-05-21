@@ -8,6 +8,8 @@ export type PublicSharedSessionWave = {
   jobId: string;
   originalFilename: string;
   createdAt: string;
+  /** Pre-formatted on the server to avoid hydration locale mismatches. */
+  createdAtLabel?: string;
   thumbnailUrls: string[];
   thumbnailUrl: string | null;
   videoUrl: string;

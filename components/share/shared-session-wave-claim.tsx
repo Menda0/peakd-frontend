@@ -1,6 +1,7 @@
 "use client";
 
 import { useUser } from "@auth0/nextjs-auth0/client";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ClaimWaveButton } from "@/components/social-feed/claim-wave-button";
 import { Button } from "@/components/ui/button";
 import type { PublicSharedSessionWave } from "@/lib/shared-session";
@@ -27,6 +28,8 @@ export function SharedSessionWaveClaim({
   variant?: "overlay" | "inline";
 }) {
   const { user, isLoading } = useUser();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   if (wave.claimStatus === "claimed" && wave.surfer) {
     if (variant === "overlay") {
@@ -60,11 +63,8 @@ export function SharedSessionWaveClaim({
   }
 
   if (!user) {
-    const returnTo = encodeURIComponent(
-      typeof window !== "undefined"
-        ? window.location.pathname + window.location.search
-        : "/",
-    );
+    const qs = searchParams.toString();
+    const returnTo = encodeURIComponent(qs ? `${pathname}?${qs}` : pathname);
     return (
       <Button
         type="button"

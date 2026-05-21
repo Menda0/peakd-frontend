@@ -62,15 +62,6 @@ function sessionLocationLabel(data: PublicSharedSession): string {
   return parts.join(" · ");
 }
 
-function formatWaveTimeLabel(createdAt: string): string {
-  const d = Date.parse(createdAt);
-  if (!Number.isFinite(d)) return createdAt;
-  return new Date(d).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
-
 function downloadFilename(base: string, suffix: string): string {
   const stem = base.replace(/\.[^.]+$/, "") || "video";
   return `${stem}${suffix}`;
@@ -147,7 +138,7 @@ function SharedSessionFeedTab({
               authorName={partnerName}
               authorAvatarUrl={data.partnerAvatarUrl}
               partnerUpload
-              timeAgo={formatWaveTimeLabel(wave.createdAt)}
+              timeAgo={wave.createdAtLabel ?? wave.createdAt}
             />
             <PostMedia
               thumbnailUrl={wave.thumbnailUrl}
@@ -237,7 +228,7 @@ function SharedSessionFilesTab({
                         {wave.hasOriginal ? <OriginalAvailableTag /> : null}
                       </div>
                       <span className="text-xs text-zinc-500">
-                        {formatWaveTimeLabel(wave.createdAt)}
+                        {wave.createdAtLabel ?? wave.createdAt}
                       </span>
                     </div>
                   </button>
