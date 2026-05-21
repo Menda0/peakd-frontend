@@ -18,6 +18,10 @@ import { cn } from "@/lib/utils";
 import { getApiBase } from "@/lib/api";
 import { publishVideoToDiscover } from "@/lib/discover-feed";
 import {
+  formatSessionPublishedAt,
+  isSessionPublished,
+} from "@/lib/surf-session-status";
+import {
   absoluteSharedSessionUrl,
   ensureSessionShareToken,
 } from "@/lib/shared-session";
@@ -243,7 +247,7 @@ const dropdownSurface =
 function SessionActionsBar({
   session,
   hasProcessingJob,
-  isSessionClosed,
+  sessionIsPublished,
   showExportActions,
   exportProcessing,
   exportReady,
@@ -253,11 +257,11 @@ function SessionActionsBar({
   rawExportFailed,
   rawDaysLeft,
   anyExportProcessing,
-  closingSession,
-  closeError,
+  publishingSession,
+  sessionPublishError,
   downloadError,
   rawDownloadError,
-  onCloseClick,
+  onPublishClick,
   onEditClick,
   onDownloadPick,
   shareDisabled,
@@ -266,7 +270,7 @@ function SessionActionsBar({
 }: {
   session: SessionDetail;
   hasProcessingJob: boolean;
-  isSessionClosed: boolean;
+  sessionIsPublished: boolean;
   showExportActions: boolean;
   exportProcessing: boolean;
   exportReady: boolean;
@@ -276,11 +280,11 @@ function SessionActionsBar({
   rawExportFailed: boolean;
   rawDaysLeft: number;
   anyExportProcessing: boolean;
-  closingSession: boolean;
-  closeError: string | null;
+  publishingSession: boolean;
+  sessionPublishError: string | null;
   downloadError: string | null;
   rawDownloadError: string | null;
-  onCloseClick: () => void;
+  onPublishClick: () => void;
   onEditClick: () => void;
   onDownloadPick: (kind: ExportKind) => void;
   shareDisabled: boolean;
@@ -301,7 +305,7 @@ function SessionActionsBar({
   return (
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-        {showExportActions || isSessionClosed ? (
+        {showExportActions || sessionIsPublished ? (
           <div className="flex flex-wrap items-center gap-2 sm:mr-auto">
             {showExportActions ? (
             <DropdownMenu>
@@ -357,7 +361,7 @@ function SessionActionsBar({
             </DropdownMenu>
             ) : null}
 
-            {isSessionClosed ? (
+            {sessionIsPublished ? (
               <Button
                 type="button"
                 variant="outline"
@@ -383,12 +387,12 @@ function SessionActionsBar({
             ) : null}
           </div>
         ) : null}
-        {!isSessionClosed ? (
+        {!sessionIsPublished ? (
           <>
             <span
               title={
                 hasProcessingJob
-                  ? "Wait until all videos finish processing before closing this session."
+                  ? "Wait until all videos finish processing before publishing this session."
                   : undefined
               }
               className="inline-flex"
@@ -398,10 +402,10 @@ function SessionActionsBar({
                 variant="outline"
                 size="sm"
                 className="border-white/15 bg-transparent text-zinc-200"
-                disabled={hasProcessingJob || closingSession}
-                onClick={onCloseClick}
+                disabled={hasProcessingJob || publishingSession}
+                onClick={onPublishClick}
               >
-                {closingSession ? "Closing…" : "Close session"}
+                {publishingSession ? "Publishing…" : "Publish session"}
               </Button>
             </span>
             <Button
@@ -416,7 +420,9 @@ function SessionActionsBar({
           </>
         ) : null}
       </div>
-      {closeError ? <p className="text-sm text-red-400">{closeError}</p> : null}
+      {sessionPublishError ? (
+        <p className="text-sm text-red-400">{sessionPublishError}</p>
+      ) : null}
       {downloadError ? <p className="text-sm text-red-400">{downloadError}</p> : null}
       {rawDownloadError ? (
         <p className="text-sm text-red-400">{rawDownloadError}</p>
@@ -427,12 +433,10 @@ function SessionActionsBar({
       {rawExportFailed && session.rawExportErrorMessage ? (
         <p className="text-sm text-red-400">{session.rawExportErrorMessage}</p>
       ) : null}
-      {isSessionClosed ? (
+      {sessionIsPublished ? (
         <p className="text-xs text-zinc-500">
-          This session is closed. Uploads are disabled.
-          {session.closedAt
-            ? ` Closed ${new Date(session.closedAt).toLocaleString()}.`
-            : ""}
+          This session is published. Uploads are disabled.
+          {formatSessionPublishedAt(session.closedAt)}
         </p>
       ) : null}
     </>
@@ -461,9 +465,9 @@ export function StudioSessionFolder() {
   const [editValues, setEditValues] = useState<StudioSessionFormValues | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
-  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
-  const [closingSession, setClosingSession] = useState(false);
-  const [closeError, setCloseError] = useState<string | null>(null);
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
+  const [publishingSession, setPublishingSession] = useState(false);
+  const [sessionPublishError, setSessionPublishError] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [rawDownloadError, setRawDownloadError] = useState<string | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -577,9 +581,9 @@ export function StudioSessionFolder() {
   const completedJobCount = jobs.filter(
     (j) => (j.status ?? "completed") === "completed",
   ).length;
-  const isSessionClosed = session?.status === "closed";
+  const sessionIsPublished = isSessionPublished(session?.status);
   const shareDisabled =
-    !isSessionClosed || hasProcessingJob || completedJobCount < 1;
+    !sessionIsPublished || hasProcessingJob || completedJobCount < 1;
   const exportProcessing = session?.exportStatus === "processing";
   const exportReady = session?.exportStatus === "ready";
   const exportFailed = session?.exportStatus === "failed";
@@ -589,11 +593,11 @@ export function StudioSessionFolder() {
   const rawDaysLeft = rawDaysRemaining(session?.rawExportExpiresAt);
   const anyExportProcessing = exportProcessing || rawExportProcessing;
   const showExportActions =
-    isSessionClosed ||
+    sessionIsPublished ||
     (session?.exportStatus != null && session.exportStatus !== "idle") ||
     (session?.rawExportStatus != null && session.rawExportStatus !== "idle");
   const uploadDisabled =
-    !!sessionError || loading || !session || editing || isSessionClosed;
+    !!sessionError || loading || !session || editing || sessionIsPublished;
 
   const handlePublishToDiscover = useCallback(
     async (jobId: string) => {
@@ -782,10 +786,10 @@ export function StudioSessionFolder() {
     [uploadOne],
   );
 
-  const handleCloseSession = useCallback(async () => {
+  const handlePublishSession = useCallback(async () => {
     if (!sessionId) return;
-    setCloseError(null);
-    setClosingSession(true);
+    setSessionPublishError(null);
+    setPublishingSession(true);
     try {
       const base = getApiBase();
       const res = await fetch(`${base}/studio/sessions/${sessionId}/close`, {
@@ -795,12 +799,14 @@ export function StudioSessionFolder() {
       if (!res.ok) {
         throw new Error(await res.text().catch(() => res.statusText));
       }
-      setCloseConfirmOpen(false);
+      setPublishConfirmOpen(false);
       await loadSession();
     } catch (e) {
-      setCloseError(e instanceof Error ? e.message : "Failed to close session");
+      setSessionPublishError(
+        e instanceof Error ? e.message : "Failed to publish session",
+      );
     } finally {
-      setClosingSession(false);
+      setPublishingSession(false);
     }
   }, [sessionId, loadSession]);
 
@@ -1034,7 +1040,7 @@ export function StudioSessionFolder() {
                 <SessionActionsBar
                   session={session}
                   hasProcessingJob={hasProcessingJob}
-                  isSessionClosed={isSessionClosed}
+                  sessionIsPublished={sessionIsPublished}
                   showExportActions={showExportActions}
                   exportProcessing={exportProcessing}
                   exportReady={exportReady}
@@ -1044,13 +1050,13 @@ export function StudioSessionFolder() {
                   rawExportFailed={rawExportFailed}
                   rawDaysLeft={rawDaysLeft}
                   anyExportProcessing={anyExportProcessing}
-                  closingSession={closingSession}
-                  closeError={closeError}
+                  publishingSession={publishingSession}
+                  sessionPublishError={sessionPublishError}
                   downloadError={downloadError}
                   rawDownloadError={rawDownloadError}
-                  onCloseClick={() => {
-                    setCloseError(null);
-                    setCloseConfirmOpen(true);
+                  onPublishClick={() => {
+                    setSessionPublishError(null);
+                    setPublishConfirmOpen(true);
                   }}
                   onEditClick={() => {
                     setEditValues(sessionToFormValues(session));
@@ -1075,8 +1081,8 @@ export function StudioSessionFolder() {
           <CardHeader>
             <CardTitle>Upload</CardTitle>
             <CardDescription className="text-zinc-500">
-              {isSessionClosed
-                ? "This session is closed. You can't add more videos."
+              {sessionIsPublished
+                ? "This session is published. You can't add more videos."
                 : (
                     <>
                       Import videos into the queue below, then use{" "}
@@ -1200,18 +1206,18 @@ export function StudioSessionFolder() {
         />
 
         <GeoCreateConfirmModal
-          open={closeConfirmOpen}
-          title="Close this session?"
+          open={publishConfirmOpen}
+          title="Publish this session?"
           description={
-            "Closing ends uploads for this session and starts building a ZIP with all completed videos and their snapshot images. You can download the archive when it is ready."
+            "Publishing ends uploads for this session and starts building a ZIP with all completed videos and their snapshot images. You can download the archive when it is ready."
           }
-          confirmLabel="Close session"
+          confirmLabel="Publish session"
           cancelLabel="Cancel"
-          onConfirm={() => void handleCloseSession()}
+          onConfirm={() => void handlePublishSession()}
           onCancel={() => {
-            if (!closingSession) setCloseConfirmOpen(false);
+            if (!publishingSession) setPublishConfirmOpen(false);
           }}
-          isSubmitting={closingSession}
+          isSubmitting={publishingSession}
         />
 
         <SessionShareModal
@@ -1307,7 +1313,7 @@ export function StudioSessionFolder() {
               const isCompleted = status === "completed";
               const isPublished = Boolean(job.discoverPublishedAt);
               const showPublishButton =
-                isSessionClosed &&
+                sessionIsPublished &&
                 !isPartner &&
                 isCompleted &&
                 !isPublished;

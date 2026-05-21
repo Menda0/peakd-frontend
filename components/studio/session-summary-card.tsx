@@ -173,7 +173,7 @@ export function SessionSummaryCard({
               </span>
               {session.status === "closed" ? (
                 <span className="rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-400">
-                  Closed
+                  Published
                 </span>
               ) : null}
               <span className="text-sm text-zinc-500">
