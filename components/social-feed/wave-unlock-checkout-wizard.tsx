@@ -16,7 +16,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  communityFundLocationLabel,
   fetchWaveCheckoutContext,
+  partnerLocationLabel,
   plainPartnerDescription,
   type WaveCheckoutContext,
 } from "@/lib/commercial-checkout";
@@ -69,9 +71,7 @@ function WizardProgress({
 
 function PartnerBlock({ ctx }: { ctx: WaveCheckoutContext }) {
   const description = plainPartnerDescription(ctx.partner.descriptionMarkdown, 3);
-  const locationLabel = ctx.location.isUndisclosed
-    ? "Undisclosed"
-    : [ctx.location.spotName, ctx.location.regionName].filter(Boolean).join(" · ");
+  const locationLabel = partnerLocationLabel(ctx.location);
 
   return (
     <div className="flex gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
@@ -108,11 +108,11 @@ function PartnerBlock({ ctx }: { ctx: WaveCheckoutContext }) {
 
 function PriceBreakdown({
   breakdown,
-  regionName,
+  communityLocation,
   communityFeePercent,
 }: {
   breakdown: WaveCheckoutContext["buyClaim"];
-  regionName: string;
+  communityLocation: string;
   communityFeePercent: number;
 }) {
   return (
@@ -136,8 +136,8 @@ function PriceBreakdown({
       </dl>
       <p className="text-xs leading-relaxed text-zinc-500">
         The {communityFeePercent}% community fee ({breakdown.communityFeePeaks} Peaks) supports
-        the surf community in <strong className="text-zinc-300">{regionName}</strong> — the
-        region where this session was filmed.
+        the surf community in{" "}
+        <strong className="text-zinc-300">{communityLocation}</strong>.
       </p>
     </div>
   );
@@ -167,10 +167,30 @@ export function WaveUnlockCheckoutWizard({
   const [buyPeaksOpen, setBuyPeaksOpen] = useState(false);
   const [pendingBuy, setPendingBuy] = useState(false);
 
+  const otherWaves = useMemo(
+    () => (ctx?.sessionWaves ?? []).filter((w) => !w.isCurrent).slice(0, 3),
+    [ctx],
+  );
+
+  const sessionViewHref = ctx?.shareToken
+    ? `/share/sessions/${encodeURIComponent(ctx.shareToken)}`
+    : null;
+
+  const showSessionStep = otherWaves.length > 0 || Boolean(sessionViewHref);
+
   const steps = useMemo(
     () =>
-      buildUnlockWizardSteps(ctx?.canBuyClaim ?? false, ctx?.canSponsor ?? false),
-    [ctx?.canBuyClaim, ctx?.canSponsor],
+      buildUnlockWizardSteps(
+        ctx?.canBuyClaim ?? false,
+        ctx?.canSponsor ?? false,
+        showSessionStep,
+      ),
+    [ctx?.canBuyClaim, ctx?.canSponsor, showSessionStep],
+  );
+
+  const communityLocation = useMemo(
+    () => (ctx ? communityFundLocationLabel(ctx.location) : ""),
+    [ctx],
   );
 
   const currentStep = steps[stepIndex] ?? steps[0];
@@ -187,29 +207,34 @@ export function WaveUnlockCheckoutWizard({
     }
   }, []);
 
-  const loadContext = useCallback(async (id: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await fetchWaveCheckoutContext(id);
-      setCtx(data);
-      setActiveJobId(id);
-      const pickRole = data.canBuyClaim && data.canSponsor;
-      if (pickRole) {
-        setIntent(null);
-      } else {
-        setIntent(
-          data.canBuyClaim ? "buy_claim" : data.canSponsor ? "sponsor" : null,
-        );
+  const loadContext = useCallback(
+    async (id: string, options?: { preserveStep?: boolean }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchWaveCheckoutContext(id);
+        setCtx(data);
+        setActiveJobId(id);
+        if (!options?.preserveStep) {
+          const pickRole = data.canBuyClaim && data.canSponsor;
+          if (pickRole) {
+            setIntent(null);
+          } else {
+            setIntent(
+              data.canBuyClaim ? "buy_claim" : data.canSponsor ? "sponsor" : null,
+            );
+          }
+          setStepIndex(0);
+        }
+      } catch (e) {
+        setCtx(null);
+        setError(e instanceof Error ? e.message : "Failed to load checkout");
+      } finally {
+        setLoading(false);
       }
-      setStepIndex(0);
-    } catch (e) {
-      setCtx(null);
-      setError(e instanceof Error ? e.message : "Failed to load checkout");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   const reset = useCallback(() => {
     setStepIndex(0);
@@ -231,14 +256,11 @@ export function WaveUnlockCheckoutWizard({
     return intent === "buy_claim" ? ctx.buyClaim : ctx.sponsor;
   }, [ctx, intent]);
 
-  const otherWaves = useMemo(
-    () => (ctx?.sessionWaves ?? []).filter((w) => !w.isCurrent).slice(0, 3),
-    [ctx],
-  );
-
-  const sessionViewHref = ctx?.shareToken
-    ? `/share/sessions/${encodeURIComponent(ctx.shareToken)}`
-    : null;
+  useEffect(() => {
+    if (stepIndex >= steps.length) {
+      setStepIndex(Math.max(0, steps.length - 1));
+    }
+  }, [steps.length, stepIndex]);
 
   const close = () => {
     reset();
@@ -377,11 +399,11 @@ export function WaveUnlockCheckoutWizard({
                       >
                         <span className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
                           <User className="size-4 text-primary" aria-hidden />
-                          I am the surfer
+                          I am the surfer — buy and claim
                         </span>
                         <span className="text-xs leading-relaxed text-zinc-500">
-                          Claim this wave for yourself. You pay Peaks, become the claimant, and
-                          unlock the full video in My Videos.
+                          Pay Peaks to buy this wave and claim it for yourself. You become the
+                          surfer on the video and unlock full playback in My Videos.
                         </span>
                       </button>
                     ) : null}
@@ -399,11 +421,11 @@ export function WaveUnlockCheckoutWizard({
                       >
                         <span className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
                           <HeartHandshake className="size-4 text-primary" aria-hidden />
-                          I am a sponsor
+                          I am a sponsor — buy unlock only
                         </span>
                         <span className="text-xs leading-relaxed text-zinc-500">
-                          Buy unlock for {surferName}. You are not the surfer — they keep claim on
-                          this wave.
+                          Pay Peaks to unlock the video for {surferName} without claiming the
+                          wave. You do not become the surfer — they keep claim.
                         </span>
                       </button>
                     ) : null}
@@ -415,7 +437,7 @@ export function WaveUnlockCheckoutWizard({
                     <PartnerBlock ctx={ctx} />
                     <PriceBreakdown
                       breakdown={breakdown}
-                      regionName={ctx.location.regionName}
+                      communityLocation={communityLocation}
                       communityFeePercent={ctx.communityFeePercent}
                     />
                     <div className="rounded-xl border border-dashed border-white/10 p-3">
@@ -426,70 +448,76 @@ export function WaveUnlockCheckoutWizard({
                         {formatDiscountSummary(ctx.commercialSettings)}
                       </p>
                     </div>
+                  </div>
+                ) : null}
+
+                {currentStep === "session" && intent ? (
+                  <div className="space-y-4">
                     {otherWaves.length > 0 ? (
-                      <div className="space-y-2">
-                        <p className="text-xs font-medium text-zinc-400">
-                          More waves from this session
-                        </p>
-                        <ul className="grid gap-2 sm:grid-cols-3">
-                          {otherWaves.map((wave) => {
-                            const wavePrice =
-                              intent === "buy_claim"
-                                ? wave.buyClaimTotalPeaks
-                                : wave.sponsorTotalPeaks;
-                            const canUnlock =
-                              intent === "buy_claim"
-                                ? wave.canBuyClaim
-                                : wave.canSponsor;
-                            return (
-                              <li key={wave.jobId}>
-                                <button
-                                  type="button"
-                                  disabled={!canUnlock}
-                                  onClick={() => void loadContext(wave.jobId)}
-                                  className={cn(
-                                    "flex w-full flex-col overflow-hidden rounded-lg border text-left transition-colors",
-                                    wave.jobId === activeJobId
-                                      ? "border-primary/50 ring-1 ring-primary/30"
-                                      : "border-white/10 hover:border-white/20",
-                                    !canUnlock && "opacity-50",
+                      <ul className="grid gap-2 sm:grid-cols-3">
+                        {otherWaves.map((wave) => {
+                          const wavePrice =
+                            intent === "buy_claim"
+                              ? wave.buyClaimTotalPeaks
+                              : wave.sponsorTotalPeaks;
+                          const canUnlock =
+                            intent === "buy_claim"
+                              ? wave.canBuyClaim
+                              : wave.canSponsor;
+                          return (
+                            <li key={wave.jobId}>
+                              <button
+                                type="button"
+                                disabled={!canUnlock}
+                                onClick={() =>
+                                  void loadContext(wave.jobId, { preserveStep: true })
+                                }
+                                className={cn(
+                                  "flex w-full flex-col overflow-hidden rounded-lg border text-left transition-colors",
+                                  wave.jobId === activeJobId
+                                    ? "border-primary/50 ring-1 ring-primary/30"
+                                    : "border-white/10 hover:border-white/20",
+                                  !canUnlock && "opacity-50",
+                                )}
+                              >
+                                <div className="relative aspect-video bg-zinc-900">
+                                  {wave.thumbnailUrl ? (
+                                    <Image
+                                      src={wave.thumbnailUrl}
+                                      alt=""
+                                      fill
+                                      className="object-cover"
+                                      sizes="160px"
+                                      unoptimized
+                                    />
+                                  ) : (
+                                    <span className="flex size-full items-center justify-center text-[10px] text-zinc-600">
+                                      Preview
+                                    </span>
                                   )}
-                                >
-                                  <div className="relative aspect-video bg-zinc-900">
-                                    {wave.thumbnailUrl ? (
-                                      <Image
-                                        src={wave.thumbnailUrl}
-                                        alt=""
-                                        fill
-                                        className="object-cover"
-                                        sizes="160px"
-                                        unoptimized
-                                      />
-                                    ) : (
-                                      <span className="flex size-full items-center justify-center text-[10px] text-zinc-600">
-                                        Preview
-                                      </span>
-                                    )}
-                                  </div>
-                                  <span className="truncate px-2 py-1.5 text-[10px] text-zinc-400">
-                                    {wave.originalFilename}
-                                    {wavePrice != null ? ` · ${wavePrice} P` : ""}
-                                  </span>
-                                </button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    ) : null}
+                                </div>
+                                <span className="truncate px-2 py-1.5 text-[10px] text-zinc-400">
+                                  {wave.originalFilename}
+                                  {wavePrice != null ? ` · ${wavePrice} P` : ""}
+                                </span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-zinc-500">
+                        No other unlockable waves in this session right now.
+                      </p>
+                    )}
                     {sessionViewHref ? (
                       <Link
                         href={sessionViewHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/15 bg-transparent px-4 py-2 text-sm font-medium text-zinc-200 transition-colors hover:bg-white/5"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-medium text-zinc-100 transition-colors hover:bg-primary/15"
                       >
-                        View all videos in this session
+                        View all videos on this session
                         <ExternalLink className="size-3.5" aria-hidden />
                       </Link>
                     ) : null}
@@ -587,7 +615,7 @@ export function WaveUnlockCheckoutWizard({
                     (currentStep === "role" &&
                       intent !== "buy_claim" &&
                       intent !== "sponsor") ||
-                    (currentStep === "details" && !intent)
+                    ((currentStep === "details" || currentStep === "session") && !intent)
                   }
                   onClick={goNext}
                 >

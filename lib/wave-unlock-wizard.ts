@@ -1,10 +1,11 @@
 import type { WaveUnlockCartIntent } from "@/lib/wave-unlock-cart";
 
-export type WaveUnlockWizardStepId = "role" | "details" | "summary";
+export type WaveUnlockWizardStepId = "role" | "details" | "session" | "summary";
 
 export const WAVE_UNLOCK_WIZARD_STEPS: WaveUnlockWizardStepId[] = [
   "role",
   "details",
+  "session",
   "summary",
 ];
 
@@ -15,12 +16,17 @@ export const WAVE_UNLOCK_STEP_META: Record<
   role: {
     title: "How are you unlocking?",
     description:
-      "Choose whether you are claiming this wave as the surfer or sponsoring unlock for someone else.",
+      "Choose whether you buy and claim this wave as the surfer, or buy unlock as a sponsor without claiming.",
   },
   details: {
     title: "Price & partner",
     description:
-      "Review partner details, your Peaks price including the community contribution, and other waves from this session.",
+      "Review partner details and your Peaks price, including the community contribution.",
+  },
+  session: {
+    title: "More from this session",
+    description:
+      "Other waves from the same session you may want to unlock.",
   },
   summary: {
     title: "Checkout",
@@ -31,13 +37,20 @@ export const WAVE_UNLOCK_STEP_META: Record<
 export function buildUnlockWizardSteps(
   canBuyClaim: boolean,
   canSponsor: boolean,
+  showSessionStep: boolean,
 ): WaveUnlockWizardStepId[] {
-  if (canBuyClaim && canSponsor) {
-    return [...WAVE_UNLOCK_WIZARD_STEPS];
+  let steps: WaveUnlockWizardStepId[] = [...WAVE_UNLOCK_WIZARD_STEPS];
+  if (!canBuyClaim || !canSponsor) {
+    steps = steps.filter((id) => id !== "role");
   }
-  return WAVE_UNLOCK_WIZARD_STEPS.filter((id) => id !== "role");
+  if (!showSessionStep) {
+    steps = steps.filter((id) => id !== "session");
+  }
+  return steps;
 }
 
 export function intentLabel(intent: WaveUnlockCartIntent): string {
-  return intent === "buy_claim" ? "Surfer (claim wave)" : "Sponsor";
+  return intent === "buy_claim"
+    ? "Surfer — buy and claim"
+    : "Sponsor — buy unlock only";
 }

@@ -1,5 +1,6 @@
 import { getApiBase } from "@/lib/api";
 import { readApiErrorMessage } from "@/lib/api-error";
+import { englishCountryLabel } from "@/lib/countries";
 import type { CommercialSettings } from "@/lib/commercial-settings";
 import {
   normalizeCommercialSettings,
@@ -179,6 +180,45 @@ export async function fetchWaveCheckoutContext(
     surfer: normalizeSurferProfile(o.surfer),
     sessionWaves: waves,
   };
+}
+
+/** Label for community-fee copy: country when undisclosed, otherwise region name. */
+export function communityFundLocationLabel(location: {
+  countryCode: string;
+  regionName: string;
+  spotName: string | null;
+  isUndisclosed: boolean;
+}): string {
+  if (location.isUndisclosed) {
+    return (
+      englishCountryLabel(location.countryCode) ??
+      location.countryCode.trim().toUpperCase() ??
+      "this area"
+    );
+  }
+  const region = location.regionName?.trim();
+  if (region && region !== "Undisclosed" && region !== "Unknown") {
+    return region;
+  }
+  return (
+    englishCountryLabel(location.countryCode) ??
+    location.countryCode.trim().toUpperCase() ??
+    "this area"
+  );
+}
+
+export function partnerLocationLabel(location: {
+  countryCode: string;
+  regionName: string;
+  spotName: string | null;
+  isUndisclosed: boolean;
+}): string {
+  if (location.isUndisclosed) {
+    const country =
+      englishCountryLabel(location.countryCode) ?? location.countryCode;
+    return country ? String(country) : "Undisclosed location";
+  }
+  return [location.spotName, location.regionName].filter(Boolean).join(" · ");
 }
 
 export function plainPartnerDescription(
