@@ -43,7 +43,7 @@ export function FeedNavSidebar({
   const adminItems = resolveAdminNavItems(pathname, { adminRegionsHref });
 
   return (
-    <aside className="hidden w-56 shrink-0 flex-col gap-6 border-r border-border py-6 pl-4 pr-3 lg:flex">
+    <aside className="hidden w-56 shrink-0 flex-col gap-6 border-r border-sidebar-border bg-sidebar py-6 pl-4 pr-3 lg:flex">
       <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
         <MainNav items={mainItems} />
         {showPartnerNav ? <PartnerNav items={partnerItems} /> : null}

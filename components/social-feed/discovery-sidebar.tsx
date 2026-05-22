@@ -13,7 +13,7 @@ export function DiscoverySidebar({
   spots: PopularSpot[];
 }) {
   return (
-    <aside className="hidden w-72 shrink-0 overflow-y-auto border-l border-border py-6 pl-5 pr-4 xl:block">
+    <aside className="hidden w-72 shrink-0 overflow-y-auto border-l border-sidebar-border bg-sidebar py-6 pl-5 pr-4 xl:block">
       <TrendingSection items={trending} />
       <SuggestedSection users={suggestedUsers} />
       <PopularSpotsSection spots={spots} />

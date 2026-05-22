@@ -93,19 +93,19 @@
 }
 
 .dark {
-  --background: #0d536b;
+  --background: #0a4758;
   --foreground: #f0f9fc;
-  --card: #107088;
+  --card: #0d6278;
   --card-foreground: #f0f9fc;
-  --popover: #107088;
+  --popover: #0d6278;
   --popover-foreground: #f0f9fc;
   --primary: #26c2c9;
   --primary-foreground: #042f3d;
-  --secondary: #0a4a5e;
+  --secondary: #073a4a;
   --secondary-foreground: #e8f6fa;
-  --muted: #0a4a5e;
+  --muted: #073a4a;
   --muted-foreground: #b8dce8;
-  --accent: #128196;
+  --accent: #0f6b82;
   --accent-foreground: #f0f9fc;
   --destructive: oklch(0.704 0.191 22.216);
   --border: rgb(240 249 252 / 0.18);
@@ -115,18 +115,18 @@
   --chart-2: #26c2c9;
   --chart-3: #16b8d3;
   --chart-4: #b8dce8;
-  --chart-5: #0a4a5e;
-  --sidebar: #0a4a5e;
+  --chart-5: #052f3d;
+  --sidebar: #052f3d;
   --sidebar-foreground: #f0f9fc;
   --sidebar-primary: #26c2c9;
   --sidebar-primary-foreground: #042f3d;
-  --sidebar-accent: #128196;
+  --sidebar-accent: #0f6b82;
   --sidebar-accent-foreground: #f0f9fc;
   --sidebar-border: rgb(240 249 252 / 0.15);
   --sidebar-ring: #5eead4;
   --scrollbar-thumb: rgb(38 194 201 / 0.55);
   --scrollbar-thumb-hover: rgb(94 234 212 / 0.75);
-  --scrollbar-track: rgb(10 74 94 / 0.65);
+  --scrollbar-track: rgb(7 58 74 / 0.75);
 }
 
 @layer base {
