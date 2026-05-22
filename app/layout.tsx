@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Auth0Provider } from "@auth0/nextjs-auth0/client";
+import { Toaster } from "@/components/ui/sonner";
+import { auth0 } from "@/lib/auth0";
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,24 +16,34 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+})
+
 export const metadata: Metadata = {
-  title: "Peakd — surf video feed",
-  description:
-    "Discover surf clips from other surfers. A mobile-first feed with a TikTok-style vertical swipe.",
+  title: "Peakd",
+  description: "Peakd videographer and media tools",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth0.getSession();
+
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col overflow-x-hidden">
-        {children}
+      <body className={`min-h-full flex flex-col ${jakarta.className}`}>
+        <Auth0Provider user={session?.user}>
+          {children}
+          <Toaster position="bottom-right" richColors closeButton />
+        </Auth0Provider>
       </body>
     </html>
   );

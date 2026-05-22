@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Large multipart uploads via /api/peakd/* (middleware/proxy buffers the body)
+  experimental: {
+    proxyClientMaxBodySize: "100mb",
+  },
 };
 
 export default nextConfig;
