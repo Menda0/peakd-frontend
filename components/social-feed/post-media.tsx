@@ -15,6 +15,7 @@ import type { SurferProfile } from "@/lib/surfer-profile";
 import {
   forceActiveFeedVideo,
   getActiveFeedVideoId,
+  notifyFeedVideoInteraction,
   registerFeedVideo,
   seekActiveFeedVideo,
   unregisterFeedVideo,
@@ -49,6 +50,9 @@ export function PostMedia({
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioOnRef = useRef(false);
   const userPausedRef = useRef(false);
+  const hoverPlayRef = useRef(false);
+  const hoverPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [canHoverPlay, setCanHoverPlay] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioOn, setAudioOn] = useState(false);
   const [isActive, setIsActive] = useState(false);
@@ -64,6 +68,14 @@ export function PostMedia({
     const video = videoRef.current;
     if (!video) return;
     video.pause();
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => setCanHoverPlay(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
   }, []);
 
   useEffect(() => {
@@ -130,6 +142,7 @@ export function PostMedia({
 
     if (video.paused) {
       userPausedRef.current = false;
+      hoverPlayRef.current = false;
       if (autoPlayInView) {
         forceActiveFeedVideo(playbackId);
       } else {
@@ -137,9 +150,52 @@ export function PostMedia({
       }
     } else {
       userPausedRef.current = true;
+      hoverPlayRef.current = false;
       video.pause();
     }
   }, [autoPlayInView, playbackId, playVideo]);
+
+  const startHoverPlay = useCallback(() => {
+    if (!canHoverPlay || !videoUrl || userPausedRef.current) return;
+    hoverPlayRef.current = true;
+    if (autoPlayInView) {
+      forceActiveFeedVideo(playbackId);
+    } else {
+      playVideo();
+    }
+  }, [autoPlayInView, canHoverPlay, playbackId, playVideo, videoUrl]);
+
+  const onMouseEnter = useCallback(() => {
+    if (!canHoverPlay || !videoUrl || userPausedRef.current) return;
+    if (hoverPlayTimerRef.current) {
+      clearTimeout(hoverPlayTimerRef.current);
+    }
+    hoverPlayTimerRef.current = setTimeout(() => {
+      hoverPlayTimerRef.current = null;
+      startHoverPlay();
+    }, 120);
+  }, [canHoverPlay, startHoverPlay, videoUrl]);
+
+  const onMouseLeave = useCallback(() => {
+    if (hoverPlayTimerRef.current) {
+      clearTimeout(hoverPlayTimerRef.current);
+      hoverPlayTimerRef.current = null;
+    }
+    if (!canHoverPlay || !hoverPlayRef.current) return;
+    hoverPlayRef.current = false;
+    pauseVideo();
+    if (autoPlayInView) {
+      notifyFeedVideoInteraction();
+    }
+  }, [autoPlayInView, canHoverPlay, pauseVideo]);
+
+  useEffect(() => {
+    return () => {
+      if (hoverPlayTimerRef.current) {
+        clearTimeout(hoverPlayTimerRef.current);
+      }
+    };
+  }, []);
 
   const onContainerClick = (e: MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
@@ -187,6 +243,8 @@ export function PostMedia({
           className,
         )}
         onClick={onContainerClick}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
         onKeyDown={onContainerKeyDown}
       >
         <video
