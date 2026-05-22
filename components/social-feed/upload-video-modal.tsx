@@ -254,7 +254,7 @@ export function UploadVideoModal({
           </div>
         </div>
 
-        <DialogFooter className="shrink-0 flex-col items-stretch gap-3 border-t border-border bg-popover px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-none">
+        <DialogFooter className="mx-0 mb-0 shrink-0 flex-col items-stretch gap-3 border-t border-border bg-popover px-6 pt-4 pb-5 sm:flex-row sm:items-center sm:justify-between sm:rounded-none">
           {error ? (
             <p className="text-sm text-red-400 sm:min-w-0 sm:flex-1 sm:pr-4">{error}</p>
           ) : (
