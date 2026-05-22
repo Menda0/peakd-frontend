@@ -79,7 +79,7 @@ export function FeedAppBarActions({
       <PeaksBalanceBar />
       <button
         type="button"
-        className="inline-flex items-center gap-2 rounded-full bg-[#26c2c9] px-4 py-2 text-sm font-medium text-[#040A10] transition hover:bg-[#2dd4dc]"
+        className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
         onClick={() => setUploadOpen(true)}
       >
         <UploadIcon className="size-4" aria-hidden />

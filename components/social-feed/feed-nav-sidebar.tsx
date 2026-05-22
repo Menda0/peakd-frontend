@@ -9,16 +9,15 @@ import {
 import { AdminNav } from "./admin-nav";
 import { MainNav } from "./main-nav";
 import { PartnerNav } from "./partner-nav";
-import { SidebarPromoCard } from "./sidebar-promo-card";
 
 export function FeedNavSidebar({
   homeHref,
   myVideosHref,
-  studioHref,
   partnerProfileHref,
   adminRegionsHref,
   showPartnerNav,
   showAdminNav,
+  studioHref,
 }: {
   homeHref: string;
   myVideosHref: string;
@@ -43,13 +42,10 @@ export function FeedNavSidebar({
   const adminItems = resolveAdminNavItems(pathname, { adminRegionsHref });
 
   return (
-    <aside className="hidden w-56 shrink-0 flex-col gap-6 border-r border-sidebar-border bg-sidebar py-6 pl-4 pr-3 lg:flex">
-      <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
-        <MainNav items={mainItems} />
-        {showPartnerNav ? <PartnerNav items={partnerItems} /> : null}
-        {showAdminNav ? <AdminNav items={adminItems} /> : null}
-      </div>
-      <SidebarPromoCard studioHref={studioHref} />
+    <aside className="sticky top-[4.25rem] z-10 hidden max-h-[calc(100dvh-4.25rem)] w-56 shrink-0 flex-col gap-6 overflow-y-auto border-r border-sidebar-border bg-sidebar py-6 pl-4 pr-3 sm:top-[4.5rem] sm:max-h-[calc(100dvh-4.5rem)] lg:flex">
+      <MainNav items={mainItems} />
+      {showPartnerNav ? <PartnerNav items={partnerItems} /> : null}
+      {showAdminNav ? <AdminNav items={adminItems} /> : null}
     </aside>
   );
 }

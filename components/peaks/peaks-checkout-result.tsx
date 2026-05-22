@@ -56,7 +56,7 @@ export function PeaksCheckoutResult({
       </p>
       <Link
         href={homeHref}
-        className="inline-flex h-9 items-center justify-center rounded-lg bg-[#26c2c9] px-4 text-sm font-medium text-[#040A10] transition hover:bg-[#2dd4dc]"
+        className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
       >
         Back to feed
       </Link>

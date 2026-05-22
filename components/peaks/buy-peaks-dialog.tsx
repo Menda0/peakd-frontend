@@ -65,7 +65,7 @@ function PackRow({
       </div>
       <Button
         type="button"
-        className="shrink-0 bg-[#26c2c9] text-[#040A10] hover:bg-[#2dd4dc]"
+        className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
         disabled={Boolean(buying)}
         onClick={() => onBuy(pack.id)}
       >
