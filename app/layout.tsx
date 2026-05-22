@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Auth0Provider } from "@auth0/nextjs-auth0/client";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { auth0 } from "@/lib/auth0";
 import { Plus_Jakarta_Sans } from 'next/font/google'
@@ -37,13 +38,16 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`h-full antialiased`}
+      className="h-full antialiased"
+      suppressHydrationWarning
     >
       <body className={`min-h-full flex flex-col ${jakarta.className}`}>
-        <Auth0Provider user={session?.user}>
-          {children}
-          <Toaster position="bottom-right" richColors closeButton />
-        </Auth0Provider>
+        <ThemeProvider>
+          <Auth0Provider user={session?.user}>
+            {children}
+            <Toaster position="bottom-right" richColors closeButton />
+          </Auth0Provider>
+        </ThemeProvider>
       </body>
     </html>
   );

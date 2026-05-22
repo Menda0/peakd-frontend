@@ -49,41 +49,43 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  --background: #f4f8fb;
+  --foreground: #040a11;
+  --card: #ffffff;
+  --card-foreground: #040a11;
+  --popover: #ffffff;
+  --popover-foreground: #040a11;
   --primary: #16b8d3;
   --primary-foreground: #040a11;
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: #e8f0f5;
+  --secondary-foreground: #0c1625;
+  --muted: #e8f0f5;
+  --muted-foreground: #4a6278;
+  --accent: #e0f4f8;
+  --accent-foreground: #0c1625;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: #c5d4e0;
+  --input: #c5d4e0;
+  --ring: #16b8d3;
+  --chart-1: #16b8d3;
+  --chart-2: #26c2c9;
+  --chart-3: #4a6278;
+  --chart-4: #0c1625;
+  --chart-5: #040a11;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #040a11;
   --sidebar-primary: #16b8d3;
   --sidebar-primary-foreground: #040a11;
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --scrollbar-thumb: oklch(0.62 0 0 / 0.4);
-  --scrollbar-thumb-hover: oklch(0.52 0 0 / 0.55);
-  --scrollbar-track: oklch(0.96 0 0 / 0.65);
+  --sidebar-accent: #e8f0f5;
+  --sidebar-accent-foreground: #0c1625;
+  --sidebar-border: #c5d4e0;
+  --sidebar-ring: #16b8d3;
+  --app-bar: rgb(255 255 255 / 0.72);
+  --app-bar-border: rgb(4 10 17 / 0.08);
+  --scrollbar-thumb: rgb(22 184 211 / 0.35);
+  --scrollbar-thumb-hover: rgb(22 184 211 / 0.55);
+  --scrollbar-track: rgb(244 248 251 / 0.85);
 }
 
 .dark {
@@ -118,6 +120,8 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --app-bar: rgb(4 10 17 / 0.55);
+  --app-bar-border: rgb(255 255 255 / 0.1);
   --scrollbar-thumb: rgb(22 184 211 / 0.35);
   --scrollbar-thumb-hover: rgb(22 184 211 / 0.55);
   --scrollbar-track: rgb(4 15 30 / 0.65);
@@ -154,6 +158,18 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Single light logo asset; invert + hue shift on dark backgrounds for contrast. */
+@layer components {
+  .logo-adaptive {
+    filter: none;
+  }
+
+  .dark .logo-adaptive,
+  :is(.dark *) .logo-adaptive {
+    filter: invert(1) hue-rotate(180deg) brightness(1.08) saturate(1.2);
   }
 }
 

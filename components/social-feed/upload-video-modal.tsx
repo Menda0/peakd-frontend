@@ -140,14 +140,14 @@ export function UploadVideoModal({
         showCloseButton={!submitting}
         className={cn(
           "flex max-h-[min(92dvh,800px)] w-full max-w-lg flex-col gap-0 overflow-hidden",
-          "border-white/10 bg-[#0a1218] p-0 text-zinc-100 ring-white/10 sm:max-w-lg",
+          "border-border bg-popover p-0 text-foreground ring-white/10 sm:max-w-lg",
         )}
       >
-        <DialogHeader className="shrink-0 space-y-1 border-b border-white/10 px-6 pt-6 pb-4 text-left">
-          <DialogTitle className="text-lg font-semibold text-zinc-100">
+        <DialogHeader className="shrink-0 space-y-1 border-b border-border px-6 pt-6 pb-4 text-left">
+          <DialogTitle className="text-lg font-semibold text-foreground">
             Upload video
           </DialogTitle>
-          <DialogDescription className="text-zinc-500">
+          <DialogDescription className="text-muted-foreground">
             Add your surf video to the feed. Country and region are prefilled from your
             profile when available; spot defaults to Undisclosed when no region is set.
           </DialogDescription>
@@ -155,13 +155,13 @@ export function UploadVideoModal({
 
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
           <div className="space-y-2">
-            <p className="text-sm font-medium text-zinc-200">Videos</p>
+            <p className="text-sm font-medium text-foreground">Videos</p>
             <div
               className={cn(
                 "rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors",
                 dragActive
-                  ? "border-primary/50 bg-white/5"
-                  : "border-white/15 bg-zinc-900/30",
+                  ? "border-primary/50 bg-muted/50"
+                  : "border-border bg-secondary/30",
                 submitting && "pointer-events-none opacity-60",
               )}
               onDragEnter={(e) => {
@@ -181,8 +181,8 @@ export function UploadVideoModal({
                 }
               }}
             >
-              <UploadIcon className="mx-auto size-8 text-zinc-500" aria-hidden />
-              <p className="mt-2 text-sm text-zinc-300">Drop videos here or browse</p>
+              <UploadIcon className="mx-auto size-8 text-muted-foreground" aria-hidden />
+              <p className="mt-2 text-sm text-muted-foreground">Drop videos here or browse</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -201,7 +201,7 @@ export function UploadVideoModal({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="mt-4 border-white/20 bg-white/5 text-zinc-100 hover:bg-white/10"
+                className="mt-4 border-border bg-muted/50 text-foreground hover:bg-accent"
                 disabled={submitting}
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -214,22 +214,22 @@ export function UploadVideoModal({
                 {videoFiles.map((file, index) => (
                   <li
                     key={`${file.name}-${file.size}-${index}`}
-                    className="flex items-center gap-3 rounded-lg border border-white/10 bg-black/25 px-3 py-2"
+                    className="flex items-center gap-3 rounded-lg border border-border bg-black/25 px-3 py-2"
                   >
                     <span
-                      className="min-w-0 flex-1 truncate text-sm text-zinc-100"
+                      className="min-w-0 flex-1 truncate text-sm text-foreground"
                       title={file.name}
                     >
                       {file.name}
                     </span>
-                    <span className="shrink-0 text-xs tabular-nums text-zinc-500">
+                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                       {formatFileSize(file.size)}
                     </span>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-8 shrink-0 px-2 text-zinc-400 hover:text-zinc-100"
+                      className="h-8 shrink-0 px-2 text-muted-foreground hover:text-foreground"
                       disabled={submitting}
                       onClick={() => removeFile(index)}
                     >
@@ -239,12 +239,12 @@ export function UploadVideoModal({
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-zinc-500">Add one or more video files to upload.</p>
+              <p className="text-xs text-muted-foreground">Add one or more video files to upload.</p>
             )}
           </div>
 
-          <div className="space-y-2 border-t border-white/10 pt-6">
-            <p className="text-sm font-medium text-zinc-200">Session details</p>
+          <div className="space-y-2 border-t border-border pt-6">
+            <p className="text-sm font-medium text-foreground">Session details</p>
             <StudioSessionFormFields
               values={values}
               onChange={patchValues}
@@ -254,7 +254,7 @@ export function UploadVideoModal({
           </div>
         </div>
 
-        <DialogFooter className="shrink-0 flex-col items-stretch gap-3 border-t border-white/10 bg-[#0a1218] px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-none">
+        <DialogFooter className="shrink-0 flex-col items-stretch gap-3 border-t border-border bg-popover px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-none">
           {error ? (
             <p className="text-sm text-red-400 sm:min-w-0 sm:flex-1 sm:pr-4">{error}</p>
           ) : (
@@ -264,7 +264,7 @@ export function UploadVideoModal({
             <Button
               type="button"
               variant="outline"
-              className="border-white/15 bg-transparent text-zinc-200"
+              className="border-border bg-transparent text-foreground"
               disabled={submitting}
               onClick={() => handleOpenChange(false)}
             >

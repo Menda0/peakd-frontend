@@ -35,7 +35,7 @@ export default async function AdminRegionsPage({
       userName={session.user.name}
       userEmail={session.user.email}
     >
-      <Suspense fallback={<p className="text-sm text-zinc-400">Loading regions…</p>}>
+      <Suspense fallback={<p className="text-sm text-muted-foreground">Loading regions…</p>}>
         <AdminRegionsManager regionsBasePath={`${prefix}/admin/regions`} />
       </Suspense>
     </SocialFeedLayout>

@@ -135,18 +135,18 @@ export function StudioJobDetail() {
   }
 
   if (!userPathPrefix) {
-    return <div className="text-sm text-zinc-400">Loading…</div>;
+    return <div className="text-sm text-muted-foreground">Loading…</div>;
   }
 
   return (
-    <div className="text-zinc-100">
+    <div className="text-foreground">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
         <div>
           <Button
             variant="ghost"
             size="sm"
             nativeButton={false}
-            className="mb-2 -ml-2 text-zinc-300 hover:bg-white/5 hover:text-zinc-100"
+            className="mb-2 -ml-2 text-muted-foreground hover:bg-accent hover:text-foreground"
             render={<Link href={backHref} />}
           >
             {backLabel}
@@ -154,7 +154,7 @@ export function StudioJobDetail() {
         </div>
 
         {detail && !sessionIdFromRoute && detail.surfSessionId ? (
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-muted-foreground">
             <Link
               href={`${userPathPrefix}/studio/sessions/${detail.surfSessionId}`}
               className="text-primary underline-offset-2 hover:underline"
@@ -164,7 +164,7 @@ export function StudioJobDetail() {
           </p>
         ) : null}
 
-        {loading ? <p className="text-sm text-zinc-500">Loading…</p> : null}
+        {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
 
         {error ? (
           <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
@@ -174,13 +174,13 @@ export function StudioJobDetail() {
 
         {detail && !loading ? (
           <>
-            <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
+            <Card className="border-border bg-white/[0.03] text-foreground">
               <CardHeader>
                 <CardTitle className="text-xl sm:text-2xl">{detail.originalFilename}</CardTitle>
-                <CardDescription className="text-zinc-500">
+                <CardDescription className="text-muted-foreground">
                   {new Date(detail.createdAt).toLocaleString()}
                   {detail.status === "processing" ? (
-                    <span className="mt-2 block text-sm text-zinc-400">
+                    <span className="mt-2 block text-sm text-muted-foreground">
                       Processing on the server. You can leave or refresh — status is saved in your
                       library.
                     </span>
@@ -195,23 +195,23 @@ export function StudioJobDetail() {
             </Card>
 
             {detail.status === "processing" ? (
-              <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
+              <Card className="border-border bg-white/[0.03] text-foreground">
                 <CardContent className="py-10">
                   <div className="mx-auto max-w-md space-y-3 text-center">
                     <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-                    <p className="text-sm text-zinc-400">Transcoding and uploading…</p>
+                    <p className="text-sm text-muted-foreground">Transcoding and uploading…</p>
                   </div>
                 </CardContent>
               </Card>
             ) : null}
 
             {detail.status === "completed" && detail.videoUrl ? (
-              <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
+              <Card className="border-border bg-white/[0.03] text-foreground">
                 <CardHeader>
                   <CardTitle className="text-base">Processed video</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-hidden rounded-xl border border-white/10 bg-black">
+                  <div className="overflow-hidden rounded-xl border border-border bg-black">
                     <video
                       key={detail.videoUrl}
                       className="aspect-video w-full"
@@ -228,13 +228,13 @@ export function StudioJobDetail() {
             ) : null}
 
             {detail.status === "completed" ? (
-              <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
+              <Card className="border-border bg-white/[0.03] text-foreground">
                 <CardHeader>
                   <CardTitle className="text-base">Snapshots ({detail.snapshots.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {detail.snapshots.length === 0 ? (
-                    <p className="text-sm text-zinc-500">No frames for this job.</p>
+                    <p className="text-sm text-muted-foreground">No frames for this job.</p>
                   ) : (
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                       {detail.snapshots.map((s, i) => (
@@ -243,7 +243,7 @@ export function StudioJobDetail() {
                           href={s.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="group overflow-hidden rounded-lg border border-white/10 bg-zinc-900/50 transition hover:border-primary/40"
+                          className="group overflow-hidden rounded-lg border border-border bg-secondary/50 transition hover:border-primary/40"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element -- presigned S3 URLs */}
                           <img

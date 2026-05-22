@@ -24,6 +24,7 @@ import { WaveUnlockCartButton } from "@/components/social-feed/wave-unlock-cart-
 import { useUserProfileModal } from "@/components/user-profile/user-profile-provider";
 import { englishCountryLabel } from "@/lib/countries";
 import { auth0DisplayNameHint } from "@/lib/user-profile";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 function initialsFromDisplayName(displayName: string, email: string | null | undefined) {
@@ -84,16 +85,17 @@ export function FeedAppBarActions({
         <UploadIcon className="size-4" aria-hidden />
         <span className="hidden sm:inline">Upload</span>
       </button>
+      <ThemeToggle />
       <button
         type="button"
-        className="rounded-full p-2.5 text-zinc-400 transition hover:bg-white/5 hover:text-zinc-200"
+        className="rounded-full p-2.5 text-muted-foreground transition hover:bg-accent hover:text-foreground"
         aria-label="Messages"
       >
         <MessageCircleIcon className="size-5" />
       </button>
       <button
         type="button"
-        className="rounded-full p-2.5 text-zinc-400 transition hover:bg-white/5 hover:text-zinc-200"
+        className="rounded-full p-2.5 text-muted-foreground transition hover:bg-accent hover:text-foreground"
         aria-label="Notifications"
       >
         <BellIcon className="size-5" />
@@ -102,31 +104,31 @@ export function FeedAppBarActions({
         <DropdownMenuTrigger
           type="button"
           className={cn(
-            "group flex h-10 max-w-[min(22rem,calc(100vw-10rem))] shrink-0 items-center gap-2 rounded-full border border-white/15 bg-zinc-800 py-1 pl-1 pr-2 outline-none ring-offset-2 ring-offset-[#040F1E] focus-visible:ring-2 focus-visible:ring-[#26c2c9]/60 data-[popup-open]:border-white/25 data-[popup-open]:bg-zinc-800/90",
+            "group flex h-10 max-w-[min(22rem,calc(100vw-10rem))] shrink-0 items-center gap-2 rounded-full border border-border bg-muted py-1 pl-1 pr-2 outline-none ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-primary/60 data-[popup-open]:border-primary/30 data-[popup-open]:bg-muted/90",
             "min-w-0",
           )}
           aria-label="Account menu"
         >
-          <span className="relative size-8 shrink-0 overflow-hidden rounded-full bg-zinc-900">
+          <span className="relative size-8 shrink-0 overflow-hidden rounded-full bg-secondary">
             {avatarImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- Auth0 / S3 URL
               <img src={avatarImageUrl} alt="" className="size-full object-cover" />
             ) : (
-              <span className="flex size-full items-center justify-center text-xs font-semibold tracking-tight text-zinc-200">
+              <span className="flex size-full items-center justify-center text-xs font-semibold tracking-tight text-foreground">
                 {initials}
               </span>
             )}
           </span>
           <div className="flex min-w-0 max-w-[5.5rem] flex-1 flex-col items-start text-left sm:max-w-[14rem]">
-            <span className="w-full truncate text-sm font-medium leading-tight text-zinc-50">
+            <span className="w-full truncate text-sm font-medium leading-tight text-foreground">
               {displayName || "Signed in"}
             </span>
             {countryLabel ? (
-              <span className="w-full truncate text-xs leading-tight text-zinc-500">{countryLabel}</span>
+              <span className="w-full truncate text-xs leading-tight text-muted-foreground">{countryLabel}</span>
             ) : null}
           </div>
           <ChevronDownIcon
-            className="size-4 shrink-0 text-zinc-400 transition group-data-[popup-open]:rotate-180 group-data-[popup-open]:text-zinc-200"
+            className="size-4 shrink-0 text-muted-foreground transition group-data-[popup-open]:rotate-180 group-data-[popup-open]:text-foreground"
             aria-hidden
           />
         </DropdownMenuTrigger>
@@ -134,25 +136,25 @@ export function FeedAppBarActions({
           align="end"
           side="bottom"
           sideOffset={8}
-          className="z-[100] min-w-52 border-white/10 bg-[#0a1218] p-1 text-zinc-100 shadow-lg ring-1 ring-white/10"
+          className="z-[100] min-w-52 border-border bg-popover p-1 text-popover-foreground shadow-lg"
         >
           <DropdownMenuGroup>
-            <DropdownMenuLabel className="px-2 py-1.5 font-normal text-zinc-300">
+            <DropdownMenuLabel className="px-2 py-1.5 font-normal text-muted-foreground">
               <div className="flex flex-col gap-0.5">
-                <span className="truncate text-sm font-medium text-zinc-50">
+                <span className="truncate text-sm font-medium text-foreground">
                   {displayName || "Signed in"}
                 </span>
-                {email ? <span className="truncate text-xs text-zinc-500">{email}</span> : null}
+                {email ? <span className="truncate text-xs text-muted-foreground">{email}</span> : null}
                 {countryLabel ? (
-                  <span className="truncate text-xs text-zinc-400">{countryLabel}</span>
+                  <span className="truncate text-xs text-muted-foreground">{countryLabel}</span>
                 ) : null}
               </div>
             </DropdownMenuLabel>
           </DropdownMenuGroup>
-          <DropdownMenuSeparator className="bg-white/10" />
+          <DropdownMenuSeparator className="bg-border" />
           <DropdownMenuGroup>
             <DropdownMenuItem
-              className="cursor-pointer text-zinc-200 focus:bg-white/10 focus:text-zinc-50"
+              className="cursor-pointer text-foreground focus:bg-accent focus:text-foreground"
               onClick={() => {
                 void openProfileSettings().catch(() => {});
               }}
@@ -161,7 +163,7 @@ export function FeedAppBarActions({
               Edit profile
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="cursor-pointer text-zinc-200 focus:bg-white/10 focus:text-zinc-50"
+              className="cursor-pointer text-foreground focus:bg-accent focus:text-foreground"
               onClick={() => {
                 window.location.assign("/auth/logout");
               }}

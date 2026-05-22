@@ -25,7 +25,7 @@ export type SurfSessionSummary = {
 function ConditionsStars({ rating }: { rating: number | null }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs text-zinc-500">Conditions</span>
+      <span className="text-xs text-muted-foreground">Conditions</span>
       <div
         className="flex items-center gap-0.5"
         role="img"
@@ -40,14 +40,14 @@ function ConditionsStars({ rating }: { rating: number | null }) {
               "size-3.5 shrink-0",
               rating != null && n <= rating
                 ? "fill-amber-400 text-amber-400"
-                : "fill-transparent text-zinc-600",
+                : "fill-transparent text-muted-foreground",
             )}
             aria-hidden
           />
         ))}
       </div>
       {rating == null ? (
-        <span className="text-xs text-zinc-600">Not rated</span>
+        <span className="text-xs text-muted-foreground">Not rated</span>
       ) : null}
     </div>
   );
@@ -72,7 +72,7 @@ function SessionPreviewThumbs({
   return (
     <div className="flex shrink-0 flex-col items-end justify-center gap-2">
       <div className="flex items-center gap-2.5">
-        <span className="whitespace-nowrap text-xs font-medium tabular-nums text-zinc-400">
+        <span className="whitespace-nowrap text-xs font-medium tabular-nums text-muted-foreground">
           {videoLabel}
         </span>
         <div className="flex items-stretch gap-1.5">
@@ -82,7 +82,7 @@ function SessionPreviewThumbs({
               <div
                 key={i}
                 className={cn(
-                  "relative h-[4.5rem] w-[4.5rem] overflow-hidden rounded-lg border border-white/10 bg-zinc-800 sm:h-20 sm:w-[4.75rem]",
+                  "relative h-[4.5rem] w-[4.5rem] overflow-hidden rounded-lg border border-border bg-muted sm:h-20 sm:w-[4.75rem]",
                   i === 0 && videoCount > 0 && !url && "animate-pulse",
                 )}
               >
@@ -90,7 +90,7 @@ function SessionPreviewThumbs({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={url} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center px-1 text-center text-[10px] leading-tight text-zinc-600">
+                  <span className="flex h-full w-full items-center justify-center px-1 text-center text-[10px] leading-tight text-muted-foreground">
                     {videoCount > 0 && i === 0 ? "…" : ""}
                   </span>
                 )}
@@ -126,7 +126,7 @@ export function VideoThumbnailStrip({
           <div
             key={i}
             className={cn(
-              "relative h-20 w-[4.25rem] overflow-hidden rounded-lg border border-white/10 bg-zinc-800 sm:w-[4.5rem]",
+              "relative h-20 w-[4.25rem] overflow-hidden rounded-lg border border-border bg-muted sm:w-[4.5rem]",
               (isProcessing || (i === 0 && urls.length === 0 && !emptyLabel)) &&
                 "animate-pulse",
             )}
@@ -135,7 +135,7 @@ export function VideoThumbnailStrip({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={url} alt="" className="h-full w-full object-cover" />
             ) : (
-              <span className="flex h-full w-full items-center justify-center px-1 text-center text-[10px] leading-tight text-zinc-500">
+              <span className="flex h-full w-full items-center justify-center px-1 text-center text-[10px] leading-tight text-muted-foreground">
                 {emptyLabel && i === 0 ? emptyLabel : ""}
               </span>
             )}
@@ -160,7 +160,7 @@ export function SessionSummaryCard({
   return (
     <Card
       className={cn(
-        "border-white/10 bg-white/[0.03] text-zinc-100",
+        "border-border bg-white/[0.03] text-foreground",
         className,
       )}
     >
@@ -168,19 +168,19 @@ export function SessionSummaryCard({
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <span className="font-medium text-zinc-100">
+              <span className="font-medium text-foreground">
                 {session.spotName ?? "Spot"}
               </span>
               {session.status === "closed" ? (
-                <span className="rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+                <span className="rounded-md border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                   Published
                 </span>
               ) : null}
-              <span className="text-sm text-zinc-500">
+              <span className="text-sm text-muted-foreground">
                 {session.sessionDate} · {session.sessionTime}
               </span>
             </div>
-            <p className="mt-0.5 truncate text-xs text-zinc-500">
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
               {session.regionName ?? "Region"} · {session.countryCode} ·{" "}
               {formatDurationMinutes(session.durationMinutes ?? 120)}
             </p>
@@ -193,14 +193,14 @@ export function SessionSummaryCard({
               waveLabels.map((label) => (
                 <span
                   key={label}
-                  className="inline-flex max-w-full items-center truncate rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-zinc-300"
+                  className="inline-flex max-w-full items-center truncate rounded-md border border-border bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground"
                   title={label}
                 >
                   {label}
                 </span>
               ))
             ) : (
-              <span className="text-xs text-zinc-600">No wave types</span>
+              <span className="text-xs text-muted-foreground">No wave types</span>
             )}
           </div>
         </div>

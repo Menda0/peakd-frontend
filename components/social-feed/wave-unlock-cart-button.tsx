@@ -21,8 +21,8 @@ export function WaveUnlockCartButton() {
         <button
           type="button"
           className={cn(
-            "relative rounded-full p-2.5 text-zinc-400 transition hover:bg-white/5 hover:text-zinc-200",
-            "data-[state=open]:bg-white/5 data-[state=open]:text-zinc-200",
+            "relative rounded-full p-2.5 text-muted-foreground transition hover:bg-accent hover:text-foreground",
+            "data-[state=open]:bg-muted/50 data-[state=open]:text-foreground",
           )}
           aria-label={`Shopping cart, ${count} items`}
           aria-expanded={open}

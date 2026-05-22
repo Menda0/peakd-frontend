@@ -46,21 +46,21 @@ export function GeoCreateConfirmModal({
         }
       }}
     >
-      <Card className="w-full max-w-md border-white/10 bg-[#0a1218] text-zinc-100">
+      <Card className="w-full max-w-md border-border bg-popover text-foreground">
         <CardHeader>
           <CardTitle className="text-lg">{title}</CardTitle>
-          <CardDescription className="whitespace-pre-wrap text-zinc-400">{description}</CardDescription>
+          <CardDescription className="whitespace-pre-wrap text-muted-foreground">{description}</CardDescription>
         </CardHeader>
         {error ? (
           <CardContent className="pt-0">
             <p className="text-sm text-red-400">{error}</p>
           </CardContent>
         ) : null}
-        <CardFooter className="flex justify-end gap-2 border-t border-white/10 pt-4">
+        <CardFooter className="flex justify-end gap-2 border-t border-border pt-4">
           <Button
             type="button"
             variant="outline"
-            className="border-white/15 bg-transparent text-zinc-200"
+            className="border-border bg-transparent text-foreground"
             disabled={isSubmitting}
             onClick={onCancel}
           >
