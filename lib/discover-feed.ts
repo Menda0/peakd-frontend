@@ -40,6 +40,15 @@ export type DiscoverFeedItem = {
   claimedByViewer: boolean;
   isOwnUpload: boolean;
   surfer: SurferProfile | null;
+  isCommercial: boolean;
+  snapshotUrls: string[];
+  videoUnlockedByViewer: boolean;
+  wavePricePeaks: number | null;
+  buyClaimPricePeaks: number | null;
+  sponsorPricePeaks: number | null;
+  canClaim: boolean;
+  canBuyClaim: boolean;
+  canSponsor: boolean;
 };
 
 export type DiscoverFeedPage = {
@@ -60,6 +69,7 @@ export type DiscoverFeedPost = {
   session: DiscoverFeedSession;
   videoUrl: string | null;
   thumbnailUrl: string | null;
+  snapshotUrls: string[];
   status: "processing" | "completed" | "failed";
   claimStatus: "none" | "auto" | "claimed";
   claimedByViewer: boolean;
@@ -68,6 +78,14 @@ export type DiscoverFeedPost = {
   likes: number;
   comments: number;
   shares: number;
+  isCommercial: boolean;
+  videoUnlockedByViewer: boolean;
+  wavePricePeaks: number | null;
+  buyClaimPricePeaks: number | null;
+  sponsorPricePeaks: number | null;
+  canClaim: boolean;
+  canBuyClaim: boolean;
+  canSponsor: boolean;
 };
 
 export const PERSONAL_UPLOAD_EVENT = "peakd:personal-upload";
@@ -141,6 +159,15 @@ export function discoverItemToPost(
     likes: item.shakaCount,
     comments: 0,
     shares: 0,
+    isCommercial: item.isCommercial,
+    snapshotUrls: item.snapshotUrls,
+    videoUnlockedByViewer: item.videoUnlockedByViewer,
+    wavePricePeaks: item.wavePricePeaks,
+    buyClaimPricePeaks: item.buyClaimPricePeaks,
+    sponsorPricePeaks: item.sponsorPricePeaks,
+    canClaim: item.canClaim,
+    canBuyClaim: item.canBuyClaim,
+    canSponsor: item.canSponsor,
   };
 }
 
@@ -214,6 +241,20 @@ function normalizeDiscoverItem(raw: unknown): DiscoverFeedItem | null {
     claimedByViewer: o.claimedByViewer === true,
     isOwnUpload: o.isOwnUpload === true,
     surfer: normalizeSurferProfile(o.surfer),
+    isCommercial: o.isCommercial === true,
+    snapshotUrls: Array.isArray(o.snapshotUrls)
+      ? o.snapshotUrls.filter((u): u is string => typeof u === "string")
+      : [],
+    videoUnlockedByViewer: o.videoUnlockedByViewer === true,
+    wavePricePeaks:
+      typeof o.wavePricePeaks === "number" ? o.wavePricePeaks : null,
+    buyClaimPricePeaks:
+      typeof o.buyClaimPricePeaks === "number" ? o.buyClaimPricePeaks : null,
+    sponsorPricePeaks:
+      typeof o.sponsorPricePeaks === "number" ? o.sponsorPricePeaks : null,
+    canClaim: o.canClaim === true,
+    canBuyClaim: o.canBuyClaim === true,
+    canSponsor: o.canSponsor === true,
   };
 }
 

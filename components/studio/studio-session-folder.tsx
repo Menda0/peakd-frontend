@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,8 +15,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { readApiErrorMessage } from "@/lib/api-error";
 import { getApiBase } from "@/lib/api";
+import { FormattedDateTime } from "@/components/ui/formatted-datetime";
 import { publishVideoToDiscover } from "@/lib/discover-feed";
+import {
+  formatSessionPublishedAt,
+  isSessionPublished,
+} from "@/lib/surf-session-status";
 import {
   absoluteSharedSessionUrl,
   ensureSessionShareToken,
@@ -31,6 +38,12 @@ import {
   validateStudioSessionFormValues,
   type StudioSessionFormValues,
 } from "@/components/studio/studio-session-form-fields";
+import {
+  DEFAULT_COMMERCIAL_SETTINGS,
+  normalizeCommercialSettings,
+  type CommercialSettings,
+} from "@/lib/commercial-settings";
+import { normalizePartnerProfileDto } from "@/lib/partner-profile";
 import type { WaveTypeId } from "@/lib/surf-session-waves";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 import {
@@ -41,7 +54,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
-import { ChevronDown, Copy, Download, Loader2, Share2 } from "lucide-react";
+import { ChevronDown, Copy, Download, Loader2, Share2, Trash2 } from "lucide-react";
 
 type ExportKind = "processed" | "raw";
 
@@ -165,9 +178,13 @@ type SessionDetail = {
   rawExportErrorMessage?: string | null;
   rawExportExpiresAt?: string | null;
   shareToken?: string | null;
+  isCommercial?: boolean;
+  commercialSettings?: CommercialSettings | null;
+  effectiveCommercialSettings?: CommercialSettings | null;
 };
 
 function sessionToFormValues(session: SessionDetail): StudioSessionFormValues {
+  const sessionCommercial = normalizeCommercialSettings(session.commercialSettings);
   return {
     countryCode: session.countryCode,
     regionId: session.regionId,
@@ -177,6 +194,24 @@ function sessionToFormValues(session: SessionDetail): StudioSessionFormValues {
     durationMinutes: session.durationMinutes ?? 120,
     conditionsRating: session.conditionsRating,
     waveTypes: (session.waveTypes ?? []) as WaveTypeId[],
+    isCommercial: session.isCommercial === true,
+    customizeCommercialPricing: Boolean(sessionCommercial),
+    commercialSettings: sessionCommercial ?? DEFAULT_COMMERCIAL_SETTINGS,
+  };
+}
+
+function commercialFieldsForApi(values: StudioSessionFormValues): {
+  isCommercial?: boolean;
+  commercialSettings?: CommercialSettings | null;
+} {
+  if (!values.isCommercial) {
+    return { isCommercial: false, commercialSettings: null };
+  }
+  return {
+    isCommercial: true,
+    commercialSettings: values.customizeCommercialPricing
+      ? values.commercialSettings ?? null
+      : null,
   };
 }
 
@@ -214,7 +249,7 @@ const dropdownSurface =
 function SessionActionsBar({
   session,
   hasProcessingJob,
-  isSessionClosed,
+  sessionIsPublished,
   showExportActions,
   exportProcessing,
   exportReady,
@@ -224,11 +259,11 @@ function SessionActionsBar({
   rawExportFailed,
   rawDaysLeft,
   anyExportProcessing,
-  closingSession,
-  closeError,
+  publishingSession,
+  sessionPublishError,
   downloadError,
   rawDownloadError,
-  onCloseClick,
+  onPublishClick,
   onEditClick,
   onDownloadPick,
   shareDisabled,
@@ -237,7 +272,7 @@ function SessionActionsBar({
 }: {
   session: SessionDetail;
   hasProcessingJob: boolean;
-  isSessionClosed: boolean;
+  sessionIsPublished: boolean;
   showExportActions: boolean;
   exportProcessing: boolean;
   exportReady: boolean;
@@ -247,11 +282,11 @@ function SessionActionsBar({
   rawExportFailed: boolean;
   rawDaysLeft: number;
   anyExportProcessing: boolean;
-  closingSession: boolean;
-  closeError: string | null;
+  publishingSession: boolean;
+  sessionPublishError: string | null;
   downloadError: string | null;
   rawDownloadError: string | null;
-  onCloseClick: () => void;
+  onPublishClick: () => void;
   onEditClick: () => void;
   onDownloadPick: (kind: ExportKind) => void;
   shareDisabled: boolean;
@@ -272,7 +307,7 @@ function SessionActionsBar({
   return (
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-        {showExportActions || isSessionClosed ? (
+        {showExportActions || sessionIsPublished ? (
           <div className="flex flex-wrap items-center gap-2 sm:mr-auto">
             {showExportActions ? (
             <DropdownMenu>
@@ -328,7 +363,7 @@ function SessionActionsBar({
             </DropdownMenu>
             ) : null}
 
-            {isSessionClosed ? (
+            {sessionIsPublished ? (
               <Button
                 type="button"
                 variant="outline"
@@ -354,12 +389,12 @@ function SessionActionsBar({
             ) : null}
           </div>
         ) : null}
-        {!isSessionClosed ? (
+        {!sessionIsPublished ? (
           <>
             <span
               title={
                 hasProcessingJob
-                  ? "Wait until all videos finish processing before closing this session."
+                  ? "Wait until all videos finish processing before publishing this session."
                   : undefined
               }
               className="inline-flex"
@@ -369,10 +404,10 @@ function SessionActionsBar({
                 variant="outline"
                 size="sm"
                 className="border-white/15 bg-transparent text-zinc-200"
-                disabled={hasProcessingJob || closingSession}
-                onClick={onCloseClick}
+                disabled={hasProcessingJob || publishingSession}
+                onClick={onPublishClick}
               >
-                {closingSession ? "Closing…" : "Close session"}
+                {publishingSession ? "Publishing…" : "Publish session"}
               </Button>
             </span>
             <Button
@@ -387,7 +422,9 @@ function SessionActionsBar({
           </>
         ) : null}
       </div>
-      {closeError ? <p className="text-sm text-red-400">{closeError}</p> : null}
+      {sessionPublishError ? (
+        <p className="text-sm text-red-400">{sessionPublishError}</p>
+      ) : null}
       {downloadError ? <p className="text-sm text-red-400">{downloadError}</p> : null}
       {rawDownloadError ? (
         <p className="text-sm text-red-400">{rawDownloadError}</p>
@@ -398,12 +435,10 @@ function SessionActionsBar({
       {rawExportFailed && session.rawExportErrorMessage ? (
         <p className="text-sm text-red-400">{session.rawExportErrorMessage}</p>
       ) : null}
-      {isSessionClosed ? (
+      {sessionIsPublished ? (
         <p className="text-xs text-zinc-500">
-          This session is closed. Uploads are disabled.
-          {session.closedAt
-            ? ` Closed ${new Date(session.closedAt).toLocaleString()}.`
-            : ""}
+          This session is published. Uploads are disabled.
+          {formatSessionPublishedAt(session.closedAt)}
         </p>
       ) : null}
     </>
@@ -432,9 +467,9 @@ export function StudioSessionFolder() {
   const [editValues, setEditValues] = useState<StudioSessionFormValues | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
-  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
-  const [closingSession, setClosingSession] = useState(false);
-  const [closeError, setCloseError] = useState<string | null>(null);
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
+  const [publishingSession, setPublishingSession] = useState(false);
+  const [sessionPublishError, setSessionPublishError] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [rawDownloadError, setRawDownloadError] = useState<string | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -445,8 +480,27 @@ export function StudioSessionFolder() {
   const shareCopyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [publishingJobId, setPublishingJobId] = useState<string | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [removeConfirmJobId, setRemoveConfirmJobId] = useState<string | null>(null);
+  const [removingJobId, setRemovingJobId] = useState<string | null>(null);
 
   const isPartner = (user as { isPartner?: boolean } | undefined)?.isPartner === true;
+  const [partnerCommercialDefaults, setPartnerCommercialDefaults] =
+    useState<CommercialSettings | null>(null);
+
+  useEffect(() => {
+    if (!isPartner) return;
+    void (async () => {
+      try {
+        const base = getApiBase();
+        const res = await fetch(`${base}/partners/me`, { credentials: "include" });
+        if (!res.ok) return;
+        const dto = normalizePartnerProfileDto(await res.json());
+        setPartnerCommercialDefaults(dto?.commercialSettings ?? null);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [isPartner]);
 
   const loadSession = useCallback(async () => {
     if (!sessionId) return;
@@ -531,9 +585,9 @@ export function StudioSessionFolder() {
   const completedJobCount = jobs.filter(
     (j) => (j.status ?? "completed") === "completed",
   ).length;
-  const isSessionClosed = session?.status === "closed";
+  const sessionIsPublished = isSessionPublished(session?.status);
   const shareDisabled =
-    !isSessionClosed || hasProcessingJob || completedJobCount < 1;
+    !sessionIsPublished || hasProcessingJob || completedJobCount < 1;
   const exportProcessing = session?.exportStatus === "processing";
   const exportReady = session?.exportStatus === "ready";
   const exportFailed = session?.exportStatus === "failed";
@@ -543,11 +597,11 @@ export function StudioSessionFolder() {
   const rawDaysLeft = rawDaysRemaining(session?.rawExportExpiresAt);
   const anyExportProcessing = exportProcessing || rawExportProcessing;
   const showExportActions =
-    isSessionClosed ||
+    sessionIsPublished ||
     (session?.exportStatus != null && session.exportStatus !== "idle") ||
     (session?.rawExportStatus != null && session.rawExportStatus !== "idle");
   const uploadDisabled =
-    !!sessionError || loading || !session || editing || isSessionClosed;
+    !!sessionError || loading || !session || editing || sessionIsPublished;
 
   const handlePublishToDiscover = useCallback(
     async (jobId: string) => {
@@ -560,6 +614,34 @@ export function StudioSessionFolder() {
         setPublishError(e instanceof Error ? e.message : "Failed to publish");
       } finally {
         setPublishingJobId(null);
+      }
+    },
+    [loadJobs],
+  );
+
+  const handleRemoveVideo = useCallback(
+    async (jobId: string) => {
+      setRemovingJobId(jobId);
+      try {
+        const base = getApiBase();
+        const res = await fetch(`${base}/videos/${jobId}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+        if (!res.ok) {
+          throw new Error(
+            await readApiErrorMessage(res, "Failed to remove video"),
+          );
+        }
+        setRemoveConfirmJobId(null);
+        toast.success("Video removed");
+        await loadJobs();
+      } catch (e) {
+        const message =
+          e instanceof Error ? e.message : "Failed to remove video";
+        toast.error(message);
+      } finally {
+        setRemovingJobId(null);
       }
     },
     [loadJobs],
@@ -736,10 +818,10 @@ export function StudioSessionFolder() {
     [uploadOne],
   );
 
-  const handleCloseSession = useCallback(async () => {
+  const handlePublishSession = useCallback(async () => {
     if (!sessionId) return;
-    setCloseError(null);
-    setClosingSession(true);
+    setSessionPublishError(null);
+    setPublishingSession(true);
     try {
       const base = getApiBase();
       const res = await fetch(`${base}/studio/sessions/${sessionId}/close`, {
@@ -747,14 +829,20 @@ export function StudioSessionFolder() {
         credentials: "include",
       });
       if (!res.ok) {
-        throw new Error(await res.text().catch(() => res.statusText));
+        throw new Error(
+          await readApiErrorMessage(res, "Failed to publish session"),
+        );
       }
-      setCloseConfirmOpen(false);
+      setPublishConfirmOpen(false);
+      toast.success("Session published");
       await loadSession();
     } catch (e) {
-      setCloseError(e instanceof Error ? e.message : "Failed to close session");
+      const message =
+        e instanceof Error ? e.message : "Failed to publish session";
+      setSessionPublishError(message);
+      toast.error(message);
     } finally {
-      setClosingSession(false);
+      setPublishingSession(false);
     }
   }, [sessionId, loadSession]);
 
@@ -886,6 +974,8 @@ export function StudioSessionFolder() {
                     onChange={(patch) =>
                       setEditValues((prev) => (prev ? { ...prev, ...patch } : prev))
                     }
+                    showCommercialFields={isPartner}
+                    partnerCommercialDefaults={partnerCommercialDefaults}
                   />
                   {editError ? (
                     <p className="text-sm text-red-400">{editError}</p>
@@ -933,6 +1023,7 @@ export function StudioSessionFolder() {
                                 durationMinutes: editValues.durationMinutes,
                                 conditionsRating: editValues.conditionsRating,
                                 waveTypes: editValues.waveTypes,
+                                ...commercialFieldsForApi(editValues),
                               }),
                             },
                           );
@@ -964,10 +1055,12 @@ export function StudioSessionFolder() {
                           });
                           setEditing(false);
                           setEditValues(null);
+                          toast.success("Session saved");
                         } catch (e) {
-                          setEditError(
-                            e instanceof Error ? e.message : "Failed to save session",
-                          );
+                          const message =
+                            e instanceof Error ? e.message : "Failed to save session";
+                          setEditError(message);
+                          toast.error(message);
                         } finally {
                           setSavingEdit(false);
                         }
@@ -983,7 +1076,7 @@ export function StudioSessionFolder() {
                 <SessionActionsBar
                   session={session}
                   hasProcessingJob={hasProcessingJob}
-                  isSessionClosed={isSessionClosed}
+                  sessionIsPublished={sessionIsPublished}
                   showExportActions={showExportActions}
                   exportProcessing={exportProcessing}
                   exportReady={exportReady}
@@ -993,13 +1086,13 @@ export function StudioSessionFolder() {
                   rawExportFailed={rawExportFailed}
                   rawDaysLeft={rawDaysLeft}
                   anyExportProcessing={anyExportProcessing}
-                  closingSession={closingSession}
-                  closeError={closeError}
+                  publishingSession={publishingSession}
+                  sessionPublishError={sessionPublishError}
                   downloadError={downloadError}
                   rawDownloadError={rawDownloadError}
-                  onCloseClick={() => {
-                    setCloseError(null);
-                    setCloseConfirmOpen(true);
+                  onPublishClick={() => {
+                    setSessionPublishError(null);
+                    setPublishConfirmOpen(true);
                   }}
                   onEditClick={() => {
                     setEditValues(sessionToFormValues(session));
@@ -1024,8 +1117,8 @@ export function StudioSessionFolder() {
           <CardHeader>
             <CardTitle>Upload</CardTitle>
             <CardDescription className="text-zinc-500">
-              {isSessionClosed
-                ? "This session is closed. You can't add more videos."
+              {sessionIsPublished
+                ? "This session is published. You can't add more videos."
                 : (
                     <>
                       Import videos into the queue below, then use{" "}
@@ -1149,18 +1242,33 @@ export function StudioSessionFolder() {
         />
 
         <GeoCreateConfirmModal
-          open={closeConfirmOpen}
-          title="Close this session?"
-          description={
-            "Closing ends uploads for this session and starts building a ZIP with all completed videos and their snapshot images. You can download the archive when it is ready."
-          }
-          confirmLabel="Close session"
+          open={removeConfirmJobId != null}
+          title="Remove this video?"
+          description="This deletes the wave from the session and removes its files from storage. This cannot be undone."
+          confirmLabel="Remove"
           cancelLabel="Cancel"
-          onConfirm={() => void handleCloseSession()}
-          onCancel={() => {
-            if (!closingSession) setCloseConfirmOpen(false);
+          onConfirm={() => {
+            if (removeConfirmJobId) void handleRemoveVideo(removeConfirmJobId);
           }}
-          isSubmitting={closingSession}
+          onCancel={() => {
+            if (!removingJobId) setRemoveConfirmJobId(null);
+          }}
+          isSubmitting={removingJobId != null}
+        />
+
+        <GeoCreateConfirmModal
+          open={publishConfirmOpen}
+          title="Publish this session?"
+          description={
+            "Publishing ends uploads for this session and starts building a ZIP with all completed videos and their snapshot images. You can download the archive when it is ready."
+          }
+          confirmLabel="Publish session"
+          cancelLabel="Cancel"
+          onConfirm={() => void handlePublishSession()}
+          onCancel={() => {
+            if (!publishingSession) setPublishConfirmOpen(false);
+          }}
+          isSubmitting={publishingSession}
         />
 
         <SessionShareModal
@@ -1256,7 +1364,7 @@ export function StudioSessionFolder() {
               const isCompleted = status === "completed";
               const isPublished = Boolean(job.discoverPublishedAt);
               const showPublishButton =
-                isSessionClosed &&
+                sessionIsPublished &&
                 !isPartner &&
                 isCompleted &&
                 !isPublished;
@@ -1293,31 +1401,55 @@ export function StudioSessionFolder() {
                               ? "Processing on server — safe to refresh; status is saved."
                               : isFailed
                                 ? (job.errorMessage ?? "Processing failed.")
-                                : isPublished
-                                  ? `On discover feed · ${new Date(job.createdAt).toLocaleString()}`
-                                  : new Date(job.createdAt).toLocaleString()}
+                                : isPublished ? (
+                                  <>
+                                    On discover feed ·{" "}
+                                    <FormattedDateTime value={job.createdAt} />
+                                  </>
+                                ) : (
+                                  <FormattedDateTime value={job.createdAt} />
+                                )}
                           </span>
                         </div>
                       </Link>
-                      {showPublishButton ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="shrink-0 border-white/15 text-zinc-200"
-                          disabled={publishingJobId === job.jobId}
-                          onClick={() => void handlePublishToDiscover(job.jobId)}
-                        >
-                          {publishingJobId === job.jobId ? (
-                            <>
+                      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+                        {!sessionIsPublished ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-white/15 text-zinc-200 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
+                            disabled={removingJobId === job.jobId}
+                            onClick={() => setRemoveConfirmJobId(job.jobId)}
+                          >
+                            {removingJobId === job.jobId ? (
                               <Loader2 className="size-4 animate-spin" aria-hidden />
-                              <span className="ml-2">Publishing…</span>
-                            </>
-                          ) : (
-                            "Publish to discover"
-                          )}
-                        </Button>
-                      ) : null}
+                            ) : (
+                              <Trash2 className="size-4" aria-hidden />
+                            )}
+                            <span className="ml-2">Remove</span>
+                          </Button>
+                        ) : null}
+                        {showPublishButton ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-white/15 text-zinc-200"
+                            disabled={publishingJobId === job.jobId}
+                            onClick={() => void handlePublishToDiscover(job.jobId)}
+                          >
+                            {publishingJobId === job.jobId ? (
+                              <>
+                                <Loader2 className="size-4 animate-spin" aria-hidden />
+                                <span className="ml-2">Publishing…</span>
+                              </>
+                            ) : (
+                              "Publish to discover"
+                            )}
+                          </Button>
+                        ) : null}
+                      </div>
                     </CardContent>
                   </Card>
                 </li>

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getApiBase } from "@/lib/api";
+import type { CommercialSettings } from "@/lib/commercial-settings";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 import { StudioNewSessionDialog } from "@/components/studio/studio-new-session-dialog";
 import { SessionSummaryCard } from "@/components/studio/session-summary-card";
@@ -43,9 +44,13 @@ type JobListItem = {
 
 export function StudioSessionsDashboard({
   defaultCountryCode = null,
+  partnerCommercialDefaults = null,
+  showCommercialFields = false,
 }: {
   /** Pre-select country when creating a session (partner profile country). */
   defaultCountryCode?: string | null;
+  partnerCommercialDefaults?: CommercialSettings | null;
+  showCommercialFields?: boolean;
 } = {}) {
   const router = useRouter();
   const { user } = useUser();
@@ -111,6 +116,8 @@ export function StudioSessionsDashboard({
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         defaultCountryCode={defaultCountryCode}
+        showCommercialFields={showCommercialFields}
+        partnerCommercialDefaults={partnerCommercialDefaults}
         onCreated={(sessionId) => {
           void loadAll();
           router.push(`${userPathPrefix}/studio/sessions/${sessionId}`);

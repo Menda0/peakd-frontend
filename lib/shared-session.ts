@@ -1,4 +1,12 @@
 import { getApiBase } from "@/lib/api";
+import { readApiErrorMessage } from "@/lib/api-error";
+import type { DiscoverFeedPost } from "@/lib/discover-feed";
+import {
+  formatLocationLabel,
+  formatSessionSummary,
+  type DiscoverFeedLocation,
+  type DiscoverFeedSession,
+} from "@/lib/discover-feed";
 import {
   normalizeSurferProfile,
   type SurferProfile,
@@ -8,19 +16,31 @@ export type PublicSharedSessionWave = {
   jobId: string;
   originalFilename: string;
   createdAt: string;
+  /** Pre-formatted on the server to avoid hydration locale mismatches. */
+  createdAtLabel?: string;
   thumbnailUrls: string[];
   thumbnailUrl: string | null;
-  videoUrl: string;
-  processedDownloadUrl: string;
+  snapshotUrls: string[];
+  videoUrl: string | null;
+  processedDownloadUrl: string | null;
   hasOriginal: boolean;
   originalDownloadUrl: string | null;
   claimStatus: "none" | "claimed" | "auto";
   canClaim: boolean;
   surfer: SurferProfile | null;
+  isCommercial: boolean;
+  videoUnlockedByViewer: boolean;
+  wavePricePeaks: number | null;
+  buyClaimPricePeaks: number | null;
+  sponsorPricePeaks: number | null;
+  canBuyClaim: boolean;
+  canSponsor: boolean;
+  claimedByViewer: boolean;
 };
 
 export type PublicSharedSession = {
   shareToken: string;
+  isCommercial: boolean;
   partnerName: string | null;
   partnerAvatarUrl: string | null;
   exports: {
@@ -91,12 +111,138 @@ export async function fetchPublicSharedSession(
     throw new Error(await res.text().catch(() => res.statusText));
   }
   const raw = (await res.json()) as PublicSharedSession;
+  return normalizePublicSharedSession(raw);
+}
+
+export async function fetchAuthenticatedSharedSession(
+  shareToken: string,
+): Promise<PublicSharedSession> {
+  const token = shareToken.trim();
+  const res = await fetch(
+    `${getApiBase()}/shared-sessions/${encodeURIComponent(token)}`,
+    { credentials: "include", cache: "no-store" },
+  );
+  if (!res.ok) {
+    throw new Error(
+      await readApiErrorMessage(res, "Could not load shared session"),
+    );
+  }
+  const raw = (await res.json()) as PublicSharedSession;
+  return normalizePublicSharedSession(raw);
+}
+
+function normalizePublicSharedSession(raw: PublicSharedSession): PublicSharedSession {
   return {
     ...raw,
-    waves: raw.waves.map((wave) => ({
-      ...wave,
-      surfer: normalizeSurferProfile(wave.surfer),
-    })),
+    isCommercial: raw.isCommercial === true,
+    waves: raw.waves.map((wave) => normalizePublicSharedSessionWave(wave)),
+  };
+}
+
+function normalizePublicSharedSessionWave(
+  wave: PublicSharedSessionWave,
+): PublicSharedSessionWave {
+  const thumbs = Array.isArray(wave.thumbnailUrls) ? wave.thumbnailUrls : [];
+  const snapshots =
+    Array.isArray(wave.snapshotUrls) && wave.snapshotUrls.length > 0
+      ? wave.snapshotUrls
+      : thumbs;
+  return {
+    ...wave,
+    thumbnailUrls: thumbs,
+    snapshotUrls: snapshots,
+    thumbnailUrl:
+      wave.thumbnailUrl ??
+      snapshots[0] ??
+      thumbs[0] ??
+      null,
+    videoUrl: typeof wave.videoUrl === "string" ? wave.videoUrl : null,
+    processedDownloadUrl:
+      typeof wave.processedDownloadUrl === "string"
+        ? wave.processedDownloadUrl
+        : null,
+    surfer: normalizeSurferProfile(wave.surfer),
+    isCommercial: wave.isCommercial === true,
+    videoUnlockedByViewer: wave.videoUnlockedByViewer === true,
+    canBuyClaim: wave.canBuyClaim === true,
+    canSponsor: wave.canSponsor === true,
+    claimedByViewer: wave.claimedByViewer === true,
+    wavePricePeaks:
+      typeof wave.wavePricePeaks === "number" ? wave.wavePricePeaks : null,
+    buyClaimPricePeaks:
+      typeof wave.buyClaimPricePeaks === "number"
+        ? wave.buyClaimPricePeaks
+        : null,
+    sponsorPricePeaks:
+      typeof wave.sponsorPricePeaks === "number" ? wave.sponsorPricePeaks : null,
+  };
+}
+
+export function sharedSessionToFeedLocation(
+  session: PublicSharedSession["session"],
+): DiscoverFeedLocation {
+  return {
+    countryCode: session.countryCode,
+    regionName: session.regionName,
+    spotName: session.spotName,
+    isUndisclosed: session.isUndisclosed,
+  };
+}
+
+export function sharedSessionToFeedSession(
+  session: PublicSharedSession["session"],
+): DiscoverFeedSession {
+  return {
+    sessionDate: session.sessionDate,
+    sessionTime: session.sessionTime,
+    durationMinutes: session.durationMinutes,
+    conditionsRating: session.conditionsRating,
+    waveTypes: session.waveTypes,
+  };
+}
+
+export function sharedSessionWaveToDiscoverPost(
+  wave: PublicSharedSessionWave,
+  ctx: {
+    partnerName: string;
+    partnerAvatarUrl: string | null;
+    location: DiscoverFeedLocation;
+    feedSession: DiscoverFeedSession;
+  },
+): DiscoverFeedPost {
+  const timeAgo = wave.createdAtLabel ?? wave.createdAt;
+  return {
+    id: wave.jobId,
+    authorName: ctx.partnerName,
+    authorAvatarUrl: ctx.partnerAvatarUrl,
+    isPartnerUpload: true,
+    location: formatLocationLabel(ctx.location),
+    sessionSummary: formatSessionSummary(ctx.location, ctx.feedSession),
+    timeAgo,
+    createdAt: wave.createdAt,
+    session: ctx.feedSession,
+    videoUrl: wave.videoUrl,
+    thumbnailUrl: wave.thumbnailUrl,
+    snapshotUrls:
+      wave.snapshotUrls.length > 0
+        ? wave.snapshotUrls
+        : wave.thumbnailUrls,
+    status: "completed",
+    claimStatus: wave.claimStatus,
+    claimedByViewer: wave.claimedByViewer,
+    isOwnUpload: false,
+    surfer: wave.surfer,
+    likes: 0,
+    comments: 0,
+    shares: 0,
+    isCommercial: true,
+    videoUnlockedByViewer: wave.videoUnlockedByViewer,
+    wavePricePeaks: wave.wavePricePeaks,
+    buyClaimPricePeaks: wave.buyClaimPricePeaks,
+    sponsorPricePeaks: wave.sponsorPricePeaks,
+    canClaim: wave.canClaim,
+    canBuyClaim: wave.canBuyClaim,
+    canSponsor: wave.canSponsor,
   };
 }
 

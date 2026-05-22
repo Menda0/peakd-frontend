@@ -5,14 +5,25 @@ import { useState } from "react";
 import type { DiscoverFeedPost } from "@/lib/discover-feed";
 import type { PlaceholderPost } from "@/lib/social-feed-placeholder";
 import type { SurferProfile } from "@/lib/surfer-profile";
+import { CommercialWaveActions } from "./commercial-wave-actions";
 import { ClaimWaveButton } from "./claim-wave-button";
 import { PostActionsBar } from "./post-actions-bar";
+import { WaveSnapshotCarousel } from "./wave-snapshot-carousel";
 import { PostContent } from "./post-content";
 import { PostSessionInfo } from "./post-session-info";
 import { PostHeader } from "./post-header";
 import { PostMedia } from "./post-media";
+import { PostSurferBadge } from "./post-surfer-badge";
 
-function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
+function DiscoverVideoPostCard({
+  post,
+  onCommercialClaimed,
+  onCommercialPurchased,
+}: {
+  post: DiscoverFeedPost;
+  onCommercialClaimed?: (surfer: SurferProfile) => void;
+  onCommercialPurchased?: () => void;
+}) {
   const [claimedLocally, setClaimedLocally] = useState(false);
   const [localSurfer, setLocalSurfer] = useState<SurferProfile | null>(null);
   const surfer = post.surfer ?? localSurfer;
@@ -20,12 +31,25 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
   const isFailed = post.status === "failed";
   const timeLabel = isProcessing ? "Processing…" : post.timeAgo;
   const canClaim =
+    !post.isCommercial &&
     post.isPartnerUpload &&
     !isProcessing &&
     !isFailed &&
     post.claimStatus === "none" &&
     !post.claimedByViewer &&
     !claimedLocally;
+  const showCommercial =
+    post.isCommercial && !isProcessing && !isFailed;
+  const commercialPlayback =
+    showCommercial && post.videoUnlockedByViewer && Boolean(post.videoUrl);
+  const commercialPreview =
+    showCommercial && !commercialPlayback;
+  const snapshotUrls =
+    post.snapshotUrls.length > 0
+      ? post.snapshotUrls
+      : post.thumbnailUrl
+        ? [post.thumbnailUrl]
+        : [];
 
   return (
     <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
@@ -48,6 +72,37 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
             <p className="text-sm font-medium text-red-300">Upload failed</p>
             <p className="text-xs text-zinc-500">This video could not be processed.</p>
           </div>
+        </div>
+      ) : commercialPlayback ? (
+        <PostMedia
+          thumbnailUrl={post.thumbnailUrl}
+          videoUrl={post.videoUrl ?? undefined}
+          surfer={surfer}
+          playbackId={post.id}
+          autoPlayInView
+          className="mt-3"
+        />
+      ) : commercialPreview ? (
+        <div className="relative mt-3">
+          <WaveSnapshotCarousel urls={snapshotUrls} />
+          {surfer ? (
+            <div className="absolute top-3 left-3 z-10">
+              <PostSurferBadge surfer={surfer} />
+            </div>
+          ) : null}
+          <CommercialWaveActions
+            post={post}
+            overlay
+            onClaimed={(claimedSurfer) => {
+              setClaimedLocally(true);
+              setLocalSurfer(claimedSurfer);
+              onCommercialClaimed?.(claimedSurfer);
+            }}
+            onPurchased={() => {
+              setClaimedLocally(true);
+              onCommercialPurchased?.();
+            }}
+          />
         </div>
       ) : (
         <PostMedia
@@ -83,12 +138,22 @@ function DiscoverVideoPostCard({ post }: { post: DiscoverFeedPost }) {
 export function VideoPostCard({
   post,
   placeholder,
+  onCommercialClaimed,
+  onCommercialPurchased,
 }: {
   post?: DiscoverFeedPost;
   placeholder?: PlaceholderPost;
+  onCommercialClaimed?: (surfer: SurferProfile) => void;
+  onCommercialPurchased?: () => void;
 }) {
   if (post) {
-    return <DiscoverVideoPostCard post={post} />;
+    return (
+      <DiscoverVideoPostCard
+        post={post}
+        onCommercialClaimed={onCommercialClaimed}
+        onCommercialPurchased={onCommercialPurchased}
+      />
+    );
   }
 
   if (!placeholder) return null;

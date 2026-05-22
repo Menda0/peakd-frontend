@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { CountryPicker } from "@/components/pickers/country-picker";
 import { RegionPicker } from "@/components/pickers/region-picker";
 import { Button } from "@/components/ui/button";
@@ -157,11 +158,15 @@ export function UserProfileModal({
       });
       if (!res.ok) {
         setSubmitError(res.error);
+        toast.error(res.error);
         return;
       }
       onSaved(res.data);
+      toast.success("Profile saved");
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Save failed");
+      const message = e instanceof Error ? e.message : "Save failed";
+      setSubmitError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }

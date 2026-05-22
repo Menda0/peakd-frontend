@@ -32,6 +32,11 @@ export type MyVideoItem = {
   uploadSource: "studio" | "personal";
   surfer: SurferProfile | null;
   filmedBy: FilmedByProfile | null;
+  isCommercial: boolean;
+  snapshotUrls: string[];
+  videoUnlockedByViewer: boolean;
+  wavePricePeaks: number | null;
+  buyClaimPricePeaks: number | null;
 };
 
 function normalizeFilmedBy(raw: unknown): FilmedByProfile | null {
@@ -82,6 +87,15 @@ function normalizeMyVideoItem(raw: unknown): MyVideoItem | null {
     uploadSource: o.uploadSource === "studio" ? "studio" : "personal",
     surfer: normalizeSurferProfile(o.surfer),
     filmedBy: normalizeFilmedBy(o.filmedBy),
+    isCommercial: o.isCommercial === true,
+    snapshotUrls: Array.isArray(o.snapshotUrls)
+      ? o.snapshotUrls.filter((u): u is string => typeof u === "string")
+      : [],
+    videoUnlockedByViewer: o.videoUnlockedByViewer === true,
+    wavePricePeaks:
+      typeof o.wavePricePeaks === "number" ? o.wavePricePeaks : null,
+    buyClaimPricePeaks:
+      typeof o.buyClaimPricePeaks === "number" ? o.buyClaimPricePeaks : null,
   };
 }
 
@@ -119,6 +133,15 @@ export function myVideoItemToPost(
     likes: 0,
     comments: 0,
     shares: 0,
+    isCommercial: item.isCommercial,
+    snapshotUrls: item.snapshotUrls,
+    videoUnlockedByViewer: item.videoUnlockedByViewer,
+    wavePricePeaks: item.wavePricePeaks,
+    buyClaimPricePeaks: item.buyClaimPricePeaks ?? item.wavePricePeaks,
+    sponsorPricePeaks: item.wavePricePeaks,
+    canClaim: item.isCommercial && item.claimStatus === "none",
+    canBuyClaim: item.isCommercial && !item.videoUnlockedByViewer,
+    canSponsor: false,
   };
 }
 
