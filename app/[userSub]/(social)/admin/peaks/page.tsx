@@ -5,9 +5,9 @@ import { sessionHasAdminRole } from "@/lib/auth0-admin";
 import { getSocialFeedNavProps } from "@/lib/social-feed-nav";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 import { SocialFeedLayout } from "@/components/social-feed/social-feed-layout";
-import { AdminRegionsManager } from "@/components/admin/admin-regions-manager";
+import { AdminPeaksDashboard } from "@/components/admin/admin-peaks-dashboard";
 
-export default async function AdminRegionsPage({
+export default async function AdminPeaksPage({
   params,
 }: {
   params: Promise<{ userSub: string }>;
@@ -36,8 +36,8 @@ export default async function AdminRegionsPage({
       userName={session.user.name}
       userEmail={session.user.email}
     >
-      <Suspense fallback={<p className="text-sm text-zinc-400">Loading regions…</p>}>
-        <AdminRegionsManager regionsBasePath={`${prefix}/admin/regions`} />
+      <Suspense fallback={<p className="text-sm text-zinc-400">Loading Peaks…</p>}>
+        <AdminPeaksDashboard />
       </Suspense>
     </SocialFeedLayout>
   );
