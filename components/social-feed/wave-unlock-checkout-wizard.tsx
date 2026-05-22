@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BuyPeaksDialog } from "@/components/peaks/buy-peaks-dialog";
+import { PeakIcon } from "@/components/peaks/peak-icon";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,6 +23,7 @@ import {
   plainPartnerDescription,
   type WaveCheckoutContext,
 } from "@/lib/commercial-checkout";
+import { buyClaimCartBatch } from "@/lib/commercial-cart";
 import { buyClaimWave, fetchPeaksBalance, sponsorWave } from "@/lib/commercial-wave";
 import {
   allocateBuyClaimLineBreakdowns,
@@ -42,8 +44,10 @@ import {
 } from "@/lib/discover-feed";
 import {
   addToWaveUnlockCart,
+  removeFromWaveUnlockCart,
   useWaveUnlockCart,
   type WaveUnlockCartIntent,
+  type WaveUnlockCartLine,
 } from "@/lib/wave-unlock-cart";
 import { PostSessionInfo } from "./post-session-info";
 import {
@@ -413,11 +417,15 @@ export function WaveUnlockCheckoutWizard({
       0,
     );
     const thisCommunityFee = breakdown?.communityFeePeaks ?? 0;
+    const checkoutVideoCount = 1 + otherCartLines.length;
+    const checkoutTotalPeaks = (breakdown?.totalPeaks ?? 0) + cartTotalPeaks;
     return {
       cartTotalPeaks,
       cartItemCount: otherCartLines.length,
       cartCommunityFeePeaks,
       totalCommunityFeePeaks: cartCommunityFeePeaks + thisCommunityFee,
+      checkoutVideoCount,
+      checkoutTotalPeaks,
       cartTotals: breakdown
         ? {
             cartTotalPeaks,
@@ -480,7 +488,7 @@ export function WaveUnlockCheckoutWizard({
   const runPurchase = async () => {
     if (!ctx || !intent || !breakdown) return;
     setError(null);
-    const cost = breakdown.totalPeaks;
+    const cost = cartSummary.checkoutTotalPeaks;
     const balance = wallet?.peaksBalance ?? (await fetchPeaksBalance().catch(() => 0));
     if (balance < cost) {
       setPendingBuy(true);
@@ -489,21 +497,73 @@ export function WaveUnlockCheckoutWizard({
     }
     setSubmitting(true);
     try {
-      if (intent === "buy_claim") {
-        const { surfer } = await buyClaimWave(activeJobId, 1);
-        dispatchWaveClaimedEvent();
-        onClaimed(surfer);
+      if (otherCartLines.length === 0) {
+        if (intent === "buy_claim") {
+          const { surfer } = await buyClaimWave(activeJobId, 1);
+          dispatchWaveClaimedEvent();
+          onClaimed(surfer);
+        } else {
+          await sponsorWave(activeJobId);
+        }
+        toast.success(
+          intent === "buy_claim"
+            ? "Wave claimed and video unlocked"
+            : "Video unlocked for the surfer",
+        );
       } else {
-        await sponsorWave(activeJobId);
+        const buyClaimBySession = new Map<string, string[]>();
+        const sponsors: WaveUnlockCartLine[] = [];
+
+        for (const line of otherCartLines) {
+          if (line.intent === "sponsor") {
+            sponsors.push(line);
+            continue;
+          }
+          const bucket = buyClaimBySession.get(line.sessionId) ?? [];
+          bucket.push(line.jobId);
+          buyClaimBySession.set(line.sessionId, bucket);
+        }
+
+        if (intent === "buy_claim") {
+          const bucket = buyClaimBySession.get(ctx.sessionId) ?? [];
+          bucket.push(activeJobId);
+          buyClaimBySession.set(ctx.sessionId, bucket);
+        }
+
+        let claimedCurrent = false;
+        for (const [, jobIds] of buyClaimBySession) {
+          await buyClaimCartBatch(jobIds);
+          if (jobIds.includes(activeJobId)) claimedCurrent = true;
+          for (const id of jobIds) removeFromWaveUnlockCart(id);
+          dispatchWaveClaimedEvent();
+        }
+
+        if (intent === "sponsor") {
+          await sponsorWave(activeJobId);
+          removeFromWaveUnlockCart(activeJobId);
+        }
+
+        for (const line of sponsors) {
+          await sponsorWave(line.jobId);
+          removeFromWaveUnlockCart(line.jobId);
+        }
+
+        if (intent === "buy_claim" && claimedCurrent && ctx.surfer) {
+          onClaimed(ctx.surfer);
+        }
+
+        const unlockedCount = cartSummary.checkoutVideoCount;
+        toast.success(
+          unlockedCount === 1
+            ? intent === "buy_claim"
+              ? "Wave claimed and video unlocked"
+              : "Video unlocked for the surfer"
+            : `${unlockedCount} videos unlocked`,
+        );
       }
       window.dispatchEvent(new CustomEvent(PEAKS_BALANCE_REFRESH_EVENT));
       void refreshWallet();
       onPurchased();
-      toast.success(
-        intent === "buy_claim"
-          ? "Wave claimed and video unlocked"
-          : "Video unlocked for the surfer",
-      );
       close();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Transaction failed");
@@ -531,7 +591,7 @@ export function WaveUnlockCheckoutWizard({
   const retryAfterTopUp = async () => {
     if (!pendingBuy || !breakdown) return;
     const balance = await fetchPeaksBalance();
-    if (balance < breakdown.totalPeaks) return;
+    if (balance < cartSummary.checkoutTotalPeaks) return;
     setPendingBuy(false);
     void runPurchase();
   };
@@ -801,13 +861,23 @@ export function WaveUnlockCheckoutWizard({
                   </Button>
                   <Button
                     type="button"
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
                     disabled={submitting || !intent}
                     onClick={() => void runPurchase()}
                   >
-                    {submitting
-                      ? "Processing…"
-                      : `Buy video now · ${breakdown?.totalPeaks ?? 0} Peaks`}
+                    {submitting ? (
+                      "Processing…"
+                    ) : (
+                      <>
+                        Buy {cartSummary.checkoutVideoCount}{" "}
+                        {cartSummary.checkoutVideoCount === 1 ? "video" : "videos"}{" "}
+                        now
+                        <PeakIcon size={18} className="size-[18px]" />
+                        <span className="tabular-nums">
+                          {cartSummary.checkoutTotalPeaks}
+                        </span>
+                      </>
+                    )}
                   </Button>
                 </>
               ) : (
