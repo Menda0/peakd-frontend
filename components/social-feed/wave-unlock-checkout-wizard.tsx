@@ -32,12 +32,13 @@ import {
 } from "@/lib/commercial-settings";
 import { dispatchWaveClaimedEvent } from "@/lib/claim-wave";
 import {
-  fetchWallet,
   PEAKS_BALANCE_REFRESH_EVENT,
+  fetchWallet,
   type WalletResponse,
 } from "@/lib/billing";
 import type { SurferProfile } from "@/lib/surfer-profile";
 import {
+  COMMERCIAL_WAVE_UNLOCKED_EVENT,
   formatSessionLocationLabel,
   formatSessionSummary,
   type DiscoverFeedLocation,
@@ -562,6 +563,7 @@ export function WaveUnlockCheckoutWizard({
         );
       }
       window.dispatchEvent(new CustomEvent(PEAKS_BALANCE_REFRESH_EVENT));
+      window.dispatchEvent(new CustomEvent(COMMERCIAL_WAVE_UNLOCKED_EVENT));
       void refreshWallet();
       onPurchased();
       close();

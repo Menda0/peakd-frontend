@@ -13,7 +13,6 @@ import { PostContent } from "./post-content";
 import { PostSessionInfo } from "./post-session-info";
 import { PostHeader } from "./post-header";
 import { PostMedia } from "./post-media";
-import { PostSurferBadge } from "./post-surfer-badge";
 
 function DiscoverVideoPostCard({
   post,
@@ -40,10 +39,12 @@ function DiscoverVideoPostCard({
     !claimedLocally;
   const showCommercial =
     post.isCommercial && !isProcessing && !isFailed;
-  const commercialPlayback =
-    showCommercial && post.videoUnlockedByViewer && Boolean(post.videoUrl);
-  const commercialPreview =
-    showCommercial && !commercialPlayback;
+  const canPlayVideo =
+    !isProcessing &&
+    !isFailed &&
+    Boolean(post.videoUrl) &&
+    (!post.isCommercial || post.videoUnlockedByViewer);
+  const commercialLocked = showCommercial && !canPlayVideo;
   const snapshotUrls =
     post.snapshotUrls.length > 0
       ? post.snapshotUrls
@@ -73,7 +74,7 @@ function DiscoverVideoPostCard({
             <p className="text-xs text-zinc-500">This video could not be processed.</p>
           </div>
         </div>
-      ) : commercialPlayback ? (
+      ) : canPlayVideo ? (
         <PostMedia
           thumbnailUrl={post.thumbnailUrl}
           videoUrl={post.videoUrl ?? undefined}
@@ -81,36 +82,8 @@ function DiscoverVideoPostCard({
           playbackId={post.id}
           autoPlayInView
           className="mt-3"
-        />
-      ) : commercialPreview ? (
-        <div className="relative mt-3">
-          <WaveSnapshotCarousel urls={snapshotUrls} />
-          {surfer ? (
-            <div className="absolute top-3 left-3 z-10">
-              <PostSurferBadge surfer={surfer} />
-            </div>
-          ) : null}
-          <CommercialWaveActions
-            post={post}
-            overlay
-            onClaimed={(claimedSurfer) => {
-              setClaimedLocally(true);
-              setLocalSurfer(claimedSurfer);
-              onCommercialClaimed?.(claimedSurfer);
-            }}
-            onPurchased={() => {
-              setClaimedLocally(true);
-              onCommercialPurchased?.();
-            }}
-          />
-        </div>
-      ) : (
-        <PostMedia
-          thumbnailUrl={post.thumbnailUrl}
-          videoUrl={post.videoUrl ?? undefined}
-          surfer={surfer}
           claimWave={
-            canClaim ? (
+            !post.isCommercial && canClaim ? (
               <ClaimWaveButton
                 variant="overlay"
                 jobId={post.id}
@@ -124,6 +97,28 @@ function DiscoverVideoPostCard({
               />
             ) : undefined
           }
+        />
+      ) : commercialLocked ? (
+        <div className="relative mt-3">
+          <WaveSnapshotCarousel urls={snapshotUrls} />
+          <CommercialWaveActions
+            post={post}
+            overlay
+            onClaimed={(claimedSurfer) => {
+              setClaimedLocally(true);
+              setLocalSurfer(claimedSurfer);
+              onCommercialClaimed?.(claimedSurfer);
+            }}
+            onPurchased={() => {
+              onCommercialPurchased?.();
+            }}
+          />
+        </div>
+      ) : (
+        <PostMedia
+          thumbnailUrl={post.thumbnailUrl}
+          videoUrl={post.videoUrl ?? undefined}
+          surfer={surfer}
           playbackId={post.id}
           autoPlayInView
           className="mt-3"
