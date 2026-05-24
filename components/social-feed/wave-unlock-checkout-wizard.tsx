@@ -169,10 +169,12 @@ function PriceLineRows({
         <dt>Price after discount</dt>
         <dd>{breakdown.basePeaks} Peaks</dd>
       </div>
-      <div className="flex justify-between gap-4 text-zinc-400">
-        <dt>Community fee ({communityFeePercent}%)</dt>
-        <dd>{breakdown.communityFeePeaks} Peaks</dd>
-      </div>
+      {breakdown.communityFeePeaks > 0 ? (
+        <div className="flex justify-between gap-4 text-zinc-400">
+          <dt>Community fee ({communityFeePercent}%)</dt>
+          <dd>{breakdown.communityFeePeaks} Peaks</dd>
+        </div>
+      ) : null}
       <div className="flex justify-between gap-4 border-t border-white/10 pt-2 font-semibold text-zinc-50">
         <dt>Price of this video</dt>
         <dd>{breakdown.totalPeaks} Peaks</dd>
@@ -240,17 +242,26 @@ function CheckoutSummaryPanel({
         sessionWaveCount={sessionWaveCount}
         cartTotals={cartTotals}
       />
-      <p className="border-t border-white/10 pt-2 text-xs leading-relaxed text-zinc-500">
-        The {communityFeePercent}% community fee ({communityFeePeaks} Peaks
-        {cartTotals && cartTotals.cartTotalPeaks > 0
-          ? ", including your cart and this video"
-          : ""}
-        ) goes to the surf community in{" "}
-        <strong className="text-zinc-300">{communityLocation}</strong>.
-        {intent === "sponsor"
-          ? " You unlock the video for the surfer on this wave without taking the claim."
-          : " This helps fund local sessions, spots, and community programs in that area."}
-      </p>
+      {communityFeePeaks > 0 ? (
+        <p className="border-t border-white/10 pt-2 text-xs leading-relaxed text-zinc-500">
+          The {communityFeePercent}% community fee ({communityFeePeaks} Peaks
+          {cartTotals && cartTotals.cartTotalPeaks > 0
+            ? ", including your cart and this video"
+            : ""}
+          ) goes to the surf community in{" "}
+          <strong className="text-zinc-300">{communityLocation}</strong>.
+          {intent === "sponsor"
+            ? " You unlock the video for the surfer on this wave without taking the claim."
+            : " This helps fund local sessions, spots, and community programs in that area."}
+        </p>
+      ) : (
+        <p className="border-t border-white/10 pt-2 text-xs leading-relaxed text-zinc-500">
+          No community fee is charged when the session location is undisclosed.
+          {intent === "sponsor"
+            ? " You unlock the video for the surfer on this wave without taking the claim."
+            : null}
+        </p>
+      )}
     </dl>
   );
 }
@@ -281,11 +292,17 @@ function PriceBreakdown({
           sessionWaveCount={sessionWaveCount}
         />
       </dl>
-      <p className="text-xs leading-relaxed text-zinc-500">
-        The {communityFeePercent}% community fee ({breakdown.communityFeePeaks} Peaks) supports
-        the surf community in{" "}
-        <strong className="text-zinc-300">{communityLocation}</strong>.
-      </p>
+      {breakdown.communityFeePeaks > 0 ? (
+        <p className="text-xs leading-relaxed text-zinc-500">
+          The {communityFeePercent}% community fee ({breakdown.communityFeePeaks} Peaks) supports
+          the surf community in{" "}
+          <strong className="text-zinc-300">{communityLocation}</strong>.
+        </p>
+      ) : (
+        <p className="text-xs leading-relaxed text-zinc-500">
+          No community fee is charged when the session location is undisclosed.
+        </p>
+      )}
     </div>
   );
 }
