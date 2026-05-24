@@ -17,6 +17,7 @@ export function FeedNavSidebar({
   studioHref,
   partnerProfileHref,
   adminRegionsHref,
+  adminPeaksHref,
   showPartnerNav,
   showAdminNav,
 }: {
@@ -25,6 +26,7 @@ export function FeedNavSidebar({
   studioHref: string;
   partnerProfileHref?: string;
   adminRegionsHref?: string;
+  adminPeaksHref?: string;
   showPartnerNav: boolean;
   showAdminNav: boolean;
 }) {
@@ -40,7 +42,10 @@ export function FeedNavSidebar({
     studioHref,
     partnerProfileHref,
   });
-  const adminItems = resolveAdminNavItems(pathname, { adminRegionsHref });
+  const adminItems = resolveAdminNavItems(pathname, {
+    adminRegionsHref,
+    adminPeaksHref,
+  });
 
   return (
     <aside className="hidden w-56 shrink-0 flex-col gap-6 border-r border-white/10 py-6 pl-4 pr-3 lg:flex">

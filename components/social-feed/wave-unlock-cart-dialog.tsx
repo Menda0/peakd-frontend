@@ -14,6 +14,7 @@ import {
   PEAKS_BALANCE_REFRESH_EVENT,
   type WalletResponse,
 } from "@/lib/billing";
+import { COMMERCIAL_WAVE_UNLOCKED_EVENT } from "@/lib/discover-feed";
 import { intentLabel } from "@/lib/wave-unlock-wizard";
 import {
   clearWaveUnlockCart,
@@ -170,6 +171,9 @@ export function WaveUnlockCartPanel({ onClose }: { onClose?: () => void }) {
 
       refresh();
       window.dispatchEvent(new CustomEvent(PEAKS_BALANCE_REFRESH_EVENT));
+      if (successCount > 0) {
+        window.dispatchEvent(new CustomEvent(COMMERCIAL_WAVE_UNLOCKED_EVENT));
+      }
       void refreshWallet();
       if (successCount > 0) {
         toast.success(

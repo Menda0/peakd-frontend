@@ -4,7 +4,10 @@ import { formatDistanceToNow } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 import type { DiscoverFeedPost } from "@/lib/discover-feed";
 import { WAVE_CLAIMED_EVENT } from "@/lib/claim-wave";
-import { PERSONAL_UPLOAD_EVENT } from "@/lib/discover-feed";
+import {
+  COMMERCIAL_WAVE_UNLOCKED_EVENT,
+  PERSONAL_UPLOAD_EVENT,
+} from "@/lib/discover-feed";
 import { fetchMyVideos, myVideoItemToPost } from "@/lib/my-videos";
 import { cn } from "@/lib/utils";
 import { VideoPostCard } from "./video-post-card";
@@ -65,9 +68,11 @@ export function MyVideosPanel() {
     };
     window.addEventListener(PERSONAL_UPLOAD_EVENT, refresh);
     window.addEventListener(WAVE_CLAIMED_EVENT, refresh);
+    window.addEventListener(COMMERCIAL_WAVE_UNLOCKED_EVENT, refresh);
     return () => {
       window.removeEventListener(PERSONAL_UPLOAD_EVENT, refresh);
       window.removeEventListener(WAVE_CLAIMED_EVENT, refresh);
+      window.removeEventListener(COMMERCIAL_WAVE_UNLOCKED_EVENT, refresh);
     };
   }, [load]);
 

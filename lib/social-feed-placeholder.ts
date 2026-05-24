@@ -4,6 +4,7 @@ import {
   CircleDollarSignIcon,
   ClapperboardIcon,
   CompassIcon,
+  MountainIcon,
   MapPinIcon,
   NewspaperIcon,
   SquarePlayIcon,
@@ -75,6 +76,7 @@ export const PARTNER_NAV_ITEMS: NavItemConfig[] = [
 
 export const ADMIN_NAV_ITEMS: NavItemConfig[] = [
   { id: "regions", label: "Regions", icon: MapPinIcon },
+  { id: "peaks", label: "Peaks", icon: MountainIcon },
 ];
 
 /*

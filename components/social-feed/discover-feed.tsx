@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   discoverItemToPost,
   fetchDiscoverFeed,
+  COMMERCIAL_WAVE_UNLOCKED_EVENT,
   PERSONAL_UPLOAD_EVENT,
   type DiscoverFeedPost,
 } from "@/lib/discover-feed";
@@ -137,8 +138,15 @@ export function DiscoverFeed() {
     const onUpload = () => {
       void refreshFirstPage();
     };
+    const onCommercialUnlocked = () => {
+      void refreshFirstPage();
+    };
     window.addEventListener(PERSONAL_UPLOAD_EVENT, onUpload);
-    return () => window.removeEventListener(PERSONAL_UPLOAD_EVENT, onUpload);
+    window.addEventListener(COMMERCIAL_WAVE_UNLOCKED_EVENT, onCommercialUnlocked);
+    return () => {
+      window.removeEventListener(PERSONAL_UPLOAD_EVENT, onUpload);
+      window.removeEventListener(COMMERCIAL_WAVE_UNLOCKED_EVENT, onCommercialUnlocked);
+    };
   }, [refreshFirstPage]);
 
   const hasProcessing = posts.some((p) => p.status === "processing");
@@ -199,7 +207,15 @@ export function DiscoverFeed() {
 
   return (
     <>
-      <FeedList posts={posts} />
+      <FeedList
+        posts={posts}
+        onCommercialPurchased={() => {
+          void refreshFirstPage();
+        }}
+        onCommercialClaimed={() => {
+          void refreshFirstPage();
+        }}
+      />
       {error ? <p className="pt-2 text-center text-xs text-red-400">{error}</p> : null}
       <div ref={sentinelRef} className="flex h-12 items-center justify-center py-4">
         {loadingMore ? (
