@@ -219,10 +219,19 @@ export function AdminPeaksDashboard() {
     setNextCursor(res.data.nextCursor);
   };
 
+  const countryLabel = countryCode
+    ? (englishCountryLabel(countryCode) ?? countryCode)
+    : null;
+  const selectedRegionName =
+    regionId != null
+      ? (byRegion.find((r) => r.regionId === regionId)?.regionName ??
+        byRegion[0]?.regionName ??
+        null)
+      : null;
   const filterLabel =
-    regionId && byRegion[0]?.regionName
-      ? `${byRegion[0].regionName} (${englishCountryLabel(countryCode) ?? countryCode})`
-      : englishCountryLabel(countryCode) ?? countryCode;
+    selectedRegionName && countryLabel
+      ? `${selectedRegionName} (${countryLabel})`
+      : countryLabel;
 
   return (
     <div className="space-y-6">
@@ -269,7 +278,7 @@ export function AdminPeaksDashboard() {
         </p>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <SummaryCard
           label="Peaks in circulation"
           value={loading ? "…" : formatPeaks(summary?.circulatingPeaks ?? 0)}
@@ -278,19 +287,41 @@ export function AdminPeaksDashboard() {
         <SummaryCard
           label="Unlock transactions"
           value={loading ? "…" : formatPeaks(summary?.unlockTransactionCount ?? 0)}
-          hint={countryCode ? `In ${filterLabel}` : undefined}
+          hint={filterLabel ? `In ${filterLabel}` : undefined}
         />
         <SummaryCard
           label="Partner Peaks paid"
           value={loading ? "…" : formatPeaks(summary?.totalPartnerPeaks ?? 0)}
-          hint="List price credited to partners"
-        />
-        <SummaryCard
-          label="Community fees"
-          value={loading ? "…" : formatPeaks(summary?.totalCommunityFeePeaks ?? 0)}
-          hint="20% fee attributed to disclosed session regions only"
+          hint={filterLabel ? `In ${filterLabel}` : "List price credited to partners"}
         />
       </div>
+
+      {countryCode ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SummaryCard
+            label="Community fees (country)"
+            value={
+              loading
+                ? "…"
+                : formatPeaks(summary?.countryCommunityFeePeaks ?? 0)
+            }
+            hint={`Attributed to disclosed sessions in ${countryLabel ?? countryCode}`}
+          />
+          <SummaryCard
+            label={
+              regionId ? "Community fees (region)" : "Community fees (regions)"
+            }
+            value={
+              loading ? "…" : formatPeaks(summary?.regionsCommunityFeePeaks ?? 0)
+            }
+            hint={
+              regionId && selectedRegionName
+                ? `Fees for ${selectedRegionName}`
+                : `Sum across disclosed regions in ${countryLabel ?? countryCode}`
+            }
+          />
+        </div>
+      ) : null}
 
       <Card className="border-white/10 bg-white/5">
         <CardHeader>
@@ -382,6 +413,11 @@ export function AdminPeaksDashboard() {
           <CardTitle className="text-zinc-100">Community fees by country</CardTitle>
           <CardDescription className="text-zinc-400">
             Fees from user purchases, attributed to disclosed session regions only.
+            {countryCode && !loading && summary?.countryCommunityFeePeaks != null ? (
+              <span className="mt-1 block font-medium text-zinc-300">
+                Total for {countryLabel}: {formatPeaks(summary.countryCommunityFeePeaks)} Peaks
+              </span>
+            ) : null}
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
@@ -428,7 +464,14 @@ export function AdminPeaksDashboard() {
         <CardHeader>
           <CardTitle className="text-zinc-100">Community fees by region</CardTitle>
           <CardDescription className="text-zinc-400">
-            Breakdown for {filterLabel}. Undisclosed regions are excluded.
+            Breakdown for {filterLabel ?? "selected country"}. Undisclosed regions are excluded.
+            {countryCode && !loading && summary?.regionsCommunityFeePeaks != null ? (
+              <span className="mt-1 block font-medium text-zinc-300">
+                {regionId && selectedRegionName
+                  ? `${selectedRegionName}: ${formatPeaks(summary.regionsCommunityFeePeaks)} Peaks`
+                  : `All regions: ${formatPeaks(summary.regionsCommunityFeePeaks)} Peaks`}
+              </span>
+            ) : null}
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
