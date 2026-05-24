@@ -39,10 +39,45 @@ function formatDate(iso: string): string {
   }
 }
 
-function shortUserId(id: string): string {
-  const t = id.trim();
-  if (t.length <= 20) return t;
-  return `${t.slice(0, 10)}…${t.slice(-6)}`;
+function buyerDisplayLabel(tx: AdminPeaksTransactionDto): string {
+  return tx.buyerDisplayName?.trim() || "Unknown user";
+}
+
+function buyerInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]!.charAt(0).toUpperCase();
+  return `${parts[0]!.charAt(0)}${parts[parts.length - 1]!.charAt(0)}`.toUpperCase();
+}
+
+function AdminPeaksBuyerCell({ tx }: { tx: AdminPeaksTransactionDto }) {
+  const name = buyerDisplayLabel(tx);
+  const sub = tx.buyerUserId.trim();
+  return (
+    <div className="flex min-w-[10rem] max-w-[14rem] items-center gap-2.5">
+      {tx.buyerAvatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={tx.buyerAvatarUrl}
+          alt=""
+          className="size-9 shrink-0 rounded-full object-cover ring-1 ring-white/15"
+        />
+      ) : (
+        <div
+          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-xs font-semibold text-zinc-200 ring-1 ring-white/15"
+          aria-hidden
+        >
+          {buyerInitials(name)}
+        </div>
+      )}
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium text-zinc-100">{name}</p>
+        <p className="truncate font-mono text-[10px] leading-tight text-zinc-500" title={sub}>
+          {sub}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function SummaryCard({
@@ -316,11 +351,8 @@ export function AdminPeaksDashboard() {
                         <td className="py-2.5 pr-3 text-right tabular-nums font-medium text-zinc-50">
                           {formatPeaks(tx.peaksCharged)}
                         </td>
-                        <td
-                          className="py-2.5 pr-3 font-mono text-xs text-zinc-500"
-                          title={tx.buyerUserId}
-                        >
-                          {shortUserId(tx.buyerUserId)}
+                        <td className="py-2.5 pr-3">
+                          <AdminPeaksBuyerCell tx={tx} />
                         </td>
                       </tr>
                     );

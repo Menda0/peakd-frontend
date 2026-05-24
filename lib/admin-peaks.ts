@@ -14,6 +14,8 @@ export type AdminPeaksTransactionDto = {
   sessionId: string;
   type: string;
   buyerUserId: string;
+  buyerDisplayName: string | null;
+  buyerAvatarUrl: string | null;
   partnerUserId: string;
   beneficiaryUserId: string;
   peaksCharged: number;
@@ -71,6 +73,8 @@ export function normalizeAdminPeaksTransaction(raw: unknown): AdminPeaksTransact
     sessionId: str(o.sessionId),
     type: str(o.type),
     buyerUserId: str(o.buyerUserId),
+    buyerDisplayName: o.buyerDisplayName == null ? null : str(o.buyerDisplayName) || null,
+    buyerAvatarUrl: o.buyerAvatarUrl == null ? null : str(o.buyerAvatarUrl) || null,
     partnerUserId: str(o.partnerUserId),
     beneficiaryUserId: str(o.beneficiaryUserId),
     peaksCharged: num(o.peaksCharged),
