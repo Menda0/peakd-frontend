@@ -239,7 +239,7 @@ export function PostMedia({
         tabIndex={0}
         aria-label={title ?? "Surf video"}
         className={cn(
-          "relative cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/80 outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+          "relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-secondary/80 outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
           className,
         )}
         onClick={onContainerClick}
@@ -290,7 +290,7 @@ export function PostMedia({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/80",
+        "relative overflow-hidden rounded-2xl border border-border bg-secondary/80",
         className,
       )}
     >
@@ -301,7 +301,7 @@ export function PostMedia({
         </span>
       </div>
       {duration ? (
-        <span className="absolute bottom-3 right-3 rounded-md bg-black/70 px-2 py-0.5 font-mono text-xs text-zinc-100">
+        <span className="absolute bottom-3 right-3 rounded-md bg-black/70 px-2 py-0.5 font-mono text-xs text-foreground">
           {duration}
         </span>
       ) : null}

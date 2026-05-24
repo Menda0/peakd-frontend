@@ -314,7 +314,7 @@ export function SpotPicker({
             }
             disabled={gated || loading}
             className={cn(
-              "h-10 min-h-10 border-white/15 bg-white/5 text-zinc-100 placeholder:text-zinc-500",
+              "h-10 min-h-10 border-border bg-muted/50 text-foreground placeholder:text-muted-foreground",
               "focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/25",
             )}
             onKeyDown={(e) => {
@@ -328,11 +328,11 @@ export function SpotPicker({
             trailingAddon={inputTrailing}
           />
           <ComboboxContent
-            className="border-white/10 bg-[#0a1218] text-zinc-100 ring-white/10"
+            className="border-border bg-popover text-foreground ring-white/10"
             positionerClassName={positionerClassName}
             align="start"
           >
-            <ComboboxEmpty className="text-zinc-500">
+            <ComboboxEmpty className="text-muted-foreground">
               {loading
                 ? "Loading…"
                 : verifiedOnly
@@ -344,7 +344,7 @@ export function SpotPicker({
                 <ComboboxItem
                   key={item.spotId}
                   value={item}
-                  className="text-zinc-200 data-highlighted:bg-primary/15 data-highlighted:text-zinc-50"
+                  className="text-foreground data-highlighted:bg-primary/15 data-highlighted:text-foreground"
                 >
                   <span className="flex w-full items-center justify-between gap-2">
                     <span>{item.name}</span>

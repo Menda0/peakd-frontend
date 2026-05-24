@@ -16,10 +16,10 @@ export default async function SharedSessionPage({
     data = await fetchPublicSharedSession(token);
   } catch {
     return (
-      <main className="min-h-screen bg-[#050a0f] text-zinc-100">
+      <main className="min-h-screen bg-background text-foreground">
         <div className="mx-auto max-w-lg px-4 py-20 text-center">
           <h1 className="text-xl font-semibold">Something went wrong</h1>
-          <p className="mt-2 text-sm text-zinc-500">
+          <p className="mt-2 text-sm text-muted-foreground">
             This shared session could not be loaded. Try again later.
           </p>
         </div>
@@ -29,10 +29,10 @@ export default async function SharedSessionPage({
 
   if (!data) {
     return (
-      <main className="min-h-screen bg-[#050a0f] text-zinc-100">
+      <main className="min-h-screen bg-background text-foreground">
         <div className="mx-auto max-w-lg px-4 py-20 text-center">
           <h1 className="text-xl font-semibold">Session not found</h1>
-          <p className="mt-2 text-sm text-zinc-500">
+          <p className="mt-2 text-sm text-muted-foreground">
             This link may be invalid or sharing was removed.
           </p>
         </div>
@@ -52,7 +52,7 @@ export default async function SharedSessionPage({
       };
 
   return (
-    <div className="dark flex min-h-[100dvh] flex-col bg-[#040F1E] text-zinc-100">
+    <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
       <FeedAppBar
         homeHref={nav.homeHref}
         userPicture={session?.user?.picture}

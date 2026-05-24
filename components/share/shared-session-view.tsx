@@ -36,7 +36,7 @@ type ViewTab = "feed" | "files";
 function ConditionsStars({ rating }: { rating: number | null }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs text-zinc-500">Conditions</span>
+      <span className="text-xs text-muted-foreground">Conditions</span>
       <div
         className="flex items-center gap-0.5"
         role="img"
@@ -51,7 +51,7 @@ function ConditionsStars({ rating }: { rating: number | null }) {
               "size-3.5 shrink-0",
               rating != null && n <= rating
                 ? "fill-amber-400 text-amber-400"
-                : "fill-transparent text-zinc-600",
+                : "fill-transparent text-muted-foreground",
             )}
             aria-hidden
           />
@@ -94,7 +94,7 @@ function WaveDownloadActions({ wave }: { wave: PublicSharedSessionWave }) {
         type="button"
         variant="outline"
         size="sm"
-        className="h-8 border-white/15 bg-transparent text-zinc-200"
+        className="h-8 border-border bg-transparent text-foreground"
         onClick={() =>
           downloadFromUrl(
             wave.processedDownloadUrl!,
@@ -110,7 +110,7 @@ function WaveDownloadActions({ wave }: { wave: PublicSharedSessionWave }) {
           type="button"
           variant="outline"
           size="sm"
-          className="h-8 border-white/15 bg-transparent text-zinc-200"
+          className="h-8 border-border bg-transparent text-foreground"
           onClick={() =>
             downloadFromUrl(
               wave.originalDownloadUrl!,
@@ -167,7 +167,7 @@ function SharedSessionFeedTab({
         const waveState = resolveWave(wave);
         return (
         <li key={wave.jobId}>
-          <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+          <article className="rounded-2xl border border-border bg-white/[0.03] p-4 sm:p-5">
             <PostHeader
               authorName={partnerName}
               authorAvatarUrl={data.partnerAvatarUrl}
@@ -196,7 +196,7 @@ function SharedSessionFeedTab({
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <span
-                  className="truncate text-sm font-medium text-zinc-200"
+                  className="truncate text-sm font-medium text-foreground"
                   title={wave.originalFilename}
                 >
                   {wave.originalFilename}
@@ -243,7 +243,7 @@ function SharedSessionFilesTab({
           <li key={wave.jobId}>
             <Card
               className={cn(
-                "border-white/10 bg-white/[0.03] text-zinc-100",
+                "border-border bg-white/[0.03] text-foreground",
                 isActive && "ring-1 ring-primary/40",
               )}
             >
@@ -260,12 +260,12 @@ function SharedSessionFilesTab({
                     />
                     <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="truncate font-medium text-zinc-100">
+                        <span className="truncate font-medium text-foreground">
                           {wave.originalFilename}
                         </span>
                         {wave.hasOriginal ? <OriginalAvailableTag /> : null}
                       </div>
-                      <span className="text-xs text-zinc-500">
+                      <span className="text-xs text-muted-foreground">
                         {wave.createdAtLabel ?? wave.createdAt}
                       </span>
                     </div>
@@ -283,7 +283,7 @@ function SharedSessionFilesTab({
                 </div>
                 {isActive ? (
                   data.isCommercial ? (
-                    <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black">
+                    <div className="relative overflow-hidden rounded-xl border border-border bg-black">
                       {wave.videoUnlockedByViewer && wave.videoUrl ? (
                         <video
                           key={wave.videoUrl}
@@ -317,7 +317,7 @@ function SharedSessionFilesTab({
                       ) : null}
                     </div>
                   ) : (
-                    <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black">
+                    <div className="relative overflow-hidden rounded-xl border border-border bg-black">
                       <video
                         key={wave.videoUrl ?? undefined}
                         className="aspect-video w-full"
@@ -462,17 +462,17 @@ export function SharedSessionView({
               <img
                 src={data.partnerAvatarUrl}
                 alt=""
-                className="size-12 shrink-0 rounded-full border border-white/10 object-cover"
+                className="size-12 shrink-0 rounded-full border border-border object-cover"
               />
             ) : (
               <div
-                className="size-12 shrink-0 rounded-full border border-white/10 bg-white/5"
+                className="size-12 shrink-0 rounded-full border border-border bg-muted/50"
                 aria-hidden
               />
             )}
             <div>
-              <p className="text-sm text-zinc-500">Shared session</p>
-              <h1 className="text-xl font-semibold tracking-tight text-zinc-100 sm:text-2xl">
+              <p className="text-sm text-muted-foreground">Shared session</p>
+              <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                 {partnerName}
               </h1>
             </div>
@@ -481,7 +481,7 @@ export function SharedSessionView({
             type="button"
             variant="outline"
             size="sm"
-            className="shrink-0 border-white/15 bg-transparent text-zinc-200"
+            className="shrink-0 border-border bg-transparent text-foreground"
             disabled={!zipReady}
             title={
               zipReady
@@ -503,13 +503,13 @@ export function SharedSessionView({
           </Button>
         </div>
 
-        <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
+        <Card className="border-border bg-white/[0.03] text-foreground">
           <CardContent className="space-y-3 p-4">
             <div>
-              <p className="font-medium text-zinc-100">
+              <p className="font-medium text-foreground">
                 {data.session.sessionDate} · {data.session.sessionTime}
               </p>
-              <p className="mt-0.5 text-sm text-zinc-500">
+              <p className="mt-0.5 text-sm text-muted-foreground">
                 {sessionLocationLabel(data)} ·{" "}
                 {formatDurationMinutes(data.session.durationMinutes)}
               </p>
@@ -520,13 +520,13 @@ export function SharedSessionView({
                 waveLabels.map((label) => (
                   <span
                     key={label}
-                    className="inline-flex max-w-full items-center truncate rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-zinc-300"
+                    className="inline-flex max-w-full items-center truncate rounded-md border border-border bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground"
                   >
                     {label}
                   </span>
                 ))
               ) : (
-                <span className="text-xs text-zinc-600">No wave types</span>
+                <span className="text-xs text-muted-foreground">No wave types</span>
               )}
             </div>
           </CardContent>
@@ -537,11 +537,11 @@ export function SharedSessionView({
 
       <section className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg font-semibold tracking-tight text-zinc-100">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
             {waveCountLabel}
           </h2>
           <div
-            className="inline-flex rounded-lg border border-white/10 bg-white/[0.03] p-0.5"
+            className="inline-flex rounded-lg border border-border bg-white/[0.03] p-0.5"
             role="tablist"
             aria-label="Session view"
           >
@@ -559,8 +559,8 @@ export function SharedSessionView({
                 className={cn(
                   "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
                   tab === id
-                    ? "bg-white/10 text-zinc-100"
-                    : "text-zinc-500 hover:text-zinc-300",
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:text-muted-foreground",
                 )}
                 onClick={() => setTab(id)}
               >
@@ -571,7 +571,7 @@ export function SharedSessionView({
         </div>
 
         {waveCount === 0 ? (
-          <p className="text-sm text-zinc-500">No waves in this session yet.</p>
+          <p className="text-sm text-muted-foreground">No waves in this session yet.</p>
         ) : tab === "feed" && data.isCommercial ? (
           <SharedSessionCommercialFeedTab
             posts={commercialPosts}

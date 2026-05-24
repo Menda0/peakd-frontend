@@ -1,12 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import "@uiw/react-md-editor/markdown-editor.css";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor").then((m) => m.default), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[280px] items-center justify-center rounded-lg border border-white/15 bg-white/5 text-sm text-zinc-500">
+    <div className="flex h-[280px] items-center justify-center rounded-lg border border-border bg-muted/50 text-sm text-muted-foreground">
       Loading editor…
     </div>
   ),
@@ -21,8 +23,18 @@ export function PartnerMarkdownField({
   onChange: (v: string) => void;
   height?: number;
 }) {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  const colorMode = mounted && resolvedTheme === "light" ? "light" : "dark";
+
   return (
-    <div data-color-mode="dark" className="overflow-hidden rounded-lg border border-white/15 [&_.w-md-editor]:bg-[#0a1218] [&_.w-md-editor-text]:text-zinc-100">
+    <div
+      data-color-mode={colorMode}
+      className="overflow-hidden rounded-lg border border-border [&_.w-md-editor]:bg-popover [&_.w-md-editor-text]:text-foreground"
+    >
       <MDEditor
         value={value}
         onChange={(v) => onChange(v ?? "")}

@@ -66,7 +66,7 @@ function SurferAvatar({
   ) : (
     <div
       className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-xs font-semibold text-zinc-200 ring-2 ring-[#050a0f]",
+        "flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-xs font-semibold text-foreground ring-2 ring-[#050a0f]",
         className,
       )}
       aria-hidden
@@ -92,24 +92,24 @@ function SurferTooltipDetails({ surfer }: { surfer: SurferProfile }) {
         />
       ) : (
         <div
-          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-sm font-semibold text-zinc-200 ring-1 ring-white/20"
+          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-sm font-semibold text-foreground ring-1 ring-white/20"
           aria-hidden
         >
           {name.charAt(0).toUpperCase()}
         </div>
       )}
       <div className="min-w-0 space-y-1">
-        <p className="truncate text-sm font-semibold leading-tight text-zinc-50">
+        <p className="truncate text-sm font-semibold leading-tight text-foreground">
           {name}
         </p>
         {location ? (
-          <p className="text-xs leading-snug text-zinc-400">{location}</p>
+          <p className="text-xs leading-snug text-muted-foreground">{location}</p>
         ) : (
-          <p className="text-xs text-zinc-600">Location not set</p>
+          <p className="text-xs text-muted-foreground">Location not set</p>
         )}
         {level ? (
-          <p className="text-xs text-zinc-500">
-            <span className="text-zinc-600">Level · </span>
+          <p className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground">Level · </span>
             {level}
           </p>
         ) : null}
@@ -130,7 +130,7 @@ function SurferWithTooltip({
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side={side} className="border-white/10 bg-[#0a1218] p-2.5">
+      <TooltipContent side={side} className="border-border bg-popover p-2.5">
         <SurferTooltipDetails surfer={surfer} />
       </TooltipContent>
     </Tooltip>
@@ -143,7 +143,7 @@ function SurferOverflowTooltipList({ surfers }: { surfers: SurferProfile[] }) {
       {surfers.map((surfer) => (
         <li
           key={surfer.userId}
-          className="border-b border-white/5 pb-3 last:border-0 last:pb-0"
+          className="border-b border-border/50 pb-3 last:border-0 last:pb-0"
         >
           <SurferTooltipDetails surfer={surfer} />
         </li>
@@ -168,7 +168,7 @@ export function SharedSessionSurferList({
   return (
     <TooltipProvider delayDuration={200}>
       <div className={cn("space-y-2", className)}>
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Surfers in this session
         </p>
         <div className="flex items-center">
@@ -190,14 +190,14 @@ export function SharedSessionSurferList({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  className="relative z-10 -ml-2 flex size-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-zinc-800 text-xs font-semibold text-zinc-200 ring-2 ring-[#050a0f] outline-none hover:bg-zinc-700 focus-visible:ring-2 focus-visible:ring-primary/60"
+                  className="relative z-10 -ml-2 flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-semibold text-foreground ring-2 ring-[#050a0f] outline-none hover:bg-zinc-700 focus-visible:ring-2 focus-visible:ring-primary/60"
                   aria-label={`${overflow.length} more surfers`}
                 >
                   +{overflow.length}
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="w-72 border-white/10 bg-[#0a1218] p-2.5">
-                <p className="mb-2 text-xs font-medium text-zinc-400">
+              <TooltipContent side="bottom" className="w-72 border-border bg-popover p-2.5">
+                <p className="mb-2 text-xs font-medium text-muted-foreground">
                   All surfers ({unique.length})
                 </p>
                 <SurferOverflowTooltipList surfers={unique} />

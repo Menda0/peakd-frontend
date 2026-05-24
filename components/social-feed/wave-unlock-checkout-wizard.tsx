@@ -76,7 +76,7 @@ function WizardProgress({
           key={id}
           className={cn(
             "h-1 flex-1 rounded-full transition-colors",
-            i <= stepIndex ? "bg-primary" : "bg-white/10",
+            i <= stepIndex ? "bg-primary" : "bg-muted",
           )}
           title={WAVE_UNLOCK_STEP_META[id].title}
         />
@@ -90,8 +90,8 @@ function PartnerBlock({ ctx }: { ctx: WaveCheckoutContext }) {
   const locationLabel = partnerLocationLabel(ctx.location);
 
   return (
-    <div className="flex gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
-      <div className="relative size-12 shrink-0 overflow-hidden rounded-full bg-zinc-800">
+    <div className="flex gap-3 rounded-xl border border-border bg-white/[0.02] p-3">
+      <div className="relative size-12 shrink-0 overflow-hidden rounded-full bg-muted">
         {ctx.partner.avatarUrl ? (
           <Image
             src={ctx.partner.avatarUrl}
@@ -102,18 +102,18 @@ function PartnerBlock({ ctx }: { ctx: WaveCheckoutContext }) {
             unoptimized
           />
         ) : (
-          <span className="flex size-full items-center justify-center text-sm font-semibold text-zinc-500">
+          <span className="flex size-full items-center justify-center text-sm font-semibold text-muted-foreground">
             {ctx.partner.partnerName.slice(0, 1).toUpperCase()}
           </span>
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-zinc-100">{ctx.partner.partnerName}</p>
+        <p className="text-sm font-semibold text-foreground">{ctx.partner.partnerName}</p>
         {locationLabel ? (
-          <p className="text-xs text-zinc-500">{locationLabel}</p>
+          <p className="text-xs text-muted-foreground">{locationLabel}</p>
         ) : null}
         {description ? (
-          <p className="mt-1 line-clamp-3 whitespace-pre-line text-xs leading-relaxed text-zinc-400">
+          <p className="mt-1 line-clamp-3 whitespace-pre-line text-xs leading-relaxed text-muted-foreground">
             {description}
           </p>
         ) : null}
@@ -141,12 +141,12 @@ function PriceLineRows({
 }) {
   return (
     <>
-      <div className="flex justify-between gap-4 text-zinc-400">
+      <div className="flex justify-between gap-4 text-muted-foreground">
         <dt>List price</dt>
         <dd>{breakdown.listPricePeaks} Peaks</dd>
       </div>
       {intent === "buy_claim" ? (
-        <div className="flex justify-between gap-4 text-zinc-400">
+        <div className="flex justify-between gap-4 text-muted-foreground">
           <dt>
             Volume discount
             {sessionWaveCount != null && sessionWaveCount > 1
@@ -160,34 +160,34 @@ function PriceLineRows({
           </dd>
         </div>
       ) : (
-        <div className="flex justify-between gap-4 text-zinc-500">
+        <div className="flex justify-between gap-4 text-muted-foreground">
           <dt>Volume discount</dt>
           <dd className="text-right text-xs">Not applicable for sponsors</dd>
         </div>
       )}
-      <div className="flex justify-between gap-4 text-zinc-400">
+      <div className="flex justify-between gap-4 text-muted-foreground">
         <dt>Price after discount</dt>
         <dd>{breakdown.basePeaks} Peaks</dd>
       </div>
       {breakdown.communityFeePeaks > 0 ? (
-        <div className="flex justify-between gap-4 text-zinc-400">
+        <div className="flex justify-between gap-4 text-muted-foreground">
           <dt>Community fee ({communityFeePercent}%)</dt>
           <dd>{breakdown.communityFeePeaks} Peaks</dd>
         </div>
       ) : null}
-      <div className="flex justify-between gap-4 border-t border-white/10 pt-2 font-semibold text-zinc-50">
+      <div className="flex justify-between gap-4 border-t border-border pt-2 font-semibold text-foreground">
         <dt>Price of this video</dt>
         <dd>{breakdown.totalPeaks} Peaks</dd>
       </div>
       {cartTotals ? (
         <>
           {cartTotals.cartTotalPeaks > 0 ? (
-            <div className="flex justify-between gap-4 font-semibold text-zinc-50">
+            <div className="flex justify-between gap-4 font-semibold text-foreground">
               <dt>Total in cart</dt>
               <dd>{cartTotals.cartTotalPeaks} Peaks</dd>
             </div>
           ) : null}
-          <div className="flex justify-between gap-4 border-t border-white/10 pt-2 font-semibold text-zinc-50">
+          <div className="flex justify-between gap-4 border-t border-border pt-2 font-semibold text-foreground">
             <dt>Total community fees</dt>
             <dd>{cartTotals.totalCommunityFeePeaks} Peaks</dd>
           </div>
@@ -225,15 +225,15 @@ function CheckoutSummaryPanel({
       ? cartTotals.totalCommunityFeePeaks
       : breakdown.communityFeePeaks;
   return (
-    <dl className="space-y-2 rounded-xl border border-white/10 p-4 text-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+    <dl className="space-y-2 rounded-xl border border-border p-4 text-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
         Checkout
       </p>
-      <p className="truncate text-sm font-medium text-zinc-100">{videoName}</p>
-      <p className="truncate text-xs text-zinc-500">{sessionLabel}</p>
+      <p className="truncate text-sm font-medium text-foreground">{videoName}</p>
+      <p className="truncate text-xs text-muted-foreground">{sessionLabel}</p>
       <div className="flex justify-between gap-4 pt-1">
-        <dt className="text-zinc-500">Unlocking as</dt>
-        <dd className="text-right text-zinc-100">{intentLabel(intent)}</dd>
+        <dt className="text-muted-foreground">Unlocking as</dt>
+        <dd className="text-right text-foreground">{intentLabel(intent)}</dd>
       </div>
       <PriceLineRows
         breakdown={breakdown}
@@ -243,19 +243,19 @@ function CheckoutSummaryPanel({
         cartTotals={cartTotals}
       />
       {communityFeePeaks > 0 ? (
-        <p className="border-t border-white/10 pt-2 text-xs leading-relaxed text-zinc-500">
+        <p className="border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">
           The {communityFeePercent}% community fee ({communityFeePeaks} Peaks
           {cartTotals && cartTotals.cartTotalPeaks > 0
             ? ", including your cart and this video"
             : ""}
           ) goes to the surf community in{" "}
-          <strong className="text-zinc-300">{communityLocation}</strong>.
+          <strong className="text-foreground">{communityLocation}</strong>.
           {intent === "sponsor"
             ? " You unlock the video for the surfer on this wave without taking the claim."
             : " This helps fund local sessions, spots, and community programs in that area."}
         </p>
       ) : (
-        <p className="border-t border-white/10 pt-2 text-xs leading-relaxed text-zinc-500">
+        <p className="border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">
           No community fee is charged when the session location is undisclosed.
           {intent === "sponsor"
             ? " You unlock the video for the surfer on this wave without taking the claim."
@@ -280,8 +280,8 @@ function PriceBreakdown({
   sessionWaveCount?: number;
 }) {
   return (
-    <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+    <div className="space-y-3 rounded-xl border border-border bg-white/[0.02] p-4">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
         Cost for this video
       </p>
       <dl className="space-y-2 text-sm">
@@ -293,13 +293,13 @@ function PriceBreakdown({
         />
       </dl>
       {breakdown.communityFeePeaks > 0 ? (
-        <p className="text-xs leading-relaxed text-zinc-500">
+        <p className="text-xs leading-relaxed text-muted-foreground">
           The {communityFeePercent}% community fee ({breakdown.communityFeePeaks} Peaks) supports
           the surf community in{" "}
-          <strong className="text-zinc-300">{communityLocation}</strong>.
+          <strong className="text-foreground">{communityLocation}</strong>.
         </p>
       ) : (
-        <p className="text-xs leading-relaxed text-zinc-500">
+        <p className="text-xs leading-relaxed text-muted-foreground">
           No community fee is charged when the session location is undisclosed.
         </p>
       )}
@@ -630,15 +630,15 @@ export function WaveUnlockCheckoutWizard({
           role="dialog"
           aria-modal="true"
           aria-labelledby="unlock-wizard-title"
-          className="flex max-h-[min(90dvh,720px)] w-full max-w-3xl flex-col gap-0 overflow-hidden border-white/10 bg-[#0a1218] py-0 text-zinc-100 ring-white/10"
+          className="flex max-h-[min(90dvh,720px)] w-full max-w-3xl flex-col gap-0 overflow-hidden border-border bg-popover py-0 text-foreground ring-white/10"
         >
-          <CardHeader className="shrink-0 space-y-3 border-b border-white/10 px-6 pt-6 pb-4">
+          <CardHeader className="shrink-0 space-y-3 border-b border-border px-6 pt-6 pb-4">
             <div className="space-y-1">
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-muted-foreground">
                 Step {stepIndex + 1} of {steps.length}
               </p>
               <CardTitle id="unlock-wizard-title">{stepMeta.title}</CardTitle>
-              <CardDescription className="text-zinc-500">
+              <CardDescription className="text-muted-foreground">
                 {stepMeta.description}
               </CardDescription>
             </div>
@@ -649,7 +649,7 @@ export function WaveUnlockCheckoutWizard({
 
           <CardContent className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
             {loading ? (
-              <p className="py-8 text-center text-sm text-zinc-500">Loading checkout…</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">Loading checkout…</p>
             ) : error && !ctx ? (
               <p className="py-6 text-center text-sm text-red-400">{error}</p>
             ) : ctx ? (
@@ -665,21 +665,21 @@ export function WaveUnlockCheckoutWizard({
                         "flex h-full flex-col gap-3 rounded-xl border p-4 text-left transition-colors",
                         intent === "sponsor"
                           ? "border-primary/50 bg-primary/10 ring-1 ring-primary/30"
-                          : "border-white/10 bg-white/[0.02] hover:border-primary/40",
-                        !ctx.canSponsor && "cursor-not-allowed opacity-50 hover:border-white/10",
+                          : "border-border bg-white/[0.02] hover:border-primary/40",
+                        !ctx.canSponsor && "cursor-not-allowed opacity-50 hover:border-border",
                       )}
                     >
-                      <span className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
+                      <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
                         <HeartHandshake className="size-4 text-primary" aria-hidden />
                         Sponsor
                       </span>
-                      <span className="text-xs leading-relaxed text-zinc-500">
+                      <span className="text-xs leading-relaxed text-muted-foreground">
                         {ctx.claimStatus === "claimed"
                           ? `You pay to unlock the full video for ${surferName}. You are not the surfer on this wave and do not take the claim.`
                           : "You pay to unlock the full video for yourself without claiming the wave. A surfer can still claim it later."}
                       </span>
                       {!ctx.canSponsor ? (
-                        <span className="text-xs text-zinc-600">
+                        <span className="text-xs text-muted-foreground">
                           {ctx.claimStatus === "claimed"
                             ? "You already claimed this wave — choose Claim video to buy and unlock as the surfer."
                             : "This wave is already unlocked."}
@@ -695,20 +695,20 @@ export function WaveUnlockCheckoutWizard({
                         "flex h-full flex-col gap-3 rounded-xl border p-4 text-left transition-colors",
                         intent === "buy_claim"
                           ? "border-primary/50 bg-primary/10 ring-1 ring-primary/30"
-                          : "border-white/10 bg-white/[0.02] hover:border-primary/40",
-                        !ctx.canBuyClaim && "cursor-not-allowed opacity-50 hover:border-white/10",
+                          : "border-border bg-white/[0.02] hover:border-primary/40",
+                        !ctx.canBuyClaim && "cursor-not-allowed opacity-50 hover:border-border",
                       )}
                     >
-                      <span className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
+                      <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
                         <User className="size-4 text-primary" aria-hidden />
                         Claim video
                       </span>
-                      <span className="text-xs leading-relaxed text-zinc-500">
+                      <span className="text-xs leading-relaxed text-muted-foreground">
                         You buy the video and claim it for yourself. You are the surfer on this
                         wave and get full playback in My Videos.
                       </span>
                       {!ctx.canBuyClaim ? (
-                        <span className="text-xs text-zinc-600">
+                        <span className="text-xs text-muted-foreground">
                           Buy and claim is not available for this wave.
                         </span>
                       ) : null}
@@ -728,11 +728,11 @@ export function WaveUnlockCheckoutWizard({
                         intent === "buy_claim" ? sessionBuyClaimCount : undefined
                       }
                     />
-                    <div className="rounded-xl border border-dashed border-white/10 p-3">
-                      <p className="text-xs font-medium text-zinc-400">
+                    <div className="rounded-xl border border-dashed border-border p-3">
+                      <p className="text-xs font-medium text-muted-foreground">
                         Partner pricing for this session
                       </p>
-                      <p className="mt-1 text-sm text-zinc-300">
+                      <p className="mt-1 text-sm text-muted-foreground">
                         {formatDiscountSummary(ctx.commercialSettings)}
                       </p>
                     </div>
@@ -748,7 +748,7 @@ export function WaveUnlockCheckoutWizard({
                       )}
                       session={ctx.sessionSummary}
                     />
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-muted-foreground">
                       {formatSessionLocationLabel(ctx.location as DiscoverFeedLocation)}
                     </p>
                     {otherWaves.length > 0 ? (
@@ -774,11 +774,11 @@ export function WaveUnlockCheckoutWizard({
                                   "flex w-full flex-col overflow-hidden rounded-lg border text-left transition-colors",
                                   wave.jobId === activeJobId
                                     ? "border-primary/50 ring-1 ring-primary/30"
-                                    : "border-white/10 hover:border-white/20",
+                                    : "border-border hover:border-border",
                                   !canUnlock && "opacity-50",
                                 )}
                               >
-                                <div className="relative aspect-video bg-zinc-900">
+                                <div className="relative aspect-video bg-secondary">
                                   {wave.thumbnailUrl ? (
                                     <Image
                                       src={wave.thumbnailUrl}
@@ -789,12 +789,12 @@ export function WaveUnlockCheckoutWizard({
                                       unoptimized
                                     />
                                   ) : (
-                                    <span className="flex size-full items-center justify-center text-[10px] text-zinc-600">
+                                    <span className="flex size-full items-center justify-center text-[10px] text-muted-foreground">
                                       Preview
                                     </span>
                                   )}
                                 </div>
-                                <span className="truncate px-2 py-1.5 text-[10px] text-zinc-400">
+                                <span className="truncate px-2 py-1.5 text-[10px] text-muted-foreground">
                                   {wave.originalFilename}
                                   {wavePrice != null ? ` · ${wavePrice} P` : ""}
                                 </span>
@@ -804,7 +804,7 @@ export function WaveUnlockCheckoutWizard({
                         })}
                       </ul>
                     ) : (
-                      <p className="text-sm text-zinc-500">
+                      <p className="text-sm text-muted-foreground">
                         No other unlockable waves in this session right now.
                       </p>
                     )}
@@ -813,7 +813,7 @@ export function WaveUnlockCheckoutWizard({
                         href={sessionViewHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-medium text-zinc-100 transition-colors hover:bg-primary/15"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-primary/15"
                       >
                         View all videos on this session
                         <ExternalLink className="size-3.5" aria-hidden />
@@ -840,7 +840,7 @@ export function WaveUnlockCheckoutWizard({
             ) : null}
           </CardContent>
 
-          <CardFooter className="shrink-0 flex-col items-stretch gap-3 border-white/10 bg-[#0a1218] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <CardFooter className="shrink-0 flex-col items-stretch gap-3 border-border bg-popover px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             {error ? (
               <p className="text-sm text-red-400 sm:min-w-0 sm:flex-1 sm:pr-4">{error}</p>
             ) : (
@@ -850,7 +850,7 @@ export function WaveUnlockCheckoutWizard({
               <Button
                 type="button"
                 variant="outline"
-                className="border-white/15 bg-transparent text-zinc-200"
+                className="border-border bg-transparent text-foreground"
                 disabled={submitting}
                 onClick={close}
               >
@@ -860,7 +860,7 @@ export function WaveUnlockCheckoutWizard({
                 <Button
                   type="button"
                   variant="outline"
-                  className="border-white/15 bg-transparent text-zinc-200"
+                  className="border-border bg-transparent text-foreground"
                   disabled={submitting || loading}
                   onClick={goBack}
                 >
@@ -872,7 +872,7 @@ export function WaveUnlockCheckoutWizard({
                   <Button
                     type="button"
                     variant="outline"
-                    className="border-white/15 bg-transparent text-zinc-200"
+                    className="border-border bg-transparent text-foreground"
                     disabled={submitting || !intent}
                     onClick={handleAddToCart}
                   >

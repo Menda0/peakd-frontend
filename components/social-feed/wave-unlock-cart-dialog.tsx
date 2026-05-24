@@ -32,8 +32,8 @@ function CartLineRow({
   onRemove: () => void;
 }) {
   return (
-    <li className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2.5">
-      <div className="relative size-14 shrink-0 overflow-hidden rounded-md bg-zinc-900">
+    <li className="flex items-start gap-3 rounded-lg border border-border bg-white/[0.02] px-3 py-2.5">
+      <div className="relative size-14 shrink-0 overflow-hidden rounded-md bg-secondary">
         {line.thumbnailUrl ? (
           <Image
             src={line.thumbnailUrl}
@@ -44,30 +44,30 @@ function CartLineRow({
             unoptimized
           />
         ) : (
-          <span className="flex size-full items-center justify-center text-[10px] text-zinc-600">
+          <span className="flex size-full items-center justify-center text-[10px] text-muted-foreground">
             Wave
           </span>
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-zinc-100">{line.videoName}</p>
-        <p className="truncate text-xs text-zinc-500">{line.sessionLabel}</p>
-        <p className="mt-0.5 text-xs text-zinc-500">{intentLabel(line.intent)}</p>
+        <p className="truncate text-sm font-medium text-foreground">{line.videoName}</p>
+        <p className="truncate text-xs text-muted-foreground">{line.sessionLabel}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{intentLabel(line.intent)}</p>
         <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
-          <span className="text-zinc-500">
-            List: <span className="text-zinc-300">{line.listPricePeaks} Peaks</span>
+          <span className="text-muted-foreground">
+            List: <span className="text-muted-foreground">{line.listPricePeaks} Peaks</span>
           </span>
           {line.discountPercent > 0 ? (
             <span className="text-emerald-400/90">
               {line.discountPercent}% off (−{line.discountPeaksSaved})
             </span>
           ) : null}
-          <span className="font-medium text-zinc-100">{line.totalPeaks} Peaks</span>
+          <span className="font-medium text-foreground">{line.totalPeaks} Peaks</span>
         </div>
       </div>
       <button
         type="button"
-        className="shrink-0 rounded-md p-1.5 text-zinc-500 hover:bg-white/5 hover:text-zinc-200"
+        className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
         aria-label="Remove from cart"
         onClick={onRemove}
       >
@@ -205,18 +205,18 @@ export function WaveUnlockCartPanel({ onClose }: { onClose?: () => void }) {
   return (
     <>
       <div className="flex max-h-[min(70dvh,520px)] w-full flex-col">
-        <div className="shrink-0 border-b border-white/10 px-4 py-3">
-          <p className="text-sm font-semibold text-zinc-100">Unlock cart</p>
-          <p className="mt-0.5 text-xs text-zinc-500">
+        <div className="shrink-0 border-b border-border px-4 py-3">
+          <p className="text-sm font-semibold text-foreground">Unlock cart</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
             Volume discounts apply per session when you claim multiple waves.
           </p>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
           {lines.length === 0 ? (
-            <p className="py-6 text-center text-sm text-zinc-500">Your cart is empty.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">Your cart is empty.</p>
           ) : quoteLoading ? (
-            <p className="py-6 text-center text-sm text-zinc-500">Updating prices…</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">Updating prices…</p>
           ) : (
             <ul className="space-y-2">
               {lines.map((line) => (
@@ -233,9 +233,9 @@ export function WaveUnlockCartPanel({ onClose }: { onClose?: () => void }) {
           )}
         </div>
 
-        <div className="shrink-0 space-y-3 border-t border-white/10 px-4 py-3">
+        <div className="shrink-0 space-y-3 border-t border-border px-4 py-3">
           {lines.length > 0 && !quoteLoading ? (
-            <dl className="space-y-1 text-sm text-zinc-400">
+            <dl className="space-y-1 text-sm text-muted-foreground">
               <div className="flex justify-between">
                 <dt>List subtotal</dt>
                 <dd>{listSubtotal} Peaks</dd>
@@ -246,11 +246,11 @@ export function WaveUnlockCartPanel({ onClose }: { onClose?: () => void }) {
                   <dd>−{discountSaved} Peaks</dd>
                 </div>
               ) : null}
-              <div className="flex justify-between text-zinc-400">
+              <div className="flex justify-between text-muted-foreground">
                 <dt>Total community fees</dt>
                 <dd>{totalCommunityFees} Peaks</dd>
               </div>
-              <div className="flex justify-between border-t border-white/10 pt-2 font-semibold text-zinc-50">
+              <div className="flex justify-between border-t border-border pt-2 font-semibold text-foreground">
                 <dt>Total in cart</dt>
                 <dd>{totalPeaks} Peaks</dd>
               </div>
@@ -261,7 +261,7 @@ export function WaveUnlockCartPanel({ onClose }: { onClose?: () => void }) {
               type="button"
               variant="outline"
               size="sm"
-              className="border-white/15 bg-transparent text-zinc-200"
+              className="border-border bg-transparent text-foreground"
               disabled={submitting || lines.length === 0}
               onClick={() => {
                 clearWaveUnlockCart();

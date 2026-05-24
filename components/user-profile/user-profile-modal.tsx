@@ -203,17 +203,17 @@ export function UserProfileModal({
       }}
     >
       <Card
-        className="max-h-[min(90dvh,720px)] w-full max-w-lg overflow-y-auto border-white/10 bg-[#0a1218] text-zinc-100"
+        className="max-h-[min(90dvh,720px)] w-full max-w-lg overflow-y-auto border-border bg-popover text-foreground"
         role="dialog"
         aria-modal="true"
         aria-labelledby="user-profile-modal-title"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <CardHeader>
-          <CardTitle id="user-profile-modal-title" className="text-lg text-zinc-50">
+          <CardTitle id="user-profile-modal-title" className="text-lg text-foreground">
             {title}
           </CardTitle>
-          <CardDescription className="text-zinc-400">{description}</CardDescription>
+          <CardDescription className="text-muted-foreground">{description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {loadError ? (
@@ -227,13 +227,13 @@ export function UserProfileModal({
             </p>
           ) : null}
           {!profile && !loadError ? (
-            <p className="text-sm text-zinc-400">Loading profile…</p>
+            <p className="text-sm text-muted-foreground">Loading profile…</p>
           ) : null}
           {profile || loadError ? (
             <>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                 <div className="flex flex-col items-center gap-2 sm:w-40">
-                  <div className="relative size-24 overflow-hidden rounded-full border border-white/15 bg-zinc-800">
+                  <div className="relative size-24 overflow-hidden rounded-full border border-border bg-muted">
                     {displayPicture ? (
                       // eslint-disable-next-line @next/next/no-img-element -- Auth0 / S3 URL
                       <img
@@ -242,7 +242,7 @@ export function UserProfileModal({
                         className="size-full object-cover"
                       />
                     ) : (
-                      <div className="flex size-full items-center justify-center text-xs text-zinc-500">
+                      <div className="flex size-full items-center justify-center text-xs text-muted-foreground">
                         No photo
                       </div>
                     )}
@@ -261,7 +261,7 @@ export function UserProfileModal({
                     />
                     <span
                       className={cn(
-                        "inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-white/10",
+                        "inline-flex items-center justify-center rounded-lg border border-border bg-muted/50 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent",
                         (saving || avatarBusy || !profile) && "pointer-events-none opacity-50",
                       )}
                     >
@@ -286,7 +286,7 @@ export function UserProfileModal({
               <FormField
                 label={
                   <>
-                    Nickname <span className="font-normal text-zinc-500">(optional)</span>
+                    Nickname <span className="font-normal text-muted-foreground">(optional)</span>
                   </>
                 }
                 htmlFor="user-profile-nickname"
@@ -325,7 +325,7 @@ export function UserProfileModal({
               <FormField
                 label={
                   <>
-                    Surf level <span className="font-normal text-zinc-500">(optional)</span>
+                    Surf level <span className="font-normal text-muted-foreground">(optional)</span>
                   </>
                 }
                 htmlFor="user-profile-surf"
@@ -355,7 +355,7 @@ export function UserProfileModal({
         </CardContent>
         <CardFooter
           className={cn(
-            "flex flex-wrap items-center gap-3 border-t border-white/10 bg-[#0a1218] px-4 py-4 text-zinc-100",
+            "flex flex-wrap items-center gap-3 border-t border-border bg-popover px-4 py-4 text-foreground",
             allowDismiss || (loadError && onRetry) ? "justify-between" : "justify-end",
           )}
         >
@@ -364,7 +364,7 @@ export function UserProfileModal({
               <Button
                 type="button"
                 variant="outline"
-                className="border-white/20 bg-white/5 text-zinc-100 hover:bg-white/10 hover:text-zinc-50"
+                className="border-border bg-muted/50 text-foreground hover:bg-accent hover:text-foreground"
                 disabled={saving || avatarBusy}
                 onClick={() => void onRetry()}
               >
@@ -375,7 +375,7 @@ export function UserProfileModal({
               <Button
                 type="button"
                 variant="outline"
-                className="border-white/20 bg-white/5 text-zinc-100 hover:bg-white/10 hover:text-zinc-50"
+                className="border-border bg-muted/50 text-foreground hover:bg-accent hover:text-foreground"
                 disabled={saving || avatarBusy}
                 onClick={onClose}
               >
@@ -385,7 +385,7 @@ export function UserProfileModal({
           </div>
           <Button
             type="button"
-            className="bg-[#26c2c9] text-zinc-950 hover:bg-[#22adb4]"
+            className="bg-[#26c2c9] text-primary-foreground hover:bg-[#22adb4]"
             disabled={saving || avatarBusy || !profile}
             onClick={() => void save()}
           >

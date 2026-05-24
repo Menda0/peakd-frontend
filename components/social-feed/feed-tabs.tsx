@@ -12,7 +12,7 @@ export function FeedTabs() {
           disabled={i !== 0}
           className={cn(
             "relative pb-2 text-sm font-medium transition",
-            i === 0 ? "text-primary" : "cursor-not-allowed text-zinc-600",
+            i === 0 ? "text-primary" : "cursor-not-allowed text-muted-foreground",
           )}
         >
           {t}

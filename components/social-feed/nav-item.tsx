@@ -17,7 +17,7 @@ export function NavItem({
     "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition",
     active
       ? "bg-primary/15 font-medium text-primary"
-      : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200",
+      : "text-muted-foreground hover:bg-accent hover:text-foreground",
     !href && "cursor-not-allowed opacity-60",
   );
 

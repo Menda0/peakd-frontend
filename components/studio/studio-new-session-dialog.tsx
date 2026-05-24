@@ -69,7 +69,7 @@ function WizardProgress({
           key={id}
           className={cn(
             "h-1 flex-1 rounded-full transition-colors",
-            i <= stepIndex ? "bg-primary" : "bg-white/10",
+            i <= stepIndex ? "bg-primary" : "bg-muted",
           )}
           title={WIZARD_STEP_META[id].title}
         />
@@ -240,15 +240,15 @@ export function StudioNewSessionDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="new-session-title"
-        className="flex max-h-[min(90dvh,720px)] w-full max-w-3xl flex-col gap-0 overflow-hidden border-white/10 bg-[#0a1218] py-0 text-zinc-100 ring-white/10"
+        className="flex max-h-[min(90dvh,720px)] w-full max-w-3xl flex-col gap-0 overflow-hidden border-border bg-popover py-0 text-foreground ring-white/10"
       >
-        <CardHeader className="shrink-0 space-y-3 border-b border-white/10 px-6 pt-6 pb-4">
+        <CardHeader className="shrink-0 space-y-3 border-b border-border px-6 pt-6 pb-4">
           <div className="space-y-1">
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-muted-foreground">
               Step {stepIndex + 1} of {steps.length}
             </p>
             <CardTitle id="new-session-title">{stepMeta.title}</CardTitle>
-            <CardDescription className="text-zinc-500">
+            <CardDescription className="text-muted-foreground">
               {stepMeta.description}
             </CardDescription>
           </div>
@@ -297,7 +297,7 @@ export function StudioNewSessionDialog({
           ) : null}
         </CardContent>
 
-        <CardFooter className="shrink-0 flex-col items-stretch gap-3 border-white/10 bg-[#0a1218] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <CardFooter className="shrink-0 flex-col items-stretch gap-3 border-border bg-popover px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           {error ? (
             <p className="text-sm text-red-400 sm:min-w-0 sm:flex-1 sm:pr-4">{error}</p>
           ) : (
@@ -307,7 +307,7 @@ export function StudioNewSessionDialog({
             <Button
               type="button"
               variant="outline"
-              className="border-white/15 bg-transparent text-zinc-200"
+              className="border-border bg-transparent text-foreground"
               disabled={submitting}
               onClick={close}
             >
@@ -317,7 +317,7 @@ export function StudioNewSessionDialog({
               <Button
                 type="button"
                 variant="outline"
-                className="border-white/15 bg-transparent text-zinc-200"
+                className="border-border bg-transparent text-foreground"
                 disabled={submitting}
                 onClick={goBack}
               >

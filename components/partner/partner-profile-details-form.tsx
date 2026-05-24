@@ -84,12 +84,12 @@ export function PartnerProfileDetailsForm({
       <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           <div className="flex flex-col items-center gap-2 sm:w-40">
-            <div className="relative size-28 overflow-hidden rounded-full border border-white/15 bg-zinc-800">
+            <div className="relative size-28 overflow-hidden rounded-full border border-border bg-muted">
               {displayPicture ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={displayPicture} alt="" className="size-full object-cover" />
               ) : (
-                <div className="flex size-full items-center justify-center text-xs text-zinc-500">
+                <div className="flex size-full items-center justify-center text-xs text-muted-foreground">
                   No photo
                 </div>
               )}
@@ -108,7 +108,7 @@ export function PartnerProfileDetailsForm({
               />
               <span
                 className={cn(
-                  "inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-white/10",
+                  "inline-flex items-center justify-center rounded-lg border border-border bg-muted/50 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent",
                   avatarBusy && "pointer-events-none opacity-50",
                 )}
               >
@@ -126,7 +126,7 @@ export function PartnerProfileDetailsForm({
               name="partnerName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-zinc-200">Partner name</FormLabel>
+                  <FormLabel className="text-foreground">Partner name</FormLabel>
                   <FormControl>
                     <Input
                       id={nameId}
@@ -135,7 +135,7 @@ export function PartnerProfileDetailsForm({
                       className={formInputLgClassName}
                     />
                   </FormControl>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-muted-foreground">
                     Leave blank to use your account name.
                   </p>
                   <FormMessage />
@@ -149,7 +149,7 @@ export function PartnerProfileDetailsForm({
                 name="partnerType"
                 render={({ field }) => (
                   <FormItem className="min-w-0">
-                    <FormLabel className="text-zinc-200">Type</FormLabel>
+                    <FormLabel className="text-foreground">Type</FormLabel>
                     <FormControl>
                       <Combobox
                         items={TYPE_KEYS}
@@ -166,21 +166,21 @@ export function PartnerProfileDetailsForm({
                           id={typeId}
                           placeholder="Search type…"
                           className={cn(
-                            "h-10 w-full min-h-10 border-white/15 bg-white/5 text-zinc-100 placeholder:text-zinc-500",
+                            "h-10 w-full min-h-10 border-border bg-muted/50 text-foreground placeholder:text-muted-foreground",
                             "focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/25",
                           )}
                         />
                         <ComboboxContent
-                          className="border-white/10 bg-[#0a1218] text-zinc-100 ring-white/10"
+                          className="border-border bg-popover text-foreground ring-white/10"
                           align="start"
                         >
-                          <ComboboxEmpty className="text-zinc-500">No matches.</ComboboxEmpty>
+                          <ComboboxEmpty className="text-muted-foreground">No matches.</ComboboxEmpty>
                           <ComboboxList>
                             {(key: PartnerType) => (
                               <ComboboxItem
                                 key={key}
                                 value={key}
-                                className="text-zinc-200 data-highlighted:bg-primary/15 data-highlighted:text-zinc-50"
+                                className="text-foreground data-highlighted:bg-primary/15 data-highlighted:text-foreground"
                               >
                                 {TYPE_LABELS[key]}
                               </ComboboxItem>
@@ -216,7 +216,7 @@ export function PartnerProfileDetailsForm({
           name="descriptionMarkdown"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-zinc-200">Description</FormLabel>
+              <FormLabel className="text-foreground">Description</FormLabel>
               <FormControl>
                 <PartnerMarkdownField
                   value={field.value}
@@ -228,7 +228,7 @@ export function PartnerProfileDetailsForm({
           )}
         />
 
-        <div className="flex justify-end border-t border-white/10 pt-4">
+        <div className="flex justify-end border-t border-border pt-4">
           <Button
             type="submit"
             className="bg-primary text-primary-foreground hover:bg-primary/90"
