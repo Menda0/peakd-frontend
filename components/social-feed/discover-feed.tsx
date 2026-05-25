@@ -18,7 +18,7 @@ function FeedSkeleton() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="animate-pulse rounded-2xl border border-border bg-white/[0.03] p-5"
+          className="animate-pulse rounded-2xl border border-border bg-card p-5"
         >
           <div className="mb-3 flex items-center gap-3">
             <div className="size-10 rounded-full bg-muted" />
@@ -196,7 +196,7 @@ export function DiscoverFeed() {
 
   if (posts.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-white/[0.03] px-4 py-12 text-center">
+      <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center">
         <p className="text-sm font-medium text-foreground">No videos in your feed yet</p>
         <p className="mt-2 text-sm text-muted-foreground">
           Upload a video from the top bar or browse content from partners in your region.

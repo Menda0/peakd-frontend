@@ -174,7 +174,7 @@ export function StudioJobDetail() {
 
         {detail && !loading ? (
           <>
-            <Card className="border-border bg-white/[0.03] text-foreground">
+            <Card className="border-border bg-card text-foreground">
               <CardHeader>
                 <CardTitle className="text-xl sm:text-2xl">{detail.originalFilename}</CardTitle>
                 <CardDescription className="text-muted-foreground">
@@ -195,7 +195,7 @@ export function StudioJobDetail() {
             </Card>
 
             {detail.status === "processing" ? (
-              <Card className="border-border bg-white/[0.03] text-foreground">
+              <Card className="border-border bg-card text-foreground">
                 <CardContent className="py-10">
                   <div className="mx-auto max-w-md space-y-3 text-center">
                     <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
@@ -206,7 +206,7 @@ export function StudioJobDetail() {
             ) : null}
 
             {detail.status === "completed" && detail.videoUrl ? (
-              <Card className="border-border bg-white/[0.03] text-foreground">
+              <Card className="border-border bg-card text-foreground">
                 <CardHeader>
                   <CardTitle className="text-base">Processed video</CardTitle>
                 </CardHeader>
@@ -228,7 +228,7 @@ export function StudioJobDetail() {
             ) : null}
 
             {detail.status === "completed" ? (
-              <Card className="border-border bg-white/[0.03] text-foreground">
+              <Card className="border-border bg-card text-foreground">
                 <CardHeader>
                   <CardTitle className="text-base">Snapshots ({detail.snapshots.length})</CardTitle>
                 </CardHeader>

@@ -72,8 +72,8 @@ export function SearchSessionsPanel() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-100">Sessions</h2>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h2 className="text-lg font-semibold text-foreground">Sessions</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           {searchLocationTitle(params)} · {dateLabel}
         </p>
       </div>
@@ -83,19 +83,19 @@ export function SearchSessionsPanel() {
           {[1, 2, 3].map((i) => (
             <Card
               key={i}
-              className="animate-pulse border-white/10 bg-white/[0.03]"
+              className="animate-pulse border-border bg-card"
             >
               <CardContent className="h-28 p-4" />
             </Card>
           ))}
         </div>
       ) : error ? (
-        <Card className="border-red-500/20 bg-red-500/5 text-zinc-100">
-          <CardContent className="p-4 text-sm text-red-300">{error}</CardContent>
+        <Card className="border-red-500/20 bg-red-500/5 text-foreground">
+          <CardContent className="p-4 text-sm text-red-500 dark:text-red-300">{error}</CardContent>
         </Card>
       ) : sessions.length === 0 ? (
-        <Card className="border-white/10 bg-white/[0.03] text-zinc-100">
-          <CardContent className="p-6 text-center text-sm text-zinc-500">
+        <Card className="border-border bg-card text-foreground">
+          <CardContent className="p-6 text-center text-sm text-muted-foreground">
             No published sessions for this location on this day.
           </CardContent>
         </Card>

@@ -59,14 +59,14 @@ function SurferAvatar({
       src={surfer.avatarUrl}
       alt=""
       className={cn(
-        "size-9 shrink-0 rounded-full object-cover ring-2 ring-[#050a0f]",
+        "size-9 shrink-0 rounded-full object-cover ring-2 ring-card",
         className,
       )}
     />
   ) : (
     <div
       className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-xs font-semibold text-foreground ring-2 ring-[#050a0f]",
+        "flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground ring-2 ring-card",
         className,
       )}
       aria-hidden
@@ -177,7 +177,7 @@ export function SharedSessionSurferList({
               <SurferWithTooltip key={surfer.userId} surfer={surfer}>
                 <button
                   type="button"
-                  className="relative cursor-default rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050a0f]"
+                  className="relative cursor-default rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                   aria-label={surferLabel(surfer)}
                 >
                   <SurferAvatar surfer={surfer} />
@@ -190,7 +190,7 @@ export function SharedSessionSurferList({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  className="relative z-10 -ml-2 flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-semibold text-foreground ring-2 ring-[#050a0f] outline-none hover:bg-zinc-700 focus-visible:ring-2 focus-visible:ring-primary/60"
+                  className="relative z-10 -ml-2 flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-semibold text-foreground ring-2 ring-card outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary/60"
                   aria-label={`${overflow.length} more surfers`}
                 >
                   +{overflow.length}

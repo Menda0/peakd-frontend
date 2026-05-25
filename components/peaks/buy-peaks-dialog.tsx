@@ -37,7 +37,7 @@ function PackRow({
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 rounded-xl border border-border bg-white/[0.03] p-4 sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-2 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between",
         highlight && "border-[#26c2c9]/40 bg-[#26c2c9]/5",
       )}
     >

@@ -25,7 +25,7 @@ import { formatDurationMinutes, waveTypeTitle } from "@/lib/surf-session-waves";
 function ConditionsStars({ rating }: { rating: number | null }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs text-zinc-500">Conditions</span>
+      <span className="text-xs text-muted-foreground">Conditions</span>
       <div
         className="flex items-center gap-0.5"
         role="img"
@@ -40,14 +40,14 @@ function ConditionsStars({ rating }: { rating: number | null }) {
               "size-3.5 shrink-0",
               rating != null && n <= rating
                 ? "fill-amber-400 text-amber-400"
-                : "fill-transparent text-zinc-600",
+                : "fill-transparent text-muted-foreground/60",
             )}
             aria-hidden
           />
         ))}
       </div>
       {rating == null ? (
-        <span className="text-xs text-zinc-600">Not rated</span>
+        <span className="text-xs text-muted-foreground">Not rated</span>
       ) : null}
     </div>
   );
@@ -72,7 +72,7 @@ function SurferAvatarStack({ surfers }: { surfers: SearchSessionSurfer[] }) {
           <div
             key={surfer.userId}
             className={cn(
-              "relative size-7 shrink-0 overflow-hidden rounded-full ring-2 ring-[#0c1521]",
+              "relative size-7 shrink-0 overflow-hidden rounded-full ring-2 ring-card",
               idx > 0 && "-ml-2",
             )}
             title={name}
@@ -87,7 +87,7 @@ function SurferAvatarStack({ surfers }: { surfers: SearchSessionSurfer[] }) {
               />
             ) : (
               <div
-                className="flex h-full w-full items-center justify-center bg-white/10 text-[10px] font-medium text-zinc-200"
+                className="flex h-full w-full items-center justify-center bg-muted text-[10px] font-medium text-foreground"
                 aria-hidden
               >
                 {name.charAt(0).toUpperCase()}
@@ -98,7 +98,7 @@ function SurferAvatarStack({ surfers }: { surfers: SearchSessionSurfer[] }) {
       })}
       {overflow > 0 ? (
         <div
-          className="relative -ml-2 flex size-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-semibold text-zinc-200 ring-2 ring-[#0c1521]"
+          className="relative -ml-2 flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-foreground ring-2 ring-card"
           aria-label={`${overflow} more surfer${overflow === 1 ? "" : "s"}`}
         >
           +{overflow}
@@ -124,21 +124,21 @@ function PartnerBadge({ author }: { author: SearchSessionAuthor }) {
         <img
           src={author.avatarUrl}
           alt=""
-          className="size-8 shrink-0 rounded-full object-cover ring-1 ring-white/10"
+          className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border"
         />
       ) : (
         <div
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/5 text-xs font-medium text-zinc-300 ring-1 ring-white/10"
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-foreground ring-1 ring-border"
           aria-hidden
         >
           {name.charAt(0).toUpperCase()}
         </div>
       )}
       <div className="min-w-0 text-left">
-        <p className="truncate text-xs font-medium leading-tight text-zinc-200">
+        <p className="truncate text-xs font-medium leading-tight text-foreground">
           {name}
         </p>
-        <p className="truncate text-[10px] leading-tight text-zinc-500">
+        <p className="truncate text-[10px] leading-tight text-muted-foreground">
           {typeLabel}
         </p>
       </div>
@@ -157,10 +157,10 @@ function CommercialIndicator({ isCommercial }: { isCommercial: boolean }) {
       <TooltipTrigger asChild>
         <span
           className={cn(
-            "inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-white/10",
+            "inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-border",
             isCommercial
-              ? "bg-amber-500/10 text-amber-300"
-              : "bg-white/5 text-zinc-300",
+              ? "bg-amber-500/10 text-amber-600 dark:text-amber-300"
+              : "bg-muted text-muted-foreground",
           )}
           aria-label={label}
         >
@@ -191,9 +191,9 @@ function SearchSessionCardBody({
   return (
     <Card
       className={cn(
-        "border-white/10 bg-white/[0.03] text-zinc-100 transition-colors",
+        "border-border bg-card text-foreground transition-colors",
         interactive &&
-          "hover:border-white/20 hover:bg-white/[0.05] focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/25",
+          "hover:border-primary/40 hover:bg-accent/40 focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/25",
         className,
       )}
     >
@@ -202,15 +202,15 @@ function SearchSessionCardBody({
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                <span className="font-medium text-zinc-100">
+                <span className="font-medium text-foreground">
                   {session.spotName ?? session.regionName}
                 </span>
                 <CommercialIndicator isCommercial={session.isCommercial} />
-                <span className="text-sm text-zinc-500">
+                <span className="text-sm text-muted-foreground">
                   {session.sessionDate} · {session.sessionTime}
                 </span>
               </div>
-              <p className="mt-0.5 truncate text-xs text-zinc-500">
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">
                 {session.spotName ? `${session.regionName} · ` : ""}
                 {session.countryCode} ·{" "}
                 {formatDurationMinutes(session.durationMinutes)}
@@ -224,14 +224,14 @@ function SearchSessionCardBody({
                 waveLabels.map((label) => (
                   <span
                     key={label}
-                    className="inline-flex max-w-full items-center truncate rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-zinc-300"
+                    className="inline-flex max-w-full items-center truncate rounded-md border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground"
                     title={label}
                   >
                     {label}
                   </span>
                 ))
               ) : (
-                <span className="text-xs text-zinc-600">No wave types</span>
+                <span className="text-xs text-muted-foreground">No wave types</span>
               )}
             </div>
           </div>
@@ -244,7 +244,7 @@ function SearchSessionCardBody({
         </div>
 
         {showFooter ? (
-          <div className="flex items-center gap-3 border-t border-white/5 pt-2">
+          <div className="flex items-center gap-3 border-t border-border pt-2">
             {showPartner ? <PartnerBadge author={session.author} /> : null}
             <div className="ml-auto">
               <SurferAvatarStack surfers={surfers} />
