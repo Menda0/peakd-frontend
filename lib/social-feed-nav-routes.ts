@@ -66,11 +66,15 @@ export function resolvePartnerNavItems(
   options: {
     studioHref: string;
     partnerProfileHref?: string;
+    partnerIncomeHref?: string;
   },
 ): ResolvedNavItem[] {
   const studioActive = pathMatchesOrChild(options.studioHref, pathname);
   const profileActive = options.partnerProfileHref
     ? pathMatchesOrChild(options.partnerProfileHref, pathname)
+    : false;
+  const incomeActive = options.partnerIncomeHref
+    ? pathMatchesOrChild(options.partnerIncomeHref, pathname)
     : false;
 
   return PARTNER_NAV_ITEMS.map((item) => {
@@ -86,6 +90,12 @@ export function resolvePartnerNavItems(
           ...item,
           href: options.partnerProfileHref,
           active: profileActive,
+        };
+      case "income":
+        return {
+          ...item,
+          href: options.partnerIncomeHref,
+          active: incomeActive,
         };
       default:
         return { ...item, active: false };
