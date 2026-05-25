@@ -1,7 +1,14 @@
 "use client";
 
-import { Star } from "lucide-react";
+import Link from "next/link";
+import { BadgeDollarSign, PlayCircle, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   PARTNER_TYPE_LABELS,
@@ -139,12 +146,42 @@ function PartnerBadge({ author }: { author: SearchSessionAuthor }) {
   );
 }
 
-export function SearchSessionCard({
+function CommercialIndicator({ isCommercial }: { isCommercial: boolean }) {
+  const Icon = isCommercial ? BadgeDollarSign : PlayCircle;
+  const label = isCommercial
+    ? "Commercial session — waves require unlock"
+    : "Free session — waves are free to watch";
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className={cn(
+            "inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-white/10",
+            isCommercial
+              ? "bg-amber-500/10 text-amber-300"
+              : "bg-white/5 text-zinc-300",
+          )}
+          aria-label={label}
+        >
+          <Icon className="size-3.5" aria-hidden />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6}>
+        <p className="text-xs">{label}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function SearchSessionCardBody({
   session,
   className,
+  interactive,
 }: {
   session: SearchSessionItem;
   className?: string;
+  interactive: boolean;
 }) {
   const waveLabels = session.waveTypes?.map((id) => waveTypeTitle(id)) ?? [];
   const showPartner = session.author.isPartner;
@@ -154,7 +191,9 @@ export function SearchSessionCard({
   return (
     <Card
       className={cn(
-        "border-white/10 bg-white/[0.03] text-zinc-100",
+        "border-white/10 bg-white/[0.03] text-zinc-100 transition-colors",
+        interactive &&
+          "hover:border-white/20 hover:bg-white/[0.05] focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/25",
         className,
       )}
     >
@@ -162,10 +201,11 @@ export function SearchSessionCard({
         <div className="flex items-stretch gap-4">
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
             <div className="min-w-0">
-              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <span className="font-medium text-zinc-100">
                   {session.spotName ?? session.regionName}
                 </span>
+                <CommercialIndicator isCommercial={session.isCommercial} />
                 <span className="text-sm text-zinc-500">
                   {session.sessionDate} · {session.sessionTime}
                 </span>
@@ -213,5 +253,41 @@ export function SearchSessionCard({
         ) : null}
       </CardContent>
     </Card>
+  );
+}
+
+export function SearchSessionCard({
+  session,
+  className,
+}: {
+  session: SearchSessionItem;
+  className?: string;
+}) {
+  const href = session.shareToken
+    ? `/share/sessions/${encodeURIComponent(session.shareToken)}`
+    : null;
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      {href ? (
+        <Link
+          href={href}
+          className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          aria-label={`Open session at ${session.spotName ?? session.regionName} on ${session.sessionDate}`}
+        >
+          <SearchSessionCardBody
+            session={session}
+            className={className}
+            interactive
+          />
+        </Link>
+      ) : (
+        <SearchSessionCardBody
+          session={session}
+          className={className}
+          interactive={false}
+        />
+      )}
+    </TooltipProvider>
   );
 }

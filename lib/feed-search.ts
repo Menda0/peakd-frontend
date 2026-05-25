@@ -45,6 +45,8 @@ export type SearchSessionSurfer = {
 
 export type SearchSessionItem = {
   sessionId: string;
+  shareToken: string | null;
+  isCommercial: boolean;
   countryCode: string;
   regionId: string;
   spotId: string;
@@ -126,6 +128,11 @@ function normalizeSearchSession(raw: unknown): SearchSessionItem | null {
   const o = raw as Record<string, unknown>;
   const sessionId = typeof o.sessionId === "string" ? o.sessionId.trim() : "";
   if (!sessionId) return null;
+  const shareToken =
+    typeof o.shareToken === "string" && o.shareToken.trim()
+      ? o.shareToken.trim()
+      : null;
+  const isCommercial = o.isCommercial === true;
   const countryCode =
     typeof o.countryCode === "string" ? o.countryCode.trim().toUpperCase() : "";
   const regionId = typeof o.regionId === "string" ? o.regionId.trim() : "";
@@ -197,6 +204,8 @@ function normalizeSearchSession(raw: unknown): SearchSessionItem | null {
 
   return {
     sessionId,
+    shareToken,
+    isCommercial,
     countryCode,
     regionId,
     spotId,
