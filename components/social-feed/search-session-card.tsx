@@ -65,7 +65,7 @@ function SurferAvatarStack({ surfers }: { surfers: SearchSessionSurfer[] }) {
           <div
             key={surfer.userId}
             className={cn(
-              "relative size-8 shrink-0 overflow-hidden rounded-full ring-2 ring-[#040F1E]",
+              "relative size-7 shrink-0 overflow-hidden rounded-full ring-2 ring-[#0c1521]",
               idx > 0 && "-ml-2",
             )}
             title={name}
@@ -80,7 +80,7 @@ function SurferAvatarStack({ surfers }: { surfers: SearchSessionSurfer[] }) {
               />
             ) : (
               <div
-                className="flex h-full w-full items-center justify-center bg-zinc-700 text-[11px] font-semibold text-zinc-200"
+                className="flex h-full w-full items-center justify-center bg-white/10 text-[10px] font-medium text-zinc-200"
                 aria-hidden
               >
                 {name.charAt(0).toUpperCase()}
@@ -91,7 +91,7 @@ function SurferAvatarStack({ surfers }: { surfers: SearchSessionSurfer[] }) {
       })}
       {overflow > 0 ? (
         <div
-          className="relative -ml-2 flex size-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-[11px] font-semibold text-zinc-200 ring-2 ring-[#040F1E]"
+          className="relative -ml-2 flex size-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-semibold text-zinc-200 ring-2 ring-[#0c1521]"
           aria-label={`${overflow} more surfer${overflow === 1 ? "" : "s"}`}
         >
           +{overflow}
@@ -109,7 +109,7 @@ function PartnerBadge({ author }: { author: SearchSessionAuthor }) {
 
   return (
     <div
-      className="flex max-w-[min(100%,18rem)] items-center gap-2 rounded-lg border border-white/15 bg-black/75 px-2 py-1.5 shadow-lg backdrop-blur-sm"
+      className="flex min-w-0 max-w-[min(100%,18rem)] items-center gap-2"
       aria-label={`Partner: ${name}, ${typeLabel}`}
     >
       {author.avatarUrl ? (
@@ -117,21 +117,21 @@ function PartnerBadge({ author }: { author: SearchSessionAuthor }) {
         <img
           src={author.avatarUrl}
           alt=""
-          className="size-9 shrink-0 rounded-full object-cover ring-1 ring-white/20"
+          className="size-8 shrink-0 rounded-full object-cover ring-1 ring-white/10"
         />
       ) : (
         <div
-          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-xs font-semibold text-zinc-200 ring-1 ring-white/20"
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/5 text-xs font-medium text-zinc-300 ring-1 ring-white/10"
           aria-hidden
         >
           {name.charAt(0).toUpperCase()}
         </div>
       )}
       <div className="min-w-0 text-left">
-        <p className="truncate text-xs font-semibold leading-tight text-zinc-50">
+        <p className="truncate text-xs font-medium leading-tight text-zinc-200">
           {name}
         </p>
-        <p className="truncate text-[10px] uppercase leading-tight tracking-wide text-primary">
+        <p className="truncate text-[10px] leading-tight text-zinc-500">
           {typeLabel}
         </p>
       </div>
@@ -158,7 +158,7 @@ export function SearchSessionCard({
         className,
       )}
     >
-      <CardContent className="flex flex-col gap-3 p-4">
+      <CardContent className="flex flex-col gap-2 px-4 py-2">
         <div className="flex items-stretch gap-4">
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
             <div className="min-w-0">
@@ -204,7 +204,7 @@ export function SearchSessionCard({
         </div>
 
         {showFooter ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 border-t border-white/5 pt-2">
             {showPartner ? <PartnerBadge author={session.author} /> : null}
             <div className="ml-auto">
               <SurferAvatarStack surfers={surfers} />
