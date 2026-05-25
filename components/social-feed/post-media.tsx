@@ -301,7 +301,7 @@ export function PostMedia({
         </span>
       </div>
       {duration ? (
-        <span className="absolute bottom-3 right-3 rounded-md bg-black/70 px-2 py-0.5 font-mono text-xs text-foreground">
+        <span className="absolute bottom-3 right-3 rounded-md bg-black/70 px-2 py-0.5 font-mono text-xs text-white">
           {duration}
         </span>
       ) : null}
