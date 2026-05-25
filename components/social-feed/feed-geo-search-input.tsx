@@ -140,27 +140,27 @@ export function FeedGeoSearchInput({
         showTrigger={false}
         showClear={Boolean(value || query.trim())}
         className={cn(
-          "h-11 min-h-11 rounded-full border-white/10 bg-white/5 py-2 pl-11 pr-3 text-sm text-zinc-100 placeholder:text-zinc-500",
-          "focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/25",
+          "h-11 min-h-11 rounded-full border-input bg-muted/40 py-2 pl-11 pr-3 text-sm text-foreground placeholder:text-muted-foreground",
+          "focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/40",
           className,
         )}
       />
       <ComboboxContent
-        className="border-white/10 bg-[#0a1218] text-zinc-100 ring-white/10"
+        className="border border-border bg-popover text-popover-foreground shadow-lg"
         positionerClassName="z-50"
       >
         <ComboboxList>
           {loading && items.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-zinc-500">Searching…</div>
+            <div className="px-3 py-2 text-sm text-muted-foreground">Searching…</div>
           ) : null}
           {items.map((item) => (
             <ComboboxItem
               key={geoItemKey(item)}
               value={item}
-              className="gap-2 data-[highlighted]:bg-white/10"
+              className="gap-2"
             >
               <span className="min-w-0 flex-1 truncate">{buildGeoSearchLabel(item)}</span>
-              <span className="shrink-0 text-[10px] uppercase tracking-wide text-zinc-500">
+              <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
                 {typeLabel(item.type)}
               </span>
               {item.type !== "country" ? <GeoVerifiedIcon /> : null}
