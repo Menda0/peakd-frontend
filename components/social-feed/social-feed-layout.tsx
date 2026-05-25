@@ -40,12 +40,7 @@ export function SocialFeedLayout({
 }) {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
-      <FeedAppBar
-        homeHref={homeHref}
-        userPicture={userPicture}
-        userName={userName}
-        userEmail={userEmail}
-      />
+      <FeedAppBar homeHref={homeHref} />
       <div className="flex min-h-0 flex-1">
         <FeedNavSidebar
           homeHref={homeHref}
@@ -57,6 +52,9 @@ export function SocialFeedLayout({
           adminPeaksHref={adminPeaksHref}
           showPartnerNav={showPartnerNav}
           showAdminNav={showAdminNav}
+          userPicture={userPicture}
+          userName={userName}
+          userEmail={userEmail}
         />
         {children ? (
           <main className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
