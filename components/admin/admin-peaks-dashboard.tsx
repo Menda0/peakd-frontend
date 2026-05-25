@@ -15,10 +15,12 @@ import { CountryPicker } from "@/components/pickers/country-picker";
 import { RegionPicker } from "@/components/pickers/region-picker";
 import { englishCountryLabel } from "@/lib/countries";
 import { isUndisclosedRegionId } from "@/lib/geo-undisclosed";
-import type {
-  AdminPeaksGeoRowDto,
-  AdminPeaksSummaryDto,
-  AdminPeaksTransactionDto,
+import {
+  DEFAULT_PEAKS_PER_EURO,
+  formatPeaksEur,
+  type AdminPeaksGeoRowDto,
+  type AdminPeaksSummaryDto,
+  type AdminPeaksTransactionDto,
 } from "@/lib/admin-peaks";
 import {
   fetchAdminPeaksByCountryAction,
@@ -31,6 +33,23 @@ type PeaksTab = "local" | "global";
 
 function formatPeaks(n: number): string {
   return n.toLocaleString();
+}
+
+function PeaksAmount({
+  peaks,
+  peaksPerEuro,
+  className,
+}: {
+  peaks: number;
+  peaksPerEuro: number;
+  className?: string;
+}) {
+  return (
+    <span className={className}>
+      {formatPeaks(peaks)}{" "}
+      <span className="text-zinc-500">({formatPeaksEur(peaks, peaksPerEuro)})</span>
+    </span>
+  );
 }
 
 function formatDate(iso: string): string {
@@ -86,10 +105,12 @@ function AdminPeaksBuyerCell({ tx }: { tx: AdminPeaksTransactionDto }) {
 function SummaryCard({
   label,
   value,
+  subValue,
   hint,
 }: {
   label: string;
   value: string;
+  subValue?: string | null;
   hint?: string;
 }) {
   return (
@@ -97,6 +118,9 @@ function SummaryCard({
       <CardHeader className="pb-2">
         <CardDescription className="text-zinc-400">{label}</CardDescription>
         <CardTitle className="text-2xl font-semibold text-zinc-50">{value}</CardTitle>
+        {subValue ? (
+          <p className="mt-1 text-sm font-medium text-zinc-400">{subValue}</p>
+        ) : null}
       </CardHeader>
       {hint ? (
         <CardContent className="pt-0">
@@ -107,19 +131,45 @@ function SummaryCard({
   );
 }
 
+function PeaksSummaryCard({
+  label,
+  peaks,
+  peaksPerEuro,
+  loading,
+  hint,
+}: {
+  label: string;
+  peaks: number | null | undefined;
+  peaksPerEuro: number;
+  loading: boolean;
+  hint?: string;
+}) {
+  const amount = peaks ?? 0;
+  return (
+    <SummaryCard
+      label={label}
+      value={loading ? "…" : `${formatPeaks(amount)} Peaks`}
+      subValue={loading ? undefined : formatPeaksEur(amount, peaksPerEuro)}
+      hint={hint}
+    />
+  );
+}
+
 function PeaksCountryTable({
   rows,
   loading,
   emptyMessage,
+  peaksPerEuro,
 }: {
   rows: AdminPeaksGeoRowDto[];
   loading: boolean;
   emptyMessage: string;
+  peaksPerEuro: number;
 }) {
   if (loading) return <p className="text-sm text-zinc-500">Loading…</p>;
   if (rows.length === 0) return <p className="text-sm text-zinc-500">{emptyMessage}</p>;
   return (
-    <table className="w-full min-w-[28rem] border-collapse text-left text-sm">
+    <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
       <thead>
         <tr className="border-b border-white/10 text-zinc-400">
           <th className="py-2 pr-4 font-medium">Country</th>
@@ -139,13 +189,13 @@ function PeaksCountryTable({
               {row.transactionCount}
             </td>
             <td className="py-2.5 pr-4 text-right tabular-nums font-medium text-zinc-50">
-              {formatPeaks(row.communityFeePeaks)}
+              <PeaksAmount peaks={row.communityFeePeaks} peaksPerEuro={peaksPerEuro} />
             </td>
             <td className="py-2.5 pr-4 text-right tabular-nums text-zinc-400">
-              {formatPeaks(row.partnerPeaks)}
+              <PeaksAmount peaks={row.partnerPeaks} peaksPerEuro={peaksPerEuro} />
             </td>
             <td className="py-2.5 pr-4 text-right tabular-nums text-zinc-400">
-              {formatPeaks(row.totalPeaksCharged)}
+              <PeaksAmount peaks={row.totalPeaksCharged} peaksPerEuro={peaksPerEuro} />
             </td>
           </tr>
         ))}
@@ -159,16 +209,18 @@ function PeaksRegionTable({
   loading,
   emptyMessage,
   showCountry,
+  peaksPerEuro,
 }: {
   rows: AdminPeaksGeoRowDto[];
   loading: boolean;
   emptyMessage: string;
   showCountry?: boolean;
+  peaksPerEuro: number;
 }) {
   if (loading) return <p className="text-sm text-zinc-500">Loading…</p>;
   if (rows.length === 0) return <p className="text-sm text-zinc-500">{emptyMessage}</p>;
   return (
-    <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
+    <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
       <thead>
         <tr className="border-b border-white/10 text-zinc-400">
           {showCountry ? <th className="py-2 pr-4 font-medium">Country</th> : null}
@@ -197,13 +249,13 @@ function PeaksRegionTable({
               {row.transactionCount}
             </td>
             <td className="py-2.5 pr-4 text-right tabular-nums font-medium text-zinc-50">
-              {formatPeaks(row.communityFeePeaks)}
+              <PeaksAmount peaks={row.communityFeePeaks} peaksPerEuro={peaksPerEuro} />
             </td>
             <td className="py-2.5 pr-4 text-right tabular-nums text-zinc-400">
-              {formatPeaks(row.partnerPeaks)}
+              <PeaksAmount peaks={row.partnerPeaks} peaksPerEuro={peaksPerEuro} />
             </td>
             <td className="py-2.5 pr-4 text-right tabular-nums text-zinc-400">
-              {formatPeaks(row.totalPeaksCharged)}
+              <PeaksAmount peaks={row.totalPeaksCharged} peaksPerEuro={peaksPerEuro} />
             </td>
           </tr>
         ))}
@@ -219,6 +271,7 @@ function TransactionsTable({
   loadingMore,
   nextCursor,
   onLoadMore,
+  peaksPerEuro,
 }: {
   transactions: AdminPeaksTransactionDto[];
   loading: boolean;
@@ -226,6 +279,7 @@ function TransactionsTable({
   loadingMore: boolean;
   nextCursor: string | null;
   onLoadMore: () => void;
+  peaksPerEuro: number;
 }) {
   if (loading) return <p className="text-sm text-zinc-500">Loading…</p>;
   if (transactions.length === 0) {
@@ -266,13 +320,13 @@ function TransactionsTable({
                 <td className="py-2.5 pr-3">{tx.type}</td>
                 <td className="py-2.5 pr-3">{location}</td>
                 <td className="py-2.5 pr-3 text-right tabular-nums">
-                  {formatPeaks(tx.basePeaks)}
+                  <PeaksAmount peaks={tx.basePeaks} peaksPerEuro={peaksPerEuro} />
                 </td>
                 <td className="py-2.5 pr-3 text-right tabular-nums text-zinc-400">
-                  {formatPeaks(tx.communityFeePeaks)}
+                  <PeaksAmount peaks={tx.communityFeePeaks} peaksPerEuro={peaksPerEuro} />
                 </td>
                 <td className="py-2.5 pr-3 text-right tabular-nums font-medium text-zinc-50">
-                  {formatPeaks(tx.peaksCharged)}
+                  <PeaksAmount peaks={tx.peaksCharged} peaksPerEuro={peaksPerEuro} />
                 </td>
                 <td className="py-2.5 pr-3">
                   <AdminPeaksBuyerCell tx={tx} />
@@ -507,12 +561,12 @@ export function AdminPeaksDashboard() {
 
   const circulationPeaks =
     localSummary?.circulatingPeaks ?? globalSummary?.circulatingPeaks;
-  const circulationValue =
-    circulationPeaks == null
-      ? localLoading || globalLoading
-        ? "…"
-        : "0"
-      : formatPeaks(circulationPeaks);
+  const peaksPerEuro =
+    localSummary?.peaksPerEuro ??
+    globalSummary?.peaksPerEuro ??
+    DEFAULT_PEAKS_PER_EURO;
+  const circulationLoading =
+    circulationPeaks == null && (localLoading || globalLoading);
 
   return (
     <div className="space-y-6">
@@ -524,10 +578,12 @@ export function AdminPeaksDashboard() {
         </p>
       </div>
 
-      <SummaryCard
+      <PeaksSummaryCard
         label="Peaks in circulation"
-        value={circulationValue}
-        hint="Sum of all user wallet balances (global)"
+        peaks={circulationPeaks}
+        peaksPerEuro={peaksPerEuro}
+        loading={circulationLoading}
+        hint={`Sum of all user wallet balances (global) · 1 EUR = ${peaksPerEuro} Peaks`}
       />
 
       {error ? (
@@ -584,23 +640,25 @@ export function AdminPeaksDashboard() {
                   value={localLoading ? "…" : formatPeaks(localSummary?.unlockTransactionCount ?? 0)}
                   hint={filterLabel ? `In ${filterLabel}` : undefined}
                 />
-                <SummaryCard
+                <PeaksSummaryCard
                   label="Partner Peaks paid"
-                  value={localLoading ? "…" : formatPeaks(localSummary?.totalPartnerPeaks ?? 0)}
+                  peaks={localSummary?.totalPartnerPeaks ?? 0}
+                  peaksPerEuro={peaksPerEuro}
+                  loading={localLoading}
                   hint={filterLabel ? `In ${filterLabel}` : undefined}
                 />
-                <SummaryCard
+                <PeaksSummaryCard
                   label="Community fees (country)"
-                  value={
-                    localLoading ? "…" : formatPeaks(localSummary?.countryCommunityFeePeaks ?? 0)
-                  }
+                  peaks={localSummary?.countryCommunityFeePeaks ?? 0}
+                  peaksPerEuro={peaksPerEuro}
+                  loading={localLoading}
                   hint={countryLabel ?? countryCode}
                 />
-                <SummaryCard
+                <PeaksSummaryCard
                   label={regionId ? "Community fees (region)" : "Community fees (regions)"}
-                  value={
-                    localLoading ? "…" : formatPeaks(localSummary?.regionsCommunityFeePeaks ?? 0)
-                  }
+                  peaks={localSummary?.regionsCommunityFeePeaks ?? 0}
+                  peaksPerEuro={peaksPerEuro}
+                  loading={localLoading}
                   hint={
                     regionId && selectedRegionName
                       ? selectedRegionName
@@ -621,6 +679,7 @@ export function AdminPeaksDashboard() {
                     rows={localByCountry}
                     loading={localLoading}
                     emptyMessage="No unlocks for this country yet."
+                    peaksPerEuro={peaksPerEuro}
                   />
                 </CardContent>
               </Card>
@@ -637,6 +696,7 @@ export function AdminPeaksDashboard() {
                     rows={localByRegion}
                     loading={localLoading}
                     emptyMessage="No unlocks for this filter yet."
+                    peaksPerEuro={peaksPerEuro}
                   />
                 </CardContent>
               </Card>
@@ -656,6 +716,7 @@ export function AdminPeaksDashboard() {
                     loadingMore={localLoadingMore}
                     nextCursor={localNextCursor}
                     onLoadMore={() => void loadMoreLocalTransactions()}
+                    peaksPerEuro={peaksPerEuro}
                   />
                 </CardContent>
               </Card>
@@ -670,21 +731,25 @@ export function AdminPeaksDashboard() {
               value={globalLoading ? "…" : formatPeaks(globalSummary?.unlockTransactionCount ?? 0)}
               hint="All countries"
             />
-            <SummaryCard
+            <PeaksSummaryCard
               label="Partner Peaks paid"
-              value={globalLoading ? "…" : formatPeaks(globalSummary?.totalPartnerPeaks ?? 0)}
+              peaks={globalSummary?.totalPartnerPeaks ?? 0}
+              peaksPerEuro={peaksPerEuro}
+              loading={globalLoading}
               hint="All countries"
             />
-            <SummaryCard
+            <PeaksSummaryCard
               label="Community fees"
-              value={
-                globalLoading ? "…" : formatPeaks(globalSummary?.totalCommunityFeePeaks ?? 0)
-              }
+              peaks={globalSummary?.totalCommunityFeePeaks ?? 0}
+              peaksPerEuro={peaksPerEuro}
+              loading={globalLoading}
               hint="Disclosed locations worldwide"
             />
-            <SummaryCard
+            <PeaksSummaryCard
               label="Total Peaks charged"
-              value={globalLoading ? "…" : formatPeaks(globalSummary?.totalPeaksCharged ?? 0)}
+              peaks={globalSummary?.totalPeaksCharged ?? 0}
+              peaksPerEuro={peaksPerEuro}
+              loading={globalLoading}
               hint="Unlock purchases globally"
             />
           </div>
@@ -701,6 +766,7 @@ export function AdminPeaksDashboard() {
                 rows={globalByCountry}
                 loading={globalLoading}
                 emptyMessage="No unlock data yet."
+                peaksPerEuro={peaksPerEuro}
               />
             </CardContent>
           </Card>
@@ -718,6 +784,7 @@ export function AdminPeaksDashboard() {
                 loading={globalLoading}
                 emptyMessage="No unlock data yet."
                 showCountry
+                peaksPerEuro={peaksPerEuro}
               />
             </CardContent>
           </Card>
@@ -737,6 +804,7 @@ export function AdminPeaksDashboard() {
                 loadingMore={globalLoadingMore}
                 nextCursor={globalNextCursor}
                 onLoadMore={() => void loadMoreGlobalTransactions()}
+                peaksPerEuro={peaksPerEuro}
               />
             </CardContent>
           </Card>
