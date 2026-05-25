@@ -2,7 +2,9 @@
 
 import { formatDistanceToNow } from "date-fns";
 import { Loader2Icon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useUserProfileModal } from "@/components/user-profile/user-profile-provider";
+import { englishCountryLabel } from "@/lib/countries";
 import {
   discoverItemToPost,
   fetchDiscoverFeed,
@@ -11,6 +13,8 @@ import {
   type DiscoverFeedPost,
 } from "@/lib/discover-feed";
 import { FeedList } from "./feed-list";
+import type { FeedTabId, FeedTabItem } from "./feed-tabs";
+import { FeedToolbar } from "./feed-toolbar";
 
 function FeedSkeleton() {
   return (
@@ -45,7 +49,52 @@ function mapDiscoverPageItems(
   );
 }
 
+type FeedFilter = {
+  countryCode?: string;
+  regionId?: string;
+};
+
+function filterForTab(
+  tabId: FeedTabId,
+  countryCode: string | null,
+  homeRegionId: string | null,
+): FeedFilter {
+  if (tabId === "country" && countryCode) {
+    return { countryCode };
+  }
+  if (tabId === "region" && countryCode && homeRegionId) {
+    return { countryCode, regionId: homeRegionId };
+  }
+  return {};
+}
+
 export function DiscoverFeed() {
+  const { profile } = useUserProfileModal();
+  const countryCode = profile?.countryCode?.trim() || null;
+  const homeRegionId = profile?.homeRegionId?.trim() || null;
+  const homeRegionName = profile?.homeRegionName?.trim() || null;
+  const countryName = countryCode ? englishCountryLabel(countryCode) : null;
+
+  const tabs = useMemo<FeedTabItem[]>(
+    () => [
+      { id: "all", label: "All" },
+      {
+        id: "country",
+        label: countryName ?? "My Country",
+        disabled: !countryCode,
+        disabledHint: "Set your country in your profile to filter by country",
+      },
+      {
+        id: "region",
+        label: homeRegionName ?? "My Region",
+        disabled: !countryCode || !homeRegionId,
+        disabledHint: "Set your home region in your profile to filter by region",
+      },
+    ],
+    [countryCode, countryName, homeRegionId, homeRegionName],
+  );
+
+  const [requestedTabId, setRequestedTabId] = useState<FeedTabId>("all");
   const [posts, setPosts] = useState<DiscoverFeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -54,6 +103,16 @@ export function DiscoverFeed() {
   const cursorRef = useRef<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingMoreRef = useRef(false);
+
+  const activeTabId: FeedTabId = useMemo(() => {
+    const requested = tabs.find((t) => t.id === requestedTabId);
+    return requested && !requested.disabled ? requestedTabId : "all";
+  }, [tabs, requestedTabId]);
+
+  const filter = useMemo(
+    () => filterForTab(activeTabId, countryCode, homeRegionId),
+    [activeTabId, countryCode, homeRegionId],
+  );
 
   const appendPage = useCallback(
     (items: DiscoverFeedPost[], nextCursor: string | null, more: boolean) => {
@@ -76,7 +135,7 @@ export function DiscoverFeed() {
 
   const refreshFirstPage = useCallback(async () => {
     try {
-      const page = await fetchDiscoverFeed({ limit: 20 });
+      const page = await fetchDiscoverFeed({ limit: 20, ...filter });
       const mapped = mapDiscoverPageItems(page.items);
       setPosts((prev) => {
         const firstIds = new Set(mapped.map((p) => p.id));
@@ -90,13 +149,13 @@ export function DiscoverFeed() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to refresh feed");
     }
-  }, []);
+  }, [filter]);
 
   const loadInitial = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const page = await fetchDiscoverFeed({ limit: 20 });
+      const page = await fetchDiscoverFeed({ limit: 20, ...filter });
       const mapped = mapDiscoverPageItems(page.items);
       setPosts(mapped);
       cursorRef.current = page.nextCursor;
@@ -109,7 +168,7 @@ export function DiscoverFeed() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filter]);
 
   const loadMore = useCallback(async () => {
     if (!hasMore || !cursorRef.current || loadingMoreRef.current) return;
@@ -119,6 +178,7 @@ export function DiscoverFeed() {
       const page = await fetchDiscoverFeed({
         limit: 20,
         cursor: cursorRef.current,
+        ...filter,
       });
       const mapped = mapDiscoverPageItems(page.items);
       appendPage(mapped, page.nextCursor, page.hasMore);
@@ -128,7 +188,7 @@ export function DiscoverFeed() {
       setLoadingMore(false);
       loadingMoreRef.current = false;
     }
-  }, [appendPage, hasMore]);
+  }, [appendPage, filter, hasMore]);
 
   useEffect(() => {
     void loadInitial();
@@ -175,38 +235,64 @@ export function DiscoverFeed() {
     return () => observer.disconnect();
   }, [hasMore, loadMore]);
 
+  const toolbar = (
+    <div className="mt-4">
+      <FeedToolbar
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onTabChange={setRequestedTabId}
+      />
+    </div>
+  );
+
   if (loading) {
-    return <FeedSkeleton />;
+    return (
+      <>
+        {toolbar}
+        <FeedSkeleton />
+      </>
+    );
   }
 
   if (error && posts.length === 0) {
     return (
-      <div className="rounded-2xl border border-red-500/30 bg-red-950/20 px-4 py-6 text-center text-sm text-red-300">
-        <p>{error}</p>
-        <button
-          type="button"
-          className="mt-3 text-primary underline-offset-2 hover:underline"
-          onClick={() => void loadInitial()}
-        >
-          Try again
-        </button>
-      </div>
+      <>
+        {toolbar}
+        <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-950/20 px-4 py-6 text-center text-sm text-red-300">
+          <p>{error}</p>
+          <button
+            type="button"
+            className="mt-3 text-primary underline-offset-2 hover:underline"
+            onClick={() => void loadInitial()}
+          >
+            Try again
+          </button>
+        </div>
+      </>
     );
   }
 
   if (posts.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center">
-        <p className="text-sm font-medium text-foreground">No videos in your feed yet</p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Upload a video from the top bar or browse content from partners in your region.
-        </p>
-      </div>
+      <>
+        {toolbar}
+        <div className="mt-4 rounded-2xl border border-border bg-card px-4 py-12 text-center">
+          <p className="text-sm font-medium text-foreground">
+            No videos in this feed yet
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {activeTabId === "all"
+              ? "Upload a video from the top bar or browse content from partners in your region."
+              : "Try a different tab or check back later."}
+          </p>
+        </div>
+      </>
     );
   }
 
   return (
     <>
+      {toolbar}
       <FeedList
         posts={posts}
         onCommercialPurchased={() => {

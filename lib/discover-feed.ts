@@ -278,11 +278,19 @@ export function normalizeDiscoverFeedPage(raw: unknown): DiscoverFeedPage | null
 export async function fetchDiscoverFeed(options?: {
   cursor?: string | null;
   limit?: number;
+  countryCode?: string | null;
+  regionId?: string | null;
 }): Promise<DiscoverFeedPage> {
   const base = getApiBase();
   const params = new URLSearchParams();
   if (options?.limit != null) params.set("limit", String(options.limit));
   if (options?.cursor?.trim()) params.set("cursor", options.cursor.trim());
+  if (options?.countryCode?.trim()) {
+    params.set("countryCode", options.countryCode.trim().toUpperCase());
+  }
+  if (options?.regionId?.trim()) {
+    params.set("regionId", options.regionId.trim());
+  }
   const qs = params.toString();
   const res = await fetch(`${base}/feed/discover${qs ? `?${qs}` : ""}`, {
     credentials: "include",
