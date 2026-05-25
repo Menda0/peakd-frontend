@@ -30,7 +30,7 @@ function Calendar({ className, style, ...props }: CalendarProps) {
   return (
     <DayPicker
       className={cn(
-        "rdp-compact w-fit max-w-full p-1.5 text-zinc-100 leading-tight tracking-tight",
+        "rdp-compact w-fit max-w-full p-1.5 text-foreground leading-tight tracking-tight",
         className,
       )}
       style={{

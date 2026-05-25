@@ -12,9 +12,9 @@ export function PostContent({
 
   return (
     <div className="mt-3 space-y-2">
-      <h3 className="text-base font-semibold leading-snug text-zinc-100">{title}</h3>
+      <h3 className="text-base font-semibold leading-snug text-foreground">{title}</h3>
       {hasDescription ? (
-        <p className="text-sm leading-relaxed text-zinc-400">{description}</p>
+        <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
       ) : null}
       {hasHashtags ? (
         <p className="flex flex-wrap gap-2 text-sm font-medium text-primary">

@@ -87,10 +87,10 @@ export function AdminCreateSpotModal({
         if (e.target === e.currentTarget && !isSubmitting) onClose();
       }}
     >
-      <Card className="w-full max-w-lg border-white/10 bg-[#0a1218] text-zinc-100">
+      <Card className="w-full max-w-lg border-border bg-popover text-foreground">
         <CardHeader>
           <CardTitle className="text-lg">Add spot</CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardDescription className="text-muted-foreground">
             Create a new surf spot in {regionName}.
           </CardDescription>
         </CardHeader>
@@ -137,13 +137,13 @@ export function AdminCreateSpotModal({
           />
           {error ? <p className="text-sm text-red-400">{error}</p> : null}
         </CardContent>
-        <CardFooter className="flex justify-end gap-2 border-t border-white/10 pt-4">
+        <CardFooter className="flex justify-end gap-2 border-t border-border pt-4">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={isSubmitting}
-            className="border-white/15 bg-transparent text-zinc-200"
+            className="border-border bg-transparent text-foreground"
           >
             Cancel
           </Button>

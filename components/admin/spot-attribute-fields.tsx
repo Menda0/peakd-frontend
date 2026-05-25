@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 const noneValue = "__none__";
 
 const selectContentClassName =
-  "border-white/10 bg-[#0a1218] text-zinc-100 ring-white/10";
+  "border-border bg-popover text-foreground ring-white/10";
 
 const levelItems = SPOT_LEVEL_OPTIONS.map((o) => ({
   value: o.id,

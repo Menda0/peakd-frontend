@@ -85,16 +85,16 @@ export function AdminRegionsManager({ regionsBasePath }: { regionsBasePath: stri
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Regions</h1>
-        <p className="mt-1 text-sm text-zinc-400">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Regions</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Select a country, then click a region to edit it and manage its spots.
         </p>
       </div>
 
-      <Card className="border-white/10 bg-white/5">
+      <Card className="border-border bg-muted/50">
         <CardHeader>
-          <CardTitle className="text-zinc-100">Country</CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardTitle className="text-foreground">Country</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Filter regions by country.
           </CardDescription>
         </CardHeader>
@@ -114,11 +114,11 @@ export function AdminRegionsManager({ regionsBasePath }: { regionsBasePath: stri
         </p>
       ) : null}
 
-      <Card className="border-white/10 bg-white/5">
+      <Card className="border-border bg-muted/50">
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0">
           <div>
-            <CardTitle className="text-zinc-100">Regions</CardTitle>
-            <CardDescription className="text-zinc-400">
+            <CardTitle className="text-foreground">Regions</CardTitle>
+            <CardDescription className="text-muted-foreground">
               {loading
                 ? "Loading…"
                 : countryCode
@@ -142,13 +142,13 @@ export function AdminRegionsManager({ regionsBasePath }: { regionsBasePath: stri
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {!countryCode ? (
-            <p className="text-sm text-zinc-500">Select a country above.</p>
+            <p className="text-sm text-muted-foreground">Select a country above.</p>
           ) : regions.length === 0 && !loading ? (
-            <p className="text-sm text-zinc-500">No regions for this country.</p>
+            <p className="text-sm text-muted-foreground">No regions for this country.</p>
           ) : (
             <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-zinc-400">
+                <tr className="border-b border-border text-muted-foreground">
                   <th className="py-2 pr-4 font-medium">Name</th>
                   <th className="py-2 pr-4 font-medium">Status</th>
                   <th className="py-2 pr-4 font-medium">Country</th>
@@ -162,7 +162,7 @@ export function AdminRegionsManager({ regionsBasePath }: { regionsBasePath: stri
                     <tr
                       key={region.regionId}
                       className={cn(
-                        "cursor-pointer border-b border-white/5 transition-colors hover:bg-white/5",
+                        "cursor-pointer border-b border-border/50 transition-colors hover:bg-accent",
                         region.disabled && "opacity-60",
                       )}
                       onClick={() => router.push(editHref)}
@@ -170,7 +170,7 @@ export function AdminRegionsManager({ regionsBasePath }: { regionsBasePath: stri
                       <td className="py-3 pr-4">
                         <Link
                           href={editHref}
-                          className="font-medium text-zinc-100 hover:underline"
+                          className="font-medium text-foreground hover:underline"
                           onClick={(e) => e.stopPropagation()}
                         >
                           {region.name}
@@ -188,8 +188,8 @@ export function AdminRegionsManager({ regionsBasePath }: { regionsBasePath: stri
                           variant={adminStatusVariant(region.disabled, region.verified)}
                         />
                       </td>
-                      <td className="py-3 pr-4 text-zinc-300">{region.countryCode}</td>
-                      <td className="py-3 pr-4 text-right tabular-nums text-zinc-300">
+                      <td className="py-3 pr-4 text-muted-foreground">{region.countryCode}</td>
+                      <td className="py-3 pr-4 text-right tabular-nums text-muted-foreground">
                         {region.spotCount}
                       </td>
                     </tr>

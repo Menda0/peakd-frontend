@@ -38,7 +38,7 @@ export function SocialFeedLayout({
   children?: ReactNode;
 }) {
   return (
-    <div className="dark flex min-h-[100dvh] flex-col bg-[#040F1E] text-zinc-100">
+    <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
       <FeedAppBar
         homeHref={homeHref}
         userPicture={userPicture}

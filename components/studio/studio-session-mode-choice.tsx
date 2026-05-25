@@ -56,29 +56,29 @@ export function StudioSessionModeChoice({
               "hover:border-primary/40 hover:bg-white/[0.04]",
               selected
                 ? "border-primary/50 bg-primary/10 ring-1 ring-primary/30"
-                : "border-white/10 bg-white/[0.02]",
+                : "border-border bg-white/[0.02]",
             )}
           >
             <div className="flex items-start gap-3">
               <span
                 className={cn(
                   "flex size-10 shrink-0 items-center justify-center rounded-lg",
-                  selected ? "bg-primary/20 text-primary" : "bg-white/5 text-zinc-400",
+                  selected ? "bg-primary/20 text-primary" : "bg-muted/50 text-muted-foreground",
                 )}
                 aria-hidden
               >
                 <Icon className="size-5" strokeWidth={1.75} />
               </span>
               <div className="min-w-0 flex-1 space-y-1">
-                <span className="block text-sm font-semibold text-zinc-50">
+                <span className="block text-sm font-semibold text-foreground">
                   {option.title}
                 </span>
-                <span className="block min-h-10 text-xs leading-relaxed text-zinc-500">
+                <span className="block min-h-10 text-xs leading-relaxed text-muted-foreground">
                   {option.description}
                 </span>
               </div>
             </div>
-            <p className="min-h-[3.75rem] flex-1 text-xs leading-relaxed text-zinc-400">
+            <p className="min-h-[3.75rem] flex-1 text-xs leading-relaxed text-muted-foreground">
               {option.objective}
             </p>
           </button>

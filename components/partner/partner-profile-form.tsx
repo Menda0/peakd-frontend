@@ -187,16 +187,16 @@ export function PartnerProfileForm({
 
   if (loadError) {
     return (
-      <Card className="border-white/10 bg-white/[0.03] text-zinc-100 ring-white/10">
-        <CardHeader className="gap-1.5 border-b border-white/10 pb-4">
-          <CardTitle className="text-zinc-50">Partner settings</CardTitle>
+      <Card className="border-border bg-white/[0.03] text-foreground ring-white/10">
+        <CardHeader className="gap-1.5 border-b border-border pb-4">
+          <CardTitle className="text-foreground">Partner settings</CardTitle>
           <CardDescription className="text-red-400/90">{loadError}</CardDescription>
         </CardHeader>
-        <div className="border-t border-white/10 p-4">
+        <div className="border-t border-border p-4">
           <Button
             type="button"
             variant="outline"
-            className="border-white/20 bg-white/5 text-zinc-100 hover:bg-white/10 hover:text-zinc-50"
+            className="border-border bg-muted/50 text-foreground hover:bg-accent hover:text-foreground"
             disabled={reloadBusy}
             onClick={() => void reload()}
           >
@@ -226,11 +226,11 @@ export function PartnerProfileForm({
         </TabsTrigger>
       </TabsList>
 
-      <Card className="border-white/10 bg-white/[0.03] text-zinc-100 ring-white/10">
-        <CardHeader className="gap-2 border-b border-white/10 pb-4">
-          <CardTitle className="text-zinc-50">{tabCopy.title}</CardTitle>
-          <CardDescription className="text-zinc-400">{tabCopy.description}</CardDescription>
-          <p className="text-sm leading-relaxed text-zinc-500">{tabCopy.objective}</p>
+      <Card className="border-border bg-white/[0.03] text-foreground ring-white/10">
+        <CardHeader className="gap-2 border-b border-border pb-4">
+          <CardTitle className="text-foreground">{tabCopy.title}</CardTitle>
+          <CardDescription className="text-muted-foreground">{tabCopy.description}</CardDescription>
+          <p className="text-sm leading-relaxed text-muted-foreground">{tabCopy.objective}</p>
         </CardHeader>
         <CardContent className="pt-6">
           <TabsContent value="profile" className="mt-0 outline-none">

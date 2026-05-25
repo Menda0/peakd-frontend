@@ -19,7 +19,7 @@ export function WaveTypeCheckboxGrid({
   return (
     <div
       className={cn(
-        "grid grid-cols-1 gap-2 rounded-lg border border-white/10 bg-white/[0.02] p-2 sm:grid-cols-3 sm:gap-2 sm:p-2.5",
+        "grid grid-cols-1 gap-2 rounded-lg border border-border bg-white/[0.02] p-2 sm:grid-cols-3 sm:gap-2 sm:p-2.5",
         className,
       )}
     >
@@ -32,7 +32,7 @@ export function WaveTypeCheckboxGrid({
             orientation="horizontal"
             className={cn(
               "cursor-pointer items-start gap-2.5 rounded-md border border-transparent p-2 transition-colors",
-              "hover:border-white/10 hover:bg-white/5",
+              "hover:border-border hover:bg-accent",
               checked && "border-primary/25 bg-primary/5",
             )}
             onClick={() => onToggle(w.id)}
@@ -47,11 +47,11 @@ export function WaveTypeCheckboxGrid({
             <div className="min-w-0 flex-1">
               <FieldLabel
                 htmlFor={checkboxId}
-                className="text-sm leading-snug font-medium text-zinc-100"
+                className="text-sm leading-snug font-medium text-foreground"
               >
                 {w.title}
               </FieldLabel>
-              <FieldDescription className="mt-0.5 text-[11px] leading-snug text-zinc-500">
+              <FieldDescription className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
                 {w.description}
               </FieldDescription>
             </div>
