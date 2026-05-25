@@ -199,7 +199,7 @@ export function StudioSessionsDashboard({
               {legacyJobs.map((job) => (
                 <li key={job.jobId}>
                   <Link href={`${userPathPrefix}/studio/${job.jobId}`} className="block">
-                    <Card className="border-border bg-white/[0.03] transition-colors hover:border-primary/30">
+                    <Card className="border-border bg-card transition-colors hover:border-primary/30">
                       <CardContent className="flex gap-4 p-4">
                         <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-muted">
                           {job.thumbnailUrl ? (

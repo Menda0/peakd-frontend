@@ -140,13 +140,13 @@ export function FeedGeoSearchInput({
         showTrigger={false}
         showClear={Boolean(value || query.trim())}
         className={cn(
-          "h-11 min-h-11 rounded-full border-input bg-muted/40 py-2 pl-11 pr-3 text-sm text-foreground placeholder:text-muted-foreground",
-          "focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/40",
+          "h-11 min-h-11 rounded-full border-border bg-card py-2 pl-11 pr-3 text-sm text-foreground placeholder:text-muted-foreground",
+          "focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/25",
           className,
         )}
       />
       <ComboboxContent
-        className="border border-border bg-popover text-popover-foreground shadow-lg"
+        className="border-border"
         positionerClassName="z-50"
       >
         <ComboboxList>

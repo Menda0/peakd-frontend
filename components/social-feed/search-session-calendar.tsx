@@ -62,8 +62,8 @@ export function SearchSessionCalendar({
           variant="outline"
           disabled={disabled}
           className={cn(
-            "h-11 shrink-0 gap-2 rounded-full border-input bg-muted/40 px-3 text-sm font-normal text-foreground hover:bg-muted/60 sm:px-4",
-            "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40",
+            "h-11 shrink-0 gap-2 rounded-full border-border bg-card px-3 text-sm font-normal text-foreground hover:bg-accent hover:text-accent-foreground sm:px-4",
+            "focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/25",
             className,
           )}
         >
@@ -77,7 +77,7 @@ export function SearchSessionCalendar({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-auto max-w-[min(100vw-1.5rem,18rem)] overflow-hidden border border-border bg-popover p-0 text-popover-foreground shadow-lg"
+        className="w-auto max-w-[min(100vw-1.5rem,18rem)] overflow-hidden border-border bg-popover p-0 text-popover-foreground"
         align="end"
         sideOffset={8}
         collisionPadding={12}
