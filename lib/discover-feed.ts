@@ -278,11 +278,32 @@ export function normalizeDiscoverFeedPage(raw: unknown): DiscoverFeedPage | null
 export async function fetchDiscoverFeed(options?: {
   cursor?: string | null;
   limit?: number;
+  countryCode?: string | null;
+  regionId?: string | null;
+  regionIds?: string[] | null;
+  spotIds?: string[] | null;
 }): Promise<DiscoverFeedPage> {
   const base = getApiBase();
   const params = new URLSearchParams();
   if (options?.limit != null) params.set("limit", String(options.limit));
   if (options?.cursor?.trim()) params.set("cursor", options.cursor.trim());
+  if (options?.countryCode?.trim()) {
+    params.set("countryCode", options.countryCode.trim().toUpperCase());
+  }
+  const regionIds = options?.regionIds
+    ?.map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (regionIds && regionIds.length > 0) {
+    params.set("regionIds", regionIds.join(","));
+  } else if (options?.regionId?.trim()) {
+    params.set("regionId", options.regionId.trim());
+  }
+  const spotIds = options?.spotIds
+    ?.map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (spotIds && spotIds.length > 0) {
+    params.set("spotIds", spotIds.join(","));
+  }
   const qs = params.toString();
   const res = await fetch(`${base}/feed/discover${qs ? `?${qs}` : ""}`, {
     credentials: "include",
