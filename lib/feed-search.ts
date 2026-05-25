@@ -18,11 +18,29 @@ export type GeoSearchSelection = {
   verified: boolean;
 };
 
+export const PARTNER_TYPE_LABELS: Record<
+  "videographer" | "coach" | "other",
+  string
+> = {
+  videographer: "Videographer",
+  coach: "Coach",
+  other: "Partner",
+};
+
+export type SearchPartnerType = keyof typeof PARTNER_TYPE_LABELS;
+
 export type SearchSessionAuthor = {
   userId: string;
   displayName: string | null;
   avatarUrl: string | null;
   isPartner: boolean;
+  partnerType: SearchPartnerType | null;
+};
+
+export type SearchSessionSurfer = {
+  userId: string;
+  displayName: string | null;
+  avatarUrl: string | null;
 };
 
 export type SearchSessionItem = {
@@ -38,6 +56,7 @@ export type SearchSessionItem = {
   regionName: string;
   spotName: string | null;
   author: SearchSessionAuthor;
+  surfers: SearchSessionSurfer[];
   videoCount: number;
   previewThumbnailUrls: string[];
 };
@@ -141,11 +160,40 @@ function normalizeSearchSession(raw: unknown): SearchSessionItem | null {
     ? o.previewThumbnailUrls.filter((u): u is string => typeof u === "string")
     : [];
 
+  const surfers: SearchSessionSurfer[] = Array.isArray(o.surfers)
+    ? o.surfers.flatMap((entry) => {
+        if (!entry || typeof entry !== "object") return [];
+        const s = entry as Record<string, unknown>;
+        const id = typeof s.userId === "string" ? s.userId.trim() : "";
+        if (!id) return [];
+        return [
+          {
+            userId: id,
+            displayName:
+              typeof s.displayName === "string"
+                ? s.displayName.trim() || null
+                : null,
+            avatarUrl:
+              typeof s.avatarUrl === "string"
+                ? s.avatarUrl.trim() || null
+                : null,
+          },
+        ];
+      })
+    : [];
+
   const authorRaw = o.author;
   if (!authorRaw || typeof authorRaw !== "object") return null;
   const a = authorRaw as Record<string, unknown>;
   const userId = typeof a.userId === "string" ? a.userId.trim() : "";
   if (!userId) return null;
+  const partnerTypeRaw = typeof a.partnerType === "string" ? a.partnerType : null;
+  const partnerType: SearchPartnerType | null =
+    partnerTypeRaw === "videographer" ||
+    partnerTypeRaw === "coach" ||
+    partnerTypeRaw === "other"
+      ? partnerTypeRaw
+      : null;
 
   return {
     sessionId,
@@ -166,7 +214,9 @@ function normalizeSearchSession(raw: unknown): SearchSessionItem | null {
       avatarUrl:
         typeof a.avatarUrl === "string" ? a.avatarUrl.trim() || null : null,
       isPartner: a.isPartner === true,
+      partnerType,
     },
+    surfers,
     videoCount,
     previewThumbnailUrls,
   };
