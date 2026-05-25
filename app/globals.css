@@ -93,40 +93,46 @@
 }
 
 .dark {
-  --background: #0a4758;
-  --foreground: #f0f9fc;
-  --card: #0d6278;
-  --card-foreground: #f0f9fc;
-  --sidebar: #052f3d;
-  --sidebar-foreground: #f0f9fc;
+  --background: #012c43;
+  --foreground: #e8f3fa;
+  --card: #013f5e;
+  --card-foreground: #e8f3fa;
+  --sidebar: #01243a;
+  --sidebar-foreground: #e8f3fa;
   --sidebar-primary: #26c2c9;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #0f6b82;
-  --sidebar-accent-foreground: #f0f9fc;
-  --sidebar-border: rgb(240 249 252 / 0.15);
+  --sidebar-primary-foreground: #022536;
+  --sidebar-accent: #03567f;
+  --sidebar-accent-foreground: #e8f3fa;
+  --sidebar-border: rgb(232 243 250 / 0.10);
   --sidebar-ring: #5eead4;
-  --popover: var(--sidebar);
+  --popover: #013f5e;
   --popover-foreground: var(--sidebar-foreground);
   --primary: #26c2c9;
-  --primary-foreground: #ffffff;
-  --secondary: #073a4a;
-  --secondary-foreground: #e8f6fa;
-  --muted: #073a4a;
-  --muted-foreground: #b8dce8;
-  --accent: #0f6b82;
-  --accent-foreground: #f0f9fc;
+  --primary-foreground: #022536;
+  --secondary: #013852;
+  --secondary-foreground: #e8f3fa;
+  --muted: #013852;
+  --muted-foreground: #9cb4c8;
+  --accent: #036093;
+  --accent-foreground: #e8f3fa;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: rgb(240 249 252 / 0.18);
-  --input: rgb(240 249 252 / 0.22);
+  --border: rgb(232 243 250 / 0.10);
+  --input: rgb(232 243 250 / 0.14);
   --ring: #5eead4;
   --chart-1: #5eead4;
   --chart-2: #26c2c9;
   --chart-3: #16b8d3;
   --chart-4: #b8dce8;
-  --chart-5: #052f3d;
+  --chart-5: #013f5e;
+  --app-bar: #01233a;
+  --app-bar-foreground: #e8f3fa;
+  --app-bar-muted-foreground: #9cb4c8;
+  --app-bar-border: rgb(232 243 250 / 0.10);
+  --app-bar-accent: #036093;
+  --app-bar-muted: #013852;
   --scrollbar-thumb: rgb(38 194 201 / 0.55);
   --scrollbar-thumb-hover: rgb(94 234 212 / 0.75);
-  --scrollbar-track: rgb(7 58 74 / 0.75);
+  --scrollbar-track: rgb(1 36 58 / 0.75);
 }
 
 @layer base {
@@ -163,7 +169,8 @@
   }
 }
 
-/* White app bar in both themes; remap tokens so header controls stay readable */
+/* App bar follows the active theme: white in light mode, brand teal-blue (#013F5E) in dark mode.
+   Tokens are remapped so header controls stay readable on whichever surface is active. */
 .app-bar {
   background-color: var(--app-bar);
   border-color: var(--app-bar-border);

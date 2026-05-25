@@ -53,7 +53,7 @@ function DiscoverVideoPostCard({
         : [];
 
   return (
-    <article className="rounded-2xl border border-border bg-white/[0.03] p-4 sm:p-5">
+    <article className="rounded-2xl border border-border bg-card p-4 sm:p-5">
       <PostHeader
         authorName={post.authorName}
         authorAvatarUrl={post.authorAvatarUrl}
@@ -154,7 +154,7 @@ export function VideoPostCard({
   if (!placeholder) return null;
 
   return (
-    <article className="rounded-2xl border border-border bg-white/[0.03] p-4 sm:p-5">
+    <article className="rounded-2xl border border-border bg-card p-4 sm:p-5">
       <PostHeader
         authorName={placeholder.authorName}
         timeAgo={placeholder.timeAgo}
