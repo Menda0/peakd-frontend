@@ -187,7 +187,7 @@ export function PartnerProfileForm({
 
   if (loadError) {
     return (
-      <Card className="border-border bg-white/[0.03] text-foreground ring-white/10">
+      <Card className="border-border bg-card text-foreground ring-white/10">
         <CardHeader className="gap-1.5 border-b border-border pb-4">
           <CardTitle className="text-foreground">Partner settings</CardTitle>
           <CardDescription className="text-red-400/90">{loadError}</CardDescription>
@@ -226,7 +226,7 @@ export function PartnerProfileForm({
         </TabsTrigger>
       </TabsList>
 
-      <Card className="border-border bg-white/[0.03] text-foreground ring-white/10">
+      <Card className="border-border bg-card text-foreground ring-white/10">
         <CardHeader className="gap-2 border-b border-border pb-4">
           <CardTitle className="text-foreground">{tabCopy.title}</CardTitle>
           <CardDescription className="text-muted-foreground">{tabCopy.description}</CardDescription>
