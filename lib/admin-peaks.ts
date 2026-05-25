@@ -8,7 +8,23 @@ export type AdminPeaksSummaryDto = {
   totalCommunityFeePeaks: number;
   countryCommunityFeePeaks: number | null;
   regionsCommunityFeePeaks: number | null;
+  peaksPerEuro: number;
 };
+
+export const DEFAULT_PEAKS_PER_EURO = 100;
+
+export function peaksToEurCents(peaks: number, peaksPerEuro: number): number {
+  if (!Number.isFinite(peaks) || peaks <= 0) return 0;
+  const rate = peaksPerEuro > 0 ? peaksPerEuro : DEFAULT_PEAKS_PER_EURO;
+  return Math.round((peaks * 100) / rate);
+}
+
+export function formatPeaksEur(peaks: number, peaksPerEuro: number): string {
+  return new Intl.NumberFormat("en-IE", {
+    style: "currency",
+    currency: "EUR",
+  }).format(peaksToEurCents(peaks, peaksPerEuro) / 100);
+}
 
 export type AdminPeaksTransactionDto = {
   id: string;
@@ -66,6 +82,10 @@ export function normalizeAdminPeaksSummary(raw: unknown): AdminPeaksSummaryDto |
       o.countryCommunityFeePeaks == null ? null : num(o.countryCommunityFeePeaks),
     regionsCommunityFeePeaks:
       o.regionsCommunityFeePeaks == null ? null : num(o.regionsCommunityFeePeaks),
+    peaksPerEuro:
+      typeof o.peaksPerEuro === "number" && o.peaksPerEuro > 0
+        ? o.peaksPerEuro
+        : DEFAULT_PEAKS_PER_EURO,
   };
 }
 
