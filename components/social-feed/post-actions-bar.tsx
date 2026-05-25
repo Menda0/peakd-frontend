@@ -17,7 +17,7 @@ export function PostActionsBar({
   shares: number;
 }) {
   return (
-    <div className="mt-4 flex items-center gap-6 text-zinc-400">
+    <div className="mt-4 flex items-center gap-6 text-muted-foreground">
       <button type="button" className="flex items-center gap-1.5 hover:text-primary">
         <HeartIcon className="size-5" />
         <span className="text-sm">{countLabel(likes)}</span>
@@ -32,7 +32,7 @@ export function PostActionsBar({
       </button>
       <button
         type="button"
-        className="ml-auto rounded-lg p-1.5 hover:bg-white/5 hover:text-zinc-200"
+        className="ml-auto rounded-lg p-1.5 hover:bg-accent hover:text-foreground"
         aria-label="Save"
       >
         <BookmarkIcon className="size-5" />

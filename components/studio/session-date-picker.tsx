@@ -41,7 +41,7 @@ export function SessionDatePicker({
           disabled={disabled}
           className={cn(
             "h-10 w-full justify-start font-normal",
-            "border-white/15 bg-white/5 text-zinc-100 hover:bg-white/10",
+            "border-border bg-muted/50 text-foreground hover:bg-accent",
             "focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/25",
           )}
         >

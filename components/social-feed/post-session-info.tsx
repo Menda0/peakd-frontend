@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 function ConditionsStars({ rating }: { rating: number | null }) {
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-2">
-      <span className="text-xs text-zinc-500">Conditions</span>
+      <span className="text-xs text-muted-foreground">Conditions</span>
       <div
         className="flex items-center gap-0.5"
         role="img"
@@ -21,14 +21,14 @@ function ConditionsStars({ rating }: { rating: number | null }) {
               "size-3.5 shrink-0",
               rating != null && n <= rating
                 ? "fill-amber-400 text-amber-400"
-                : "fill-transparent text-zinc-600",
+                : "fill-transparent text-muted-foreground",
             )}
             aria-hidden
           />
         ))}
       </div>
       {rating == null ? (
-        <span className="text-xs text-zinc-600">Not rated</span>
+        <span className="text-xs text-muted-foreground">Not rated</span>
       ) : null}
     </div>
   );
@@ -52,18 +52,18 @@ export function PostSessionInfo({
             waveLabels.map((label) => (
               <span
                 key={label}
-                className="inline-flex max-w-full items-center truncate rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-zinc-300"
+                className="inline-flex max-w-full items-center truncate rounded-md border border-border bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground"
                 title={label}
               >
                 {label}
               </span>
             ))
           ) : (
-            <span className="text-xs text-zinc-600">No wave types</span>
+            <span className="text-xs text-muted-foreground">No wave types</span>
           )}
         </div>
       </div>
-      <p className="text-sm text-zinc-300">{sessionSummary}</p>
+      <p className="text-sm text-muted-foreground">{sessionSummary}</p>
     </div>
   );
 }

@@ -13,7 +13,6 @@ import { PostContent } from "./post-content";
 import { PostSessionInfo } from "./post-session-info";
 import { PostHeader } from "./post-header";
 import { PostMedia } from "./post-media";
-import { PostSurferBadge } from "./post-surfer-badge";
 
 function DiscoverVideoPostCard({
   post,
@@ -40,10 +39,12 @@ function DiscoverVideoPostCard({
     !claimedLocally;
   const showCommercial =
     post.isCommercial && !isProcessing && !isFailed;
-  const commercialPlayback =
-    showCommercial && post.videoUnlockedByViewer && Boolean(post.videoUrl);
-  const commercialPreview =
-    showCommercial && !commercialPlayback;
+  const canPlayVideo =
+    !isProcessing &&
+    !isFailed &&
+    Boolean(post.videoUrl) &&
+    (!post.isCommercial || post.videoUnlockedByViewer);
+  const commercialLocked = showCommercial && !canPlayVideo;
   const snapshotUrls =
     post.snapshotUrls.length > 0
       ? post.snapshotUrls
@@ -52,7 +53,7 @@ function DiscoverVideoPostCard({
         : [];
 
   return (
-    <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+    <article className="rounded-2xl border border-border bg-white/[0.03] p-4 sm:p-5">
       <PostHeader
         authorName={post.authorName}
         authorAvatarUrl={post.authorAvatarUrl}
@@ -60,20 +61,20 @@ function DiscoverVideoPostCard({
         timeAgo={timeLabel}
       />
       {isProcessing ? (
-        <div className="relative mt-3 overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/80">
+        <div className="relative mt-3 overflow-hidden rounded-2xl border border-border bg-secondary/80">
             <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-cyan-950/30 via-zinc-900 to-zinc-950">
             <Loader2Icon className="size-10 animate-spin text-primary" aria-hidden />
-            <p className="text-sm text-zinc-400">Your video is being processed</p>
+            <p className="text-sm text-muted-foreground">Your video is being processed</p>
           </div>
         </div>
       ) : isFailed ? (
-        <div className="relative mt-3 overflow-hidden rounded-2xl border border-red-500/20 bg-zinc-900/80">
+        <div className="relative mt-3 overflow-hidden rounded-2xl border border-red-500/20 bg-secondary/80">
           <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-red-950/20 via-zinc-900 to-zinc-950 px-4 text-center">
             <p className="text-sm font-medium text-red-300">Upload failed</p>
-            <p className="text-xs text-zinc-500">This video could not be processed.</p>
+            <p className="text-xs text-muted-foreground">This video could not be processed.</p>
           </div>
         </div>
-      ) : commercialPlayback ? (
+      ) : canPlayVideo ? (
         <PostMedia
           thumbnailUrl={post.thumbnailUrl}
           videoUrl={post.videoUrl ?? undefined}
@@ -81,36 +82,8 @@ function DiscoverVideoPostCard({
           playbackId={post.id}
           autoPlayInView
           className="mt-3"
-        />
-      ) : commercialPreview ? (
-        <div className="relative mt-3">
-          <WaveSnapshotCarousel urls={snapshotUrls} />
-          {surfer ? (
-            <div className="absolute top-3 left-3 z-10">
-              <PostSurferBadge surfer={surfer} />
-            </div>
-          ) : null}
-          <CommercialWaveActions
-            post={post}
-            overlay
-            onClaimed={(claimedSurfer) => {
-              setClaimedLocally(true);
-              setLocalSurfer(claimedSurfer);
-              onCommercialClaimed?.(claimedSurfer);
-            }}
-            onPurchased={() => {
-              setClaimedLocally(true);
-              onCommercialPurchased?.();
-            }}
-          />
-        </div>
-      ) : (
-        <PostMedia
-          thumbnailUrl={post.thumbnailUrl}
-          videoUrl={post.videoUrl ?? undefined}
-          surfer={surfer}
           claimWave={
-            canClaim ? (
+            !post.isCommercial && canClaim ? (
               <ClaimWaveButton
                 variant="overlay"
                 jobId={post.id}
@@ -124,6 +97,28 @@ function DiscoverVideoPostCard({
               />
             ) : undefined
           }
+        />
+      ) : commercialLocked ? (
+        <div className="relative mt-3">
+          <WaveSnapshotCarousel urls={snapshotUrls} />
+          <CommercialWaveActions
+            post={post}
+            overlay
+            onClaimed={(claimedSurfer) => {
+              setClaimedLocally(true);
+              setLocalSurfer(claimedSurfer);
+              onCommercialClaimed?.(claimedSurfer);
+            }}
+            onPurchased={() => {
+              onCommercialPurchased?.();
+            }}
+          />
+        </div>
+      ) : (
+        <PostMedia
+          thumbnailUrl={post.thumbnailUrl}
+          videoUrl={post.videoUrl ?? undefined}
+          surfer={surfer}
           playbackId={post.id}
           autoPlayInView
           className="mt-3"
@@ -159,7 +154,7 @@ export function VideoPostCard({
   if (!placeholder) return null;
 
   return (
-    <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+    <article className="rounded-2xl border border-border bg-white/[0.03] p-4 sm:p-5">
       <PostHeader
         authorName={placeholder.authorName}
         timeAgo={placeholder.timeAgo}

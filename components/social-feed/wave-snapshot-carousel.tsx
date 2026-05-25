@@ -31,7 +31,7 @@ export function WaveSnapshotCarousel({
     return (
       <div
         className={cn(
-          "flex aspect-video w-full items-center justify-center rounded-2xl border border-white/10 bg-zinc-900/80 text-sm text-zinc-500",
+          "flex aspect-video w-full items-center justify-center rounded-2xl border border-border bg-secondary/80 text-sm text-muted-foreground",
           className,
         )}
       >
@@ -44,7 +44,7 @@ export function WaveSnapshotCarousel({
     <div className={cn("relative", className)}>
       <div
         ref={scrollRef}
-        className="flex aspect-video snap-x snap-mandatory overflow-x-auto rounded-2xl border border-white/10 bg-zinc-900/80 scrollbar-none"
+        className="flex aspect-video snap-x snap-mandatory overflow-x-auto rounded-2xl border border-border bg-secondary/80 scrollbar-none"
         onScroll={() => {
           const el = scrollRef.current;
           if (!el || slides.length === 0) return;
@@ -73,7 +73,7 @@ export function WaveSnapshotCarousel({
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute top-1/2 left-2 z-10 size-8 -translate-y-1/2 rounded-full border border-white/15 bg-black/60 text-zinc-100 hover:bg-black/80"
+            className="absolute top-1/2 left-2 z-10 size-8 -translate-y-1/2 rounded-full border border-border bg-black/60 text-foreground hover:bg-black/80"
             aria-label="Previous image"
             onClick={() => scrollToIndex(index - 1)}
           >
@@ -83,7 +83,7 @@ export function WaveSnapshotCarousel({
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 rounded-full border border-white/15 bg-black/60 text-zinc-100 hover:bg-black/80"
+            className="absolute top-1/2 right-2 z-10 size-8 -translate-y-1/2 rounded-full border border-border bg-black/60 text-foreground hover:bg-black/80"
             aria-label="Next image"
             onClick={() => scrollToIndex(index + 1)}
           >

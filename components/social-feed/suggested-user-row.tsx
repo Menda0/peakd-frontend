@@ -5,8 +5,8 @@ export function SuggestedUserRow({ user }: { user: SuggestedUser }) {
     <div className="flex items-center gap-3 py-2">
       <div className="size-10 shrink-0 rounded-full bg-gradient-to-br from-zinc-600 to-zinc-800" />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-zinc-100">{user.name}</p>
-        <p className="truncate text-xs text-zinc-500">@{user.handle}</p>
+        <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
+        <p className="truncate text-xs text-muted-foreground">@{user.handle}</p>
       </div>
       <button
         type="button"

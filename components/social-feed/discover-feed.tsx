@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   discoverItemToPost,
   fetchDiscoverFeed,
+  COMMERCIAL_WAVE_UNLOCKED_EVENT,
   PERSONAL_UPLOAD_EVENT,
   type DiscoverFeedPost,
 } from "@/lib/discover-feed";
@@ -17,16 +18,16 @@ function FeedSkeleton() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="animate-pulse rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+          className="animate-pulse rounded-2xl border border-border bg-white/[0.03] p-5"
         >
           <div className="mb-3 flex items-center gap-3">
-            <div className="size-10 rounded-full bg-zinc-800" />
+            <div className="size-10 rounded-full bg-muted" />
             <div className="flex flex-1 flex-col gap-2">
-              <div className="h-4 w-32 rounded bg-zinc-800" />
-              <div className="h-3 w-48 rounded bg-zinc-800/80" />
+              <div className="h-4 w-32 rounded bg-muted" />
+              <div className="h-3 w-48 rounded bg-muted/80" />
             </div>
           </div>
-          <div className="mt-3 aspect-video w-full rounded-2xl bg-zinc-800/80" />
+          <div className="mt-3 aspect-video w-full rounded-2xl bg-muted/80" />
         </div>
       ))}
     </div>
@@ -137,8 +138,15 @@ export function DiscoverFeed() {
     const onUpload = () => {
       void refreshFirstPage();
     };
+    const onCommercialUnlocked = () => {
+      void refreshFirstPage();
+    };
     window.addEventListener(PERSONAL_UPLOAD_EVENT, onUpload);
-    return () => window.removeEventListener(PERSONAL_UPLOAD_EVENT, onUpload);
+    window.addEventListener(COMMERCIAL_WAVE_UNLOCKED_EVENT, onCommercialUnlocked);
+    return () => {
+      window.removeEventListener(PERSONAL_UPLOAD_EVENT, onUpload);
+      window.removeEventListener(COMMERCIAL_WAVE_UNLOCKED_EVENT, onCommercialUnlocked);
+    };
   }, [refreshFirstPage]);
 
   const hasProcessing = posts.some((p) => p.status === "processing");
@@ -188,9 +196,9 @@ export function DiscoverFeed() {
 
   if (posts.length === 0) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-12 text-center">
-        <p className="text-sm font-medium text-zinc-200">No videos in your feed yet</p>
-        <p className="mt-2 text-sm text-zinc-500">
+      <div className="rounded-2xl border border-border bg-white/[0.03] px-4 py-12 text-center">
+        <p className="text-sm font-medium text-foreground">No videos in your feed yet</p>
+        <p className="mt-2 text-sm text-muted-foreground">
           Upload a video from the top bar or browse content from partners in your region.
         </p>
       </div>
@@ -199,11 +207,19 @@ export function DiscoverFeed() {
 
   return (
     <>
-      <FeedList posts={posts} />
+      <FeedList
+        posts={posts}
+        onCommercialPurchased={() => {
+          void refreshFirstPage();
+        }}
+        onCommercialClaimed={() => {
+          void refreshFirstPage();
+        }}
+      />
       {error ? <p className="pt-2 text-center text-xs text-red-400">{error}</p> : null}
       <div ref={sentinelRef} className="flex h-12 items-center justify-center py-4">
         {loadingMore ? (
-          <Loader2Icon className="size-6 animate-spin text-zinc-500" aria-label="Loading more" />
+          <Loader2Icon className="size-6 animate-spin text-muted-foreground" aria-label="Loading more" />
         ) : null}
       </div>
     </>

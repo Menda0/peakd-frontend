@@ -95,10 +95,13 @@ export function resolvePartnerNavItems(
 
 export function resolveAdminNavItems(
   pathname: string,
-  options: { adminRegionsHref?: string },
+  options: { adminRegionsHref?: string; adminPeaksHref?: string },
 ): ResolvedNavItem[] {
   const regionsActive = options.adminRegionsHref
     ? pathMatchesOrChild(options.adminRegionsHref, pathname)
+    : false;
+  const peaksActive = options.adminPeaksHref
+    ? pathMatchesOrChild(options.adminPeaksHref, pathname)
     : false;
 
   return ADMIN_NAV_ITEMS.map((item) => {
@@ -108,6 +111,12 @@ export function resolveAdminNavItems(
           ...item,
           href: options.adminRegionsHref,
           active: regionsActive,
+        };
+      case "peaks":
+        return {
+          ...item,
+          href: options.adminPeaksHref,
+          active: peaksActive,
         };
       default:
         return { ...item, active: false };

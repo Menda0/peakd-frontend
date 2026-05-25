@@ -49,78 +49,84 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #16b8d3;
-  --primary-foreground: #040a11;
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
+  --background: #f4f8fb;
+  --foreground: #040a11;
+  --card: #ffffff;
+  --card-foreground: #040a11;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #040a11;
   --sidebar-primary: #16b8d3;
-  --sidebar-primary-foreground: #040a11;
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --scrollbar-thumb: oklch(0.62 0 0 / 0.4);
-  --scrollbar-thumb-hover: oklch(0.52 0 0 / 0.55);
-  --scrollbar-track: oklch(0.96 0 0 / 0.65);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8f0f5;
+  --sidebar-accent-foreground: #0c1625;
+  --sidebar-border: #c5d4e0;
+  --sidebar-ring: #16b8d3;
+  --popover: var(--sidebar);
+  --popover-foreground: var(--sidebar-foreground);
+  --primary: #16b8d3;
+  --primary-foreground: #ffffff;
+  --secondary: #e8f0f5;
+  --secondary-foreground: #0c1625;
+  --muted: #e8f0f5;
+  --muted-foreground: #4a6278;
+  --accent: #e0f4f8;
+  --accent-foreground: #0c1625;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: #c5d4e0;
+  --input: #c5d4e0;
+  --ring: #16b8d3;
+  --chart-1: #16b8d3;
+  --chart-2: #26c2c9;
+  --chart-3: #4a6278;
+  --chart-4: #0c1625;
+  --chart-5: #040a11;
+  --radius: 0.625rem;
+  --app-bar: #ffffff;
+  --app-bar-foreground: #040a11;
+  --app-bar-muted-foreground: #4a6278;
+  --app-bar-border: rgb(4 10 17 / 0.1);
+  --app-bar-accent: #e8f0f5;
+  --app-bar-muted: #f4f8fb;
+  --scrollbar-thumb: rgb(22 184 211 / 0.35);
+  --scrollbar-thumb-hover: rgb(22 184 211 / 0.55);
+  --scrollbar-track: rgb(244 248 251 / 0.85);
 }
 
 .dark {
-  --background: #040f1e;
-  --foreground: oklch(0.985 0 0);
-  --card: #0c1625;
-  --card-foreground: oklch(0.985 0 0);
-  --popover: #0c1625;
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: #16b8d3;
-  --primary-foreground: #040a11;
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: #0a4758;
+  --foreground: #f0f9fc;
+  --card: #0d6278;
+  --card-foreground: #f0f9fc;
+  --sidebar: #052f3d;
+  --sidebar-foreground: #f0f9fc;
+  --sidebar-primary: #26c2c9;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #0f6b82;
+  --sidebar-accent-foreground: #f0f9fc;
+  --sidebar-border: rgb(240 249 252 / 0.15);
+  --sidebar-ring: #5eead4;
+  --popover: var(--sidebar);
+  --popover-foreground: var(--sidebar-foreground);
+  --primary: #26c2c9;
+  --primary-foreground: #ffffff;
+  --secondary: #073a4a;
+  --secondary-foreground: #e8f6fa;
+  --muted: #073a4a;
+  --muted-foreground: #b8dce8;
+  --accent: #0f6b82;
+  --accent-foreground: #f0f9fc;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: #0c1625;
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: #16b8d3;
-  --sidebar-primary-foreground: #040a11;
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-  --scrollbar-thumb: rgb(22 184 211 / 0.35);
-  --scrollbar-thumb-hover: rgb(22 184 211 / 0.55);
-  --scrollbar-track: rgb(4 15 30 / 0.65);
+  --border: rgb(240 249 252 / 0.18);
+  --input: rgb(240 249 252 / 0.22);
+  --ring: #5eead4;
+  --chart-1: #5eead4;
+  --chart-2: #26c2c9;
+  --chart-3: #16b8d3;
+  --chart-4: #b8dce8;
+  --chart-5: #052f3d;
+  --scrollbar-thumb: rgb(38 194 201 / 0.55);
+  --scrollbar-thumb-hover: rgb(94 234 212 / 0.75);
+  --scrollbar-track: rgb(7 58 74 / 0.75);
 }
 
 @layer base {
@@ -155,6 +161,23 @@
   html {
     @apply font-sans;
   }
+}
+
+/* White app bar in both themes; remap tokens so header controls stay readable */
+.app-bar {
+  background-color: var(--app-bar);
+  border-color: var(--app-bar-border);
+  color: var(--app-bar-foreground);
+  --foreground: var(--app-bar-foreground);
+  --muted-foreground: var(--app-bar-muted-foreground);
+  --border: var(--app-bar-border);
+  --muted: var(--app-bar-muted);
+  --accent: var(--app-bar-accent);
+  --accent-foreground: var(--app-bar-foreground);
+  --secondary: var(--app-bar-muted);
+  --secondary-foreground: var(--app-bar-foreground);
+  --input: var(--app-bar-border);
+  --ring-offset-background: var(--app-bar);
 }
 
 /* Compact react-day-picker inside popovers (default sheet uses 44px cells + oversized caption). */
@@ -198,5 +221,25 @@
   .rdp-compact.rdp-root .rdp-day_button:focus-visible {
     outline: 2px solid rgb(22 184 211 / 0.55);
     outline-offset: 1px;
+  }
+
+  .rdp-compact.rdp-root .rdp-day_hasSession .rdp-day_button {
+    position: relative;
+  }
+
+  .rdp-compact.rdp-root .rdp-day_hasSession .rdp-day_button::after {
+    content: "";
+    position: absolute;
+    bottom: 0.125rem;
+    left: 50%;
+    width: 0.25rem;
+    height: 0.25rem;
+    transform: translateX(-50%);
+    border-radius: 9999px;
+    background-color: #16b8d3;
+  }
+
+  .rdp-compact.rdp-root .rdp-selected.rdp-day_hasSession .rdp-day_button::after {
+    background-color: #040f1e;
   }
 }

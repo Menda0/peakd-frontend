@@ -14,10 +14,10 @@ import type { StudioSessionMode } from "@/components/studio/studio-session-mode-
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-4">
-      <dt className="shrink-0 text-xs font-medium uppercase tracking-wide text-zinc-500 sm:w-36">
+      <dt className="shrink-0 text-xs font-medium uppercase tracking-wide text-muted-foreground sm:w-36">
         {label}
       </dt>
-      <dd className="min-w-0 text-sm text-zinc-100">{value}</dd>
+      <dd className="min-w-0 text-sm text-foreground">{value}</dd>
     </div>
   );
 }
@@ -126,7 +126,7 @@ export function StudioNewSessionSummary({
     : "—";
 
   return (
-    <dl className="flex flex-col gap-4 rounded-lg border border-white/10 bg-white/[0.02] p-4">
+    <dl className="flex flex-col gap-4 rounded-lg border border-border bg-white/[0.02] p-4">
       {showTypeStep ? <SummaryRow label="Session type" value={modeLabel} /> : null}
       <SummaryRow label="Country" value={values.countryCode ?? "—"} />
       <SummaryRow label="Region" value={geoNames.regionName} />
