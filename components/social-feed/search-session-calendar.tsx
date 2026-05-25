@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { format, isValid, parse, startOfMonth } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -14,21 +14,30 @@ export function SearchSessionCalendar({
   datesWithSessions,
   disabled,
   onMonthChange,
+  defaultMonth,
   className,
 }: {
-  valueYmd: string;
-  onChangeYmd: (ymd: string) => void;
+  valueYmd: string | null;
+  onChangeYmd: (ymd: string | null) => void;
   datesWithSessions: Set<string>;
   disabled?: boolean;
   onMonthChange?: (monthYm: string) => void;
+  defaultMonth?: string;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
 
   const selected = useMemo(() => {
+    if (!valueYmd) return undefined;
     const d = parse(valueYmd, "yyyy-MM-dd", new Date());
     return isValid(d) ? d : undefined;
   }, [valueYmd]);
+
+  const fallbackMonth = useMemo(() => {
+    if (!defaultMonth) return undefined;
+    const d = parse(`${defaultMonth}-01`, "yyyy-MM-dd", new Date());
+    return isValid(d) ? d : undefined;
+  }, [defaultMonth]);
 
   const handleMonthChange = useCallback(
     (month: Date) => {
@@ -52,7 +61,7 @@ export function SearchSessionCalendar({
         month: "short",
         day: "numeric",
       })
-    : "Select date";
+    : "Any date";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -85,7 +94,7 @@ export function SearchSessionCalendar({
         <Calendar
           mode="single"
           selected={selected}
-          defaultMonth={selected ?? new Date()}
+          defaultMonth={selected ?? fallbackMonth ?? new Date()}
           captionLayout="dropdown"
           navLayout="around"
           modifiers={{ hasSession: hasSessionDates }}
@@ -98,6 +107,23 @@ export function SearchSessionCalendar({
             }
           }}
         />
+        {selected ? (
+          <div className="flex justify-end border-t border-border px-3 py-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                onChangeYmd(null);
+                setOpen(false);
+              }}
+            >
+              <X className="size-3.5" aria-hidden />
+              <span className="ml-1.5">Clear date</span>
+            </Button>
+          </div>
+        ) : null}
       </PopoverContent>
     </Popover>
   );
