@@ -12,6 +12,7 @@ import { PostSurferBadge } from "@/components/social-feed/post-surfer-badge";
 import { VideoPostCard } from "@/components/social-feed/video-post-card";
 import { WaveSnapshotCarousel } from "@/components/social-feed/wave-snapshot-carousel";
 import { VideoThumbnailStrip } from "@/components/studio/session-summary-card";
+import { ShareBackButton } from "@/components/share/share-back-button";
 import { SharedSessionSurferList } from "@/components/share/shared-session-surfer-list";
 import {
   SharedSessionWaveClaim,
@@ -455,6 +456,7 @@ export function SharedSessionView({
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-10 sm:px-6">
       <header className="space-y-4">
+        <ShareBackButton />
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3">
             {data.partnerAvatarUrl ? (

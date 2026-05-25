@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import { englishCountryLabel } from "@/lib/countries";
@@ -10,7 +10,10 @@ import {
   type SearchSessionItem,
 } from "@/lib/feed-search";
 import { SearchSessionCard } from "@/components/social-feed/search-session-card";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+
+const SEARCH_SESSIONS_PAGE_SIZE = 10;
 
 function searchLocationTitle(params: ReturnType<typeof parseFeedSearchParams>): string {
   if (!params) return "";
@@ -18,6 +21,15 @@ function searchLocationTitle(params: ReturnType<typeof parseFeedSearchParams>): 
   if (params.spotId) return `Spots in ${country}`;
   if (params.regionId) return `Regions in ${country}`;
   return country;
+}
+
+function sessionDateLabel(sessionDate: string | null): string {
+  if (!sessionDate) return "All dates";
+  try {
+    return format(parseISO(sessionDate), "EEEE, MMMM d, yyyy");
+  } catch {
+    return sessionDate;
+  }
 }
 
 export function SearchSessionsPanel() {
@@ -29,56 +41,99 @@ export function SearchSessionsPanel() {
   );
 
   const [sessions, setSessions] = useState<SearchSessionItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
 
-  const load = useCallback(async () => {
-    if (!params) {
-      setSessions([]);
-      setError(null);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const rows = await fetchSearchSessions({
+  const fetchPage = useCallback(
+    async (cursor: string | null) => {
+      if (!params) {
+        return { sessions: [], nextCursor: null, hasMore: false };
+      }
+      return fetchSearchSessions({
         countryCode: params.countryCode,
         regionId: params.regionId,
         spotId: params.spotId,
         sessionDate: params.sessionDate,
+        cursor,
+        limit: SEARCH_SESSIONS_PAGE_SIZE,
       });
-      setSessions(rows);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load sessions");
-      setSessions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [params]);
+    },
+    [params],
+  );
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!params) {
+      setSessions([]);
+      setNextCursor(null);
+      setHasMore(false);
+      setError(null);
+      return;
+    }
+    const requestId = ++requestIdRef.current;
+    setSessions([]);
+    setNextCursor(null);
+    setHasMore(false);
+    setError(null);
+    setInitialLoading(true);
+    fetchPage(null)
+      .then((page) => {
+        if (requestIdRef.current !== requestId) return;
+        setSessions(page.sessions);
+        setNextCursor(page.nextCursor);
+        setHasMore(page.hasMore);
+      })
+      .catch((e) => {
+        if (requestIdRef.current !== requestId) return;
+        setError(e instanceof Error ? e.message : "Failed to load sessions");
+        setSessions([]);
+      })
+      .finally(() => {
+        if (requestIdRef.current === requestId) {
+          setInitialLoading(false);
+        }
+      });
+  }, [fetchPage, params]);
+
+  const handleLoadMore = useCallback(async () => {
+    if (!nextCursor || loadingMore) return;
+    const requestId = requestIdRef.current;
+    setLoadingMore(true);
+    try {
+      const page = await fetchPage(nextCursor);
+      if (requestIdRef.current !== requestId) return;
+      setSessions((prev) => {
+        const seen = new Set(prev.map((s) => s.sessionId));
+        const additions = page.sessions.filter((s) => !seen.has(s.sessionId));
+        return [...prev, ...additions];
+      });
+      setNextCursor(page.nextCursor);
+      setHasMore(page.hasMore);
+    } catch (e) {
+      if (requestIdRef.current !== requestId) return;
+      setError(e instanceof Error ? e.message : "Failed to load more sessions");
+    } finally {
+      if (requestIdRef.current === requestId) {
+        setLoadingMore(false);
+      }
+    }
+  }, [fetchPage, loadingMore, nextCursor]);
 
   if (!params) return null;
-
-  let dateLabel = params.sessionDate;
-  try {
-    dateLabel = format(parseISO(params.sessionDate), "EEEE, MMMM d, yyyy");
-  } catch {
-    /* keep raw */
-  }
 
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold text-foreground">Sessions</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {searchLocationTitle(params)} · {dateLabel}
+          {searchLocationTitle(params)} · {sessionDateLabel(params.sessionDate)}
         </p>
       </div>
 
-      {loading ? (
+      {initialLoading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <Card
@@ -96,17 +151,34 @@ export function SearchSessionsPanel() {
       ) : sessions.length === 0 ? (
         <Card className="border-border bg-card text-foreground">
           <CardContent className="p-6 text-center text-sm text-muted-foreground">
-            No published sessions for this location on this day.
+            {params.sessionDate
+              ? "No published sessions for this location on this day."
+              : "No published sessions for this location yet."}
           </CardContent>
         </Card>
       ) : (
-        <ul className="space-y-3">
-          {sessions.map((session) => (
-            <li key={session.sessionId}>
-              <SearchSessionCard session={session} />
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="space-y-3">
+            {sessions.map((session) => (
+              <li key={session.sessionId}>
+                <SearchSessionCard session={session} />
+              </li>
+            ))}
+          </ul>
+          {hasMore ? (
+            <div className="flex justify-center pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={loadingMore}
+                onClick={() => void handleLoadMore()}
+              >
+                {loadingMore ? "Loading…" : "Load more"}
+              </Button>
+            </div>
+          ) : null}
+        </>
       )}
     </div>
   );

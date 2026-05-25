@@ -9,7 +9,6 @@ import { SearchSessionCalendar } from "@/components/social-feed/search-session-c
 import {
   buildFeedSearchQueryString,
   fetchSearchSessionDates,
-  formatTodayYmd,
   parseFeedSearchParams,
   resolveGeoFromUrlParams,
   type GeoSearchSelection,
@@ -26,7 +25,7 @@ export function FeedSearchBar({ homeHref }: { homeHref: string }) {
   );
 
   const [geo, setGeo] = useState<GeoSearchSelection | null>(null);
-  const [sessionDate, setSessionDate] = useState(formatTodayYmd());
+  const [sessionDate, setSessionDate] = useState<string | null>(null);
   const [datesWithSessions, setDatesWithSessions] = useState<Set<string>>(
     () => new Set(),
   );
@@ -37,11 +36,13 @@ export function FeedSearchBar({ homeHref }: { homeHref: string }) {
   useEffect(() => {
     if (!urlSearch) {
       setGeo(null);
-      setSessionDate(formatTodayYmd());
+      setSessionDate(null);
       return;
     }
     setSessionDate(urlSearch.sessionDate);
-    setVisibleMonth(urlSearch.sessionDate.slice(0, 7));
+    if (urlSearch.sessionDate) {
+      setVisibleMonth(urlSearch.sessionDate.slice(0, 7));
+    }
     let cancelled = false;
     void resolveGeoFromUrlParams(urlSearch).then((selection) => {
       if (!cancelled) setGeo(selection);
@@ -52,7 +53,7 @@ export function FeedSearchBar({ homeHref }: { homeHref: string }) {
   }, [searchParamsKey, urlSearch]);
 
   const applySearch = useCallback(
-    (nextGeo: GeoSearchSelection, nextDate: string) => {
+    (nextGeo: GeoSearchSelection, nextDate: string | null) => {
       const qs = buildFeedSearchQueryString(nextGeo, nextDate);
       router.push(`${homeHref}?${qs}`);
     },
@@ -62,20 +63,19 @@ export function FeedSearchBar({ homeHref }: { homeHref: string }) {
   const handleGeoChange = useCallback(
     (next: GeoSearchSelection | null) => {
       setGeo(next);
-      if (next) {
-        const date = sessionDate || formatTodayYmd();
-        applySearch(next, date);
-      } else {
+      if (!next) {
         router.push(homeHref);
+        return;
       }
+      applySearch(next, null);
     },
-    [applySearch, homeHref, router, sessionDate],
+    [applySearch, homeHref, router],
   );
 
   const handleDateChange = useCallback(
-    (ymd: string) => {
+    (ymd: string | null) => {
       setSessionDate(ymd);
-      setVisibleMonth(ymd.slice(0, 7));
+      if (ymd) setVisibleMonth(ymd.slice(0, 7));
       if (geo) {
         applySearch(geo, ymd);
       }
@@ -134,6 +134,7 @@ export function FeedSearchBar({ homeHref }: { homeHref: string }) {
         datesWithSessions={datesWithSessions}
         disabled={!geoSelected}
         onMonthChange={setVisibleMonth}
+        defaultMonth={visibleMonth}
       />
     </div>
   );
