@@ -12,6 +12,10 @@ import {
   PERSONAL_UPLOAD_EVENT,
   type DiscoverFeedPost,
 } from "@/lib/discover-feed";
+import {
+  EMPTY_FEED_FILTERS,
+  type FeedFiltersState,
+} from "./feed-filters-popover";
 import { FeedList } from "./feed-list";
 import type { FeedTabId, FeedTabItem } from "./feed-tabs";
 import { FeedToolbar } from "./feed-toolbar";
@@ -52,18 +56,39 @@ function mapDiscoverPageItems(
 type FeedFilter = {
   countryCode?: string;
   regionId?: string;
+  regionIds?: string[];
+  spotIds?: string[];
 };
 
 function filterForTab(
   tabId: FeedTabId,
   countryCode: string | null,
   homeRegionId: string | null,
+  filters: FeedFiltersState,
 ): FeedFilter {
   if (tabId === "country" && countryCode) {
-    return { countryCode };
+    const f: FeedFilter = { countryCode };
+    if (filters.country.regionIds.length > 0) {
+      f.regionIds = filters.country.regionIds;
+    }
+    if (filters.country.spotIds.length > 0) {
+      f.spotIds = filters.country.spotIds;
+    }
+    return f;
   }
   if (tabId === "region" && countryCode && homeRegionId) {
-    return { countryCode, regionId: homeRegionId };
+    const f: FeedFilter = { countryCode, regionId: homeRegionId };
+    if (filters.region.spotIds.length > 0) {
+      f.spotIds = filters.region.spotIds;
+    }
+    return f;
+  }
+  const geo = filters.all.geo;
+  if (geo) {
+    const f: FeedFilter = { countryCode: geo.countryCode };
+    if (geo.regionId) f.regionId = geo.regionId;
+    if (geo.spotId) f.spotIds = [geo.spotId];
+    return f;
   }
   return {};
 }
@@ -95,6 +120,7 @@ export function DiscoverFeed() {
   );
 
   const [requestedTabId, setRequestedTabId] = useState<FeedTabId>("all");
+  const [filters, setFilters] = useState<FeedFiltersState>(EMPTY_FEED_FILTERS);
   const [posts, setPosts] = useState<DiscoverFeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -110,8 +136,8 @@ export function DiscoverFeed() {
   }, [tabs, requestedTabId]);
 
   const filter = useMemo(
-    () => filterForTab(activeTabId, countryCode, homeRegionId),
-    [activeTabId, countryCode, homeRegionId],
+    () => filterForTab(activeTabId, countryCode, homeRegionId, filters),
+    [activeTabId, countryCode, homeRegionId, filters],
   );
 
   const appendPage = useCallback(
@@ -241,6 +267,11 @@ export function DiscoverFeed() {
         tabs={tabs}
         activeTabId={activeTabId}
         onTabChange={setRequestedTabId}
+        filters={filters}
+        onFiltersChange={setFilters}
+        countryCode={countryCode}
+        homeRegionId={homeRegionId}
+        homeRegionName={homeRegionName}
       />
     </div>
   );

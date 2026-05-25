@@ -280,6 +280,8 @@ export async function fetchDiscoverFeed(options?: {
   limit?: number;
   countryCode?: string | null;
   regionId?: string | null;
+  regionIds?: string[] | null;
+  spotIds?: string[] | null;
 }): Promise<DiscoverFeedPage> {
   const base = getApiBase();
   const params = new URLSearchParams();
@@ -288,8 +290,19 @@ export async function fetchDiscoverFeed(options?: {
   if (options?.countryCode?.trim()) {
     params.set("countryCode", options.countryCode.trim().toUpperCase());
   }
-  if (options?.regionId?.trim()) {
+  const regionIds = options?.regionIds
+    ?.map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (regionIds && regionIds.length > 0) {
+    params.set("regionIds", regionIds.join(","));
+  } else if (options?.regionId?.trim()) {
     params.set("regionId", options.regionId.trim());
+  }
+  const spotIds = options?.spotIds
+    ?.map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (spotIds && spotIds.length > 0) {
+    params.set("spotIds", spotIds.join(","));
   }
   const qs = params.toString();
   const res = await fetch(`${base}/feed/discover${qs ? `?${qs}` : ""}`, {
