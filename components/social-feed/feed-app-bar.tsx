@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { FeedAppBarActions } from "./feed-app-bar-actions";
 import { FeedLogo } from "./feed-logo";
 import { FeedSearchBar } from "./feed-search-bar";
@@ -19,7 +20,13 @@ export function FeedAppBar({
         <FeedLogo href={homeHref} />
       </div>
       <div className="flex min-w-0 justify-center px-1 sm:px-2">
-        <FeedSearchBar />
+        <Suspense
+          fallback={
+            <div className="h-11 w-full max-w-md animate-pulse rounded-full bg-white/5 sm:max-w-xl lg:max-w-2xl" />
+          }
+        >
+          <FeedSearchBar homeHref={homeHref} />
+        </Suspense>
       </div>
       <div className="flex min-w-0 items-center justify-end">
         <FeedAppBarActions

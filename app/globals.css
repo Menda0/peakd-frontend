@@ -222,4 +222,24 @@
     outline: 2px solid rgb(22 184 211 / 0.55);
     outline-offset: 1px;
   }
+
+  .rdp-compact.rdp-root .rdp-day_hasSession .rdp-day_button {
+    position: relative;
+  }
+
+  .rdp-compact.rdp-root .rdp-day_hasSession .rdp-day_button::after {
+    content: "";
+    position: absolute;
+    bottom: 0.125rem;
+    left: 50%;
+    width: 0.25rem;
+    height: 0.25rem;
+    transform: translateX(-50%);
+    border-radius: 9999px;
+    background-color: #16b8d3;
+  }
+
+  .rdp-compact.rdp-root .rdp-selected.rdp-day_hasSession .rdp-day_button::after {
+    background-color: #040f1e;
+  }
 }
