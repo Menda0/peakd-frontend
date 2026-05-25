@@ -71,7 +71,7 @@ export function SharedSessionWaveClaim({
         size="sm"
         className={cn(
           variant === "overlay"
-            ? "absolute bottom-3 right-3 z-10 h-auto rounded-lg border border-border bg-black/75 px-3 py-1.5 text-xs font-semibold text-foreground shadow-lg backdrop-blur-sm hover:bg-black/85"
+            ? "absolute bottom-3 right-3 z-10 h-auto rounded-lg border border-white/15 bg-black/75 px-3 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur-sm hover:bg-black/85"
             : "border-border bg-primary text-primary-foreground hover:bg-primary/90",
         )}
         onClick={() => {
