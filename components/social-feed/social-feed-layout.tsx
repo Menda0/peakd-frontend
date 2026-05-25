@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import {
   MOCK_SPOTS,
-  MOCK_STORIES,
   MOCK_SUGGESTED_USERS,
   MOCK_TRENDING,
 } from "@/lib/social-feed-placeholder";
@@ -61,7 +60,7 @@ export function SocialFeedLayout({
             <div className="mx-auto w-full max-w-4xl">{children}</div>
           </main>
         ) : (
-          <FeedMainColumn stories={MOCK_STORIES} />
+          <FeedMainColumn />
         )}
         <DiscoverySidebar
           trending={MOCK_TRENDING}

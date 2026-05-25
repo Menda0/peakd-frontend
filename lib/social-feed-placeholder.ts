@@ -19,12 +19,6 @@ export type NavItemConfig = {
   active?: boolean;
 };
 
-export type StoryItem = {
-  id: string;
-  name: string;
-  active?: boolean;
-};
-
 export type PlaceholderPost = {
   id: string;
   authorName: string;
@@ -89,15 +83,6 @@ export const CATEGORY_ITEMS: NavItemConfig[] = [
   { id: "howto", label: "How To", icon: FilmIcon },
 ];
 */
-
-export const MOCK_STORIES: StoryItem[] = [
-  { id: "1", name: "Kai", active: true },
-  { id: "2", name: "Malia", active: true },
-  { id: "3", name: "Noa" },
-  { id: "4", name: "Leo" },
-  { id: "5", name: "Tia" },
-  { id: "6", name: "Jon" },
-];
 
 export const MOCK_POSTS: PlaceholderPost[] = [
   {
