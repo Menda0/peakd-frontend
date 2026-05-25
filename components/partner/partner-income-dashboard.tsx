@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownToLineIcon,
   CheckCircle2Icon,
@@ -147,18 +147,30 @@ export function PartnerIncomeDashboard({
     }
   }, []);
 
+  const didMountRefreshRef = useRef(false);
   useEffect(() => {
-    // If the user just returned from Stripe onboarding (`?refresh=1`), pull
-    // the latest cached state in case the webhook is still in flight. Deferred
-    // so the state update doesn't cascade inside the same render pass.
+    // Stripe sends the user to `return_url` (no query string) on success and
+    // to `refresh_url` (`?refresh=1`) when the account link expires. In both
+    // cases the cached onboarding state may still be `pending` because the
+    // `account.updated` webhook hasn't arrived yet. If we mount and aren't
+    // fully `enabled`, refresh once now and once shortly after — the server
+    // action reconciles live against Stripe.
     if (typeof window === "undefined") return;
-    const sp = new URLSearchParams(window.location.search);
-    if (sp.get("refresh") !== "1") return;
-    const handle = window.setTimeout(() => {
-      void refreshStatus();
-    }, 0);
-    return () => window.clearTimeout(handle);
-  }, [refreshStatus]);
+    if (didMountRefreshRef.current) return;
+    if (status?.onboardingStatus === "enabled") return;
+    didMountRefreshRef.current = true;
+    const handles: number[] = [
+      window.setTimeout(() => {
+        void refreshStatus();
+      }, 0),
+      window.setTimeout(() => {
+        void refreshStatus();
+      }, 3000),
+    ];
+    return () => {
+      for (const h of handles) window.clearTimeout(h);
+    };
+  }, [refreshStatus, status?.onboardingStatus]);
 
   const onConnect = useCallback(async () => {
     setActionError(null);
