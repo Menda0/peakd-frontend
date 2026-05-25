@@ -127,16 +127,18 @@ export async function fetchAdminPeaksByCountryAction(filter?: {
 }
 
 export async function fetchAdminPeaksByRegionAction(
-  countryCode: string,
+  countryCode?: string | null,
   regionId?: string | null,
 ): Promise<AdminActionResult<AdminPeaksGeoRowDto[]>> {
   try {
-    const cc = countryCode.trim().toUpperCase();
-    const params = new URLSearchParams({ countryCode: cc });
+    const params = new URLSearchParams();
+    const cc = countryCode?.trim().toUpperCase();
     const rid = regionId?.trim();
+    if (cc) params.set("countryCode", cc);
     if (rid) params.set("regionId", rid);
+    const qs = params.toString();
     const res = await adminApiFetch(
-      `${ADMIN_PEAKS_PATH}/by-region?${params.toString()}`,
+      `${ADMIN_PEAKS_PATH}/by-region${qs ? `?${qs}` : ""}`,
       { method: "GET" },
     );
     const text = await res.text();

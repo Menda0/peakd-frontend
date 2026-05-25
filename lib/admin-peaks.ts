@@ -6,6 +6,8 @@ export type AdminPeaksSummaryDto = {
   totalPeaksCharged: number;
   totalPartnerPeaks: number;
   totalCommunityFeePeaks: number;
+  countryCommunityFeePeaks: number | null;
+  regionsCommunityFeePeaks: number | null;
 };
 
 export type AdminPeaksTransactionDto = {
@@ -60,6 +62,10 @@ export function normalizeAdminPeaksSummary(raw: unknown): AdminPeaksSummaryDto |
     totalPeaksCharged: num(o.totalPeaksCharged),
     totalPartnerPeaks: num(o.totalPartnerPeaks),
     totalCommunityFeePeaks: num(o.totalCommunityFeePeaks),
+    countryCommunityFeePeaks:
+      o.countryCommunityFeePeaks == null ? null : num(o.countryCommunityFeePeaks),
+    regionsCommunityFeePeaks:
+      o.regionsCommunityFeePeaks == null ? null : num(o.regionsCommunityFeePeaks),
   };
 }
 
