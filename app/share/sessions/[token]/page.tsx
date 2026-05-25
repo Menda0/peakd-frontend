@@ -60,12 +60,7 @@ export default async function SharedSessionPage({
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
-      <FeedAppBar
-        homeHref={nav.homeHref}
-        userPicture={session?.user?.picture}
-        userName={session?.user?.name}
-        userEmail={session?.user?.email}
-      />
+      <FeedAppBar homeHref={nav.homeHref} />
       <main className="min-h-0 flex-1 overflow-y-auto">
         <SharedSessionView
           data={enrichSharedSessionViewData(data)}
