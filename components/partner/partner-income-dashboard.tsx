@@ -17,8 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { PeakIcon } from "@/components/peaks/peak-icon";
-import { formatEur, formatPeaksCount } from "@/lib/billing";
+import { formatEur } from "@/lib/billing";
 import {
   type PartnerEarningsPageDto,
   type PartnerOnboardingStatus,
@@ -96,9 +95,18 @@ function formatDate(iso: string): string {
   }
 }
 
-function peaksToCents(peaks: number, peaksPerEuro: number): number {
-  if (peaksPerEuro <= 0) return 0;
-  return Math.floor((peaks * 100) / peaksPerEuro);
+/**
+ * Parses a user-entered EUR amount (e.g. "12", "12.50", "12,5") into cents,
+ * returning null when the input is empty or not a valid positive amount.
+ * Caps fractional digits at 2 to avoid sub-cent values like €0.005.
+ */
+function parseEurInputToCents(raw: string): number | null {
+  const trimmed = raw.trim().replace(",", ".");
+  if (!trimmed) return null;
+  if (!/^\d+(?:\.\d{0,2})?$/.test(trimmed)) return null;
+  const n = Number.parseFloat(trimmed);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.round(n * 100);
 }
 
 export function PartnerIncomeDashboard({
@@ -190,31 +198,27 @@ export function PartnerIncomeDashboard({
     }
   }, []);
 
-  const peaksAmount = useMemo(() => {
-    const trimmed = amountText.trim();
-    if (!trimmed) return null;
-    const n = Number.parseInt(trimmed, 10);
-    if (!Number.isFinite(n) || n <= 0) return null;
-    return n;
-  }, [amountText]);
+  const amountCents = useMemo(() => parseEurInputToCents(amountText), [
+    amountText,
+  ]);
 
   const onWithdraw = useCallback(async () => {
-    if (!status || peaksAmount == null) return;
+    if (!status || amountCents == null) return;
     setActionError(null);
     setActionSuccess(null);
-    if (peaksAmount > status.withdrawablePeaks) {
+    if (amountCents > status.withdrawableAmountCents) {
       setActionError("Amount exceeds available balance");
       return;
     }
-    if (peaksAmount < status.minWithdrawalPeaks) {
+    if (amountCents < status.minWithdrawalAmountCents) {
       setActionError(
-        `Minimum withdrawal is ${formatPeaksCount(status.minWithdrawalPeaks)} Peaks`,
+        `Minimum withdrawal is ${formatEur(status.minWithdrawalAmountCents)}`,
       );
       return;
     }
     setSubmitting("withdraw");
     try {
-      const res = await requestPartnerWithdrawalAction(peaksAmount);
+      const res = await requestPartnerWithdrawalAction(amountCents);
       if (!res.ok) {
         setActionError(res.error);
         return;
@@ -229,11 +233,11 @@ export function PartnerIncomeDashboard({
     } finally {
       setSubmitting(null);
     }
-  }, [peaksAmount, refreshEarnings, refreshStatus, status]);
+  }, [amountCents, refreshEarnings, refreshStatus, status]);
 
   const onMaxClick = useCallback(() => {
     if (!status) return;
-    setAmountText(String(status.withdrawablePeaks));
+    setAmountText((status.withdrawableAmountCents / 100).toFixed(2));
   }, [status]);
 
   if (!status) {
@@ -251,19 +255,16 @@ export function PartnerIncomeDashboard({
   }
 
   const onboardingBadge = ONBOARDING_BADGES[status.onboardingStatus];
-  const peaksPerEuro = status.peaksPerEuro;
-  const previewCents =
-    peaksAmount != null ? peaksToCents(peaksAmount, peaksPerEuro) : 0;
   const canWithdraw =
     status.onboardingStatus === "enabled" &&
-    status.withdrawablePeaks >= status.minWithdrawalPeaks;
+    status.withdrawableAmountCents >= status.minWithdrawalAmountCents;
 
   return (
     <div className="space-y-6">
       <header className="space-y-1">
         <h1 className="font-heading text-2xl font-semibold">Income</h1>
         <p className="text-sm text-muted-foreground">
-          Cash out the Peaks you earned from commercial wave unlocks straight to
+          Cash out the money you earned from commercial wave unlocks straight to
           your bank account via Stripe.
         </p>
       </header>
@@ -272,20 +273,13 @@ export function PartnerIncomeDashboard({
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Withdrawable balance</CardDescription>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <PeakIcon size={24} />
-              {formatPeaksCount(status.withdrawablePeaks)}
+            <CardTitle className="text-2xl">
+              {formatEur(status.withdrawableAmountCents)}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              ≈ {formatEur(status.withdrawableAmountCents)} at{" "}
-              {formatPeaksCount(peaksPerEuro)} Peaks per €1
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Minimum withdrawal:{" "}
-              {formatPeaksCount(status.minWithdrawalPeaks)} Peaks (
-              {formatEur(status.minWithdrawalAmountCents)})
+            <p className="text-xs text-muted-foreground">
+              Minimum withdrawal: {formatEur(status.minWithdrawalAmountCents)}
             </p>
           </CardContent>
         </Card>
@@ -354,16 +348,20 @@ export function PartnerIncomeDashboard({
         <CardContent className="space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <label className="block text-sm">
-              <span className="mb-1 block text-muted-foreground">Peaks</span>
+              <span className="mb-1 block text-muted-foreground">
+                Amount (EUR)
+              </span>
               <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">€</span>
                 <Input
-                  inputMode="numeric"
-                  pattern="[0-9]*"
+                  inputMode="decimal"
                   value={amountText}
                   onChange={(e) =>
-                    setAmountText(e.target.value.replace(/[^0-9]/g, ""))
+                    setAmountText(e.target.value.replace(/[^0-9.,]/g, ""))
                   }
-                  placeholder={String(status.minWithdrawalPeaks)}
+                  placeholder={(status.minWithdrawalAmountCents / 100).toFixed(
+                    2,
+                  )}
                   className="w-40"
                   disabled={!canWithdraw || submitting === "withdraw"}
                 />
@@ -378,16 +376,11 @@ export function PartnerIncomeDashboard({
                 </Button>
               </div>
             </label>
-            <div className="text-sm text-muted-foreground">
-              {peaksAmount != null
-                ? `≈ ${formatEur(previewCents)}`
-                : "Enter an amount above"}
-            </div>
             <Button
               type="button"
               onClick={onWithdraw}
               disabled={
-                !canWithdraw || peaksAmount == null || submitting === "withdraw"
+                !canWithdraw || amountCents == null || submitting === "withdraw"
               }
               className="sm:ml-auto"
             >
@@ -409,11 +402,7 @@ export function PartnerIncomeDashboard({
       </Card>
 
       <WithdrawalsHistory withdrawals={status.recentWithdrawals} />
-      <EarningsHistory
-        earnings={earnings}
-        error={earningsError}
-        peaksPerEuro={peaksPerEuro}
-      />
+      <EarningsHistory earnings={earnings} error={earningsError} />
     </div>
   );
 }
@@ -439,12 +428,7 @@ function WithdrawalsHistory({
                 className="flex items-center justify-between py-2"
               >
                 <div className="space-y-0.5">
-                  <p className="font-medium">
-                    {formatEur(w.amountCents)} ·{" "}
-                    <span className="text-muted-foreground">
-                      {formatPeaksCount(w.peaksDebited)} Peaks
-                    </span>
-                  </p>
+                  <p className="font-medium">{formatEur(w.amountCents)}</p>
                   <p className="text-xs text-muted-foreground">
                     {formatDate(w.createdAt)}
                     {w.failureReason ? ` · ${w.failureReason}` : ""}
@@ -463,11 +447,9 @@ function WithdrawalsHistory({
 function EarningsHistory({
   earnings,
   error,
-  peaksPerEuro,
 }: {
   earnings: PartnerEarningsPageDto | null;
   error: string | null;
-  peaksPerEuro: number;
 }) {
   return (
     <Card>
@@ -490,12 +472,7 @@ function EarningsHistory({
                 className="flex items-center justify-between py-2"
               >
                 <div className="space-y-0.5">
-                  <p className="font-medium">
-                    +{formatPeaksCount(row.basePeaks)} Peaks{" "}
-                    <span className="text-muted-foreground">
-                      ({formatEur(peaksToCents(row.basePeaks, peaksPerEuro))})
-                    </span>
-                  </p>
+                  <p className="font-medium">+{formatEur(row.amountCents)}</p>
                   <p className="text-xs text-muted-foreground">
                     {row.type === "buy_claim" ? "Buy & claim" : "Sponsor"} ·{" "}
                     {row.countryCode || "??"} · {formatDate(row.createdAt)}

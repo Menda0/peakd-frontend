@@ -20,7 +20,6 @@ export type PartnerWithdrawalStatus =
 
 export type PartnerWithdrawalDto = {
   id: string;
-  peaksDebited: number;
   amountCents: number;
   currency: string;
   status: PartnerWithdrawalStatus;
@@ -29,10 +28,7 @@ export type PartnerWithdrawalDto = {
 };
 
 export type PartnerPayoutsStatusDto = {
-  withdrawablePeaks: number;
-  peaksPerEuro: number;
   withdrawableAmountCents: number;
-  minWithdrawalPeaks: number;
   minWithdrawalAmountCents: number;
   currency: "eur";
   onboardingStatus: PartnerOnboardingStatus;
@@ -44,8 +40,7 @@ export type PartnerPayoutsStatusDto = {
 export type PartnerEarningRowDto = {
   id: string;
   jobId: string;
-  basePeaks: number;
-  peaksCharged: number;
+  amountCents: number;
   countryCode: string;
   regionId: string;
   type: string;
@@ -77,7 +72,6 @@ function normalizeWithdrawal(raw: unknown): PartnerWithdrawalDto | null {
   if (!isWithdrawalStatus(o.status)) return null;
   return {
     id: String(o.id ?? ""),
-    peaksDebited: Number(o.peaksDebited) || 0,
     amountCents: Number(o.amountCents) || 0,
     currency: typeof o.currency === "string" ? o.currency : "eur",
     status: o.status,
@@ -102,10 +96,7 @@ export function normalizePartnerPayoutsStatus(
     ? o.requirementsDue.filter((x): x is string => typeof x === "string")
     : [];
   return {
-    withdrawablePeaks: Math.max(0, Number(o.withdrawablePeaks) || 0),
-    peaksPerEuro: Number(o.peaksPerEuro) || 100,
     withdrawableAmountCents: Math.max(0, Number(o.withdrawableAmountCents) || 0),
-    minWithdrawalPeaks: Math.max(0, Number(o.minWithdrawalPeaks) || 0),
     minWithdrawalAmountCents: Math.max(
       0,
       Number(o.minWithdrawalAmountCents) || 0,
@@ -131,8 +122,7 @@ export function normalizePartnerEarningsPage(
     items.push({
       id: String(row.id ?? ""),
       jobId: String(row.jobId ?? ""),
-      basePeaks: Number(row.basePeaks) || 0,
-      peaksCharged: Number(row.peaksCharged) || 0,
+      amountCents: Math.max(0, Number(row.amountCents) || 0),
       countryCode: typeof row.countryCode === "string" ? row.countryCode : "",
       regionId: typeof row.regionId === "string" ? row.regionId : "",
       type: typeof row.type === "string" ? row.type : "",
