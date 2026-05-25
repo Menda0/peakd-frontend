@@ -274,18 +274,30 @@ export async function fetchSearchSessionDates(options: {
     : [];
 }
 
+export type SearchSessionsPage = {
+  sessions: SearchSessionItem[];
+  nextCursor: string | null;
+  hasMore: boolean;
+};
+
 export async function fetchSearchSessions(options: {
   countryCode: string;
   regionId?: string | null;
   spotId?: string | null;
-  sessionDate: string;
-}): Promise<SearchSessionItem[]> {
-  const params = new URLSearchParams({
-    countryCode: options.countryCode,
-    sessionDate: options.sessionDate,
-  });
+  sessionDate?: string | null;
+  cursor?: string | null;
+  limit?: number;
+}): Promise<SearchSessionsPage> {
+  const params = new URLSearchParams({ countryCode: options.countryCode });
+  if (options.sessionDate?.trim()) {
+    params.set("sessionDate", options.sessionDate.trim());
+  }
   if (options.regionId?.trim()) params.set("regionId", options.regionId.trim());
   if (options.spotId?.trim()) params.set("spotId", options.spotId.trim());
+  if (options.cursor?.trim()) params.set("cursor", options.cursor.trim());
+  if (typeof options.limit === "number" && options.limit > 0) {
+    params.set("limit", String(Math.floor(options.limit)));
+  }
   const base = getApiBase();
   const res = await fetch(`${base}/feed/search/sessions?${params}`, {
     credentials: "include",
@@ -293,18 +305,32 @@ export async function fetchSearchSessions(options: {
   if (!res.ok) {
     throw new Error(await res.text().catch(() => res.statusText));
   }
-  const data = (await res.json()) as { sessions?: unknown[] };
-  const sessions = Array.isArray(data.sessions) ? data.sessions : [];
-  return sessions
-    .map(normalizeSearchSession)
-    .filter((s): s is SearchSessionItem => s != null);
+  const data = (await res.json()) as {
+    sessions?: unknown[];
+    nextCursor?: unknown;
+    hasMore?: unknown;
+  };
+  const sessions = Array.isArray(data.sessions)
+    ? data.sessions
+        .map(normalizeSearchSession)
+        .filter((s): s is SearchSessionItem => s != null)
+    : [];
+  const nextCursor =
+    typeof data.nextCursor === "string" && data.nextCursor.trim()
+      ? data.nextCursor
+      : null;
+  return {
+    sessions,
+    nextCursor,
+    hasMore: data.hasMore === true,
+  };
 }
 
 export type FeedSearchParams = {
   countryCode: string;
   regionId: string | null;
   spotId: string | null;
-  sessionDate: string;
+  sessionDate: string | null;
 };
 
 export function parseFeedSearchParams(
@@ -318,7 +344,7 @@ export function parseFeedSearchParams(
   const sessionDate =
     sessionDateRaw && /^\d{4}-\d{2}-\d{2}$/.test(sessionDateRaw)
       ? sessionDateRaw
-      : formatTodayYmd();
+      : null;
   return { countryCode: country, regionId, spotId, sessionDate };
 }
 
@@ -332,12 +358,10 @@ export function formatTodayYmd(): string {
 
 export function buildFeedSearchQueryString(
   geo: GeoSearchSelection,
-  sessionDate: string,
+  sessionDate: string | null,
 ): string {
-  const params = new URLSearchParams({
-    country: geo.countryCode,
-    sessionDate,
-  });
+  const params = new URLSearchParams({ country: geo.countryCode });
+  if (sessionDate) params.set("sessionDate", sessionDate);
   if (geo.regionId) params.set("regionId", geo.regionId);
   if (geo.spotId) params.set("spotId", geo.spotId);
   return params.toString();
