@@ -16,6 +16,7 @@ export function SocialFeedLayout({
   studioHref,
   partnerProfileHref,
   adminRegionsHref,
+  adminPeaksHref,
   showPartnerNav,
   showAdminNav,
   userPicture,
@@ -28,6 +29,7 @@ export function SocialFeedLayout({
   studioHref: string;
   partnerProfileHref?: string;
   adminRegionsHref?: string;
+  adminPeaksHref?: string;
   showPartnerNav: boolean;
   showAdminNav: boolean;
   userPicture?: string | null;
@@ -50,6 +52,7 @@ export function SocialFeedLayout({
           studioHref={studioHref}
           partnerProfileHref={partnerProfileHref}
           adminRegionsHref={adminRegionsHref}
+          adminPeaksHref={adminPeaksHref}
           showPartnerNav={showPartnerNav}
           showAdminNav={showAdminNav}
         />

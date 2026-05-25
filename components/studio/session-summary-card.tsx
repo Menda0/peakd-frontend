@@ -57,7 +57,7 @@ export const SESSION_PREVIEW_SLOTS_LIST = 3;
 export const SESSION_PREVIEW_SLOTS_DETAIL = 4;
 export const VIDEO_JOB_THUMBNAIL_SLOTS = 4;
 
-function SessionPreviewThumbs({
+export function SessionPreviewThumbs({
   urls,
   videoCount,
   slotCount = SESSION_PREVIEW_SLOTS_LIST,

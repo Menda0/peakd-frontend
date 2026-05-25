@@ -32,12 +32,13 @@ import {
 } from "@/lib/commercial-settings";
 import { dispatchWaveClaimedEvent } from "@/lib/claim-wave";
 import {
-  fetchWallet,
   PEAKS_BALANCE_REFRESH_EVENT,
+  fetchWallet,
   type WalletResponse,
 } from "@/lib/billing";
 import type { SurferProfile } from "@/lib/surfer-profile";
 import {
+  COMMERCIAL_WAVE_UNLOCKED_EVENT,
   formatSessionLocationLabel,
   formatSessionSummary,
   type DiscoverFeedLocation,
@@ -168,10 +169,12 @@ function PriceLineRows({
         <dt>Price after discount</dt>
         <dd>{breakdown.basePeaks} Peaks</dd>
       </div>
-      <div className="flex justify-between gap-4 text-muted-foreground">
-        <dt>Community fee ({communityFeePercent}%)</dt>
-        <dd>{breakdown.communityFeePeaks} Peaks</dd>
-      </div>
+      {breakdown.communityFeePeaks > 0 ? (
+        <div className="flex justify-between gap-4 text-muted-foreground">
+          <dt>Community fee ({communityFeePercent}%)</dt>
+          <dd>{breakdown.communityFeePeaks} Peaks</dd>
+        </div>
+      ) : null}
       <div className="flex justify-between gap-4 border-t border-border pt-2 font-semibold text-foreground">
         <dt>Price of this video</dt>
         <dd>{breakdown.totalPeaks} Peaks</dd>
@@ -239,17 +242,26 @@ function CheckoutSummaryPanel({
         sessionWaveCount={sessionWaveCount}
         cartTotals={cartTotals}
       />
-      <p className="border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">
-        The {communityFeePercent}% community fee ({communityFeePeaks} Peaks
-        {cartTotals && cartTotals.cartTotalPeaks > 0
-          ? ", including your cart and this video"
-          : ""}
-        ) goes to the surf community in{" "}
-        <strong className="text-muted-foreground">{communityLocation}</strong>.
-        {intent === "sponsor"
-          ? " You unlock the video for the surfer on this wave without taking the claim."
-          : " This helps fund local sessions, spots, and community programs in that area."}
-      </p>
+      {communityFeePeaks > 0 ? (
+        <p className="border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">
+          The {communityFeePercent}% community fee ({communityFeePeaks} Peaks
+          {cartTotals && cartTotals.cartTotalPeaks > 0
+            ? ", including your cart and this video"
+            : ""}
+          ) goes to the surf community in{" "}
+          <strong className="text-foreground">{communityLocation}</strong>.
+          {intent === "sponsor"
+            ? " You unlock the video for the surfer on this wave without taking the claim."
+            : " This helps fund local sessions, spots, and community programs in that area."}
+        </p>
+      ) : (
+        <p className="border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">
+          No community fee is charged when the session location is undisclosed.
+          {intent === "sponsor"
+            ? " You unlock the video for the surfer on this wave without taking the claim."
+            : null}
+        </p>
+      )}
     </dl>
   );
 }
@@ -280,11 +292,17 @@ function PriceBreakdown({
           sessionWaveCount={sessionWaveCount}
         />
       </dl>
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        The {communityFeePercent}% community fee ({breakdown.communityFeePeaks} Peaks) supports
-        the surf community in{" "}
-        <strong className="text-muted-foreground">{communityLocation}</strong>.
-      </p>
+      {breakdown.communityFeePeaks > 0 ? (
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          The {communityFeePercent}% community fee ({breakdown.communityFeePeaks} Peaks) supports
+          the surf community in{" "}
+          <strong className="text-foreground">{communityLocation}</strong>.
+        </p>
+      ) : (
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          No community fee is charged when the session location is undisclosed.
+        </p>
+      )}
     </div>
   );
 }
@@ -562,6 +580,7 @@ export function WaveUnlockCheckoutWizard({
         );
       }
       window.dispatchEvent(new CustomEvent(PEAKS_BALANCE_REFRESH_EVENT));
+      window.dispatchEvent(new CustomEvent(COMMERCIAL_WAVE_UNLOCKED_EVENT));
       void refreshWallet();
       onPurchased();
       close();

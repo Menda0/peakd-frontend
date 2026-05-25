@@ -89,6 +89,7 @@ export type DiscoverFeedPost = {
 };
 
 export const PERSONAL_UPLOAD_EVENT = "peakd:personal-upload";
+export const COMMERCIAL_WAVE_UNLOCKED_EVENT = "peakd:commercial-wave-unlocked";
 
 export function formatLocationLabel(location: DiscoverFeedLocation): string {
   const country = englishCountryLabel(location.countryCode) ?? location.countryCode;
