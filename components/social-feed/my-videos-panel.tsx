@@ -18,7 +18,7 @@ function MyVideosSkeleton() {
       {[0, 1, 2, 3].map((i) => (
         <div
           key={i}
-          className="animate-pulse rounded-2xl border border-border bg-white/[0.03] p-4"
+          className="animate-pulse rounded-2xl border border-border bg-card p-4"
         >
           <div className="mb-3 flex items-center gap-2">
             <div className="size-8 shrink-0 rounded-full bg-muted" />
@@ -110,7 +110,7 @@ export function MyVideosPanel() {
 
   if (videos.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-white/[0.03] px-4 py-12 text-center">
+      <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center">
         <p className="text-sm font-medium text-foreground">No videos yet</p>
         <p className="mt-2 text-sm text-muted-foreground">
           Upload a video from the top bar, or claim a partner upload from your feed. Personal

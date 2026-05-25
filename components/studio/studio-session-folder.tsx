@@ -960,7 +960,7 @@ export function StudioSessionFolder() {
         {session && !sessionError ? (
           <section className="space-y-4">
             {editing && editValues ? (
-              <Card className="border-border bg-white/[0.03] text-foreground">
+              <Card className="border-border bg-card text-foreground">
                 <CardHeader>
                   <CardTitle>Edit session</CardTitle>
                   <CardDescription className="text-muted-foreground">
@@ -1113,7 +1113,7 @@ export function StudioSessionFolder() {
           </section>
         ) : null}
 
-        <Card className="border-border bg-white/[0.03] text-foreground">
+        <Card className="border-border bg-card text-foreground">
           <CardHeader>
             <CardTitle>Upload</CardTitle>
             <CardDescription className="text-muted-foreground">
@@ -1319,7 +1319,7 @@ export function StudioSessionFolder() {
           <ul className="flex flex-col gap-3">
             {pendingUploads.map((p) => (
               <li key={p.clientId}>
-                <Card className="border-border bg-white/[0.03]">
+                <Card className="border-border bg-card">
                   <CardContent className="flex gap-4 p-4">
                     <div
                       className={cn(
@@ -1372,7 +1372,7 @@ export function StudioSessionFolder() {
                 <li key={job.jobId}>
                   <Card
                     className={cn(
-                      "border-border bg-white/[0.03]",
+                      "border-border bg-card",
                       isFailed && "border-red-500/20",
                     )}
                   >

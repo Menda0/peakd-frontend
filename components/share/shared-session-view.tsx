@@ -167,7 +167,7 @@ function SharedSessionFeedTab({
         const waveState = resolveWave(wave);
         return (
         <li key={wave.jobId}>
-          <article className="rounded-2xl border border-border bg-white/[0.03] p-4 sm:p-5">
+          <article className="rounded-2xl border border-border bg-card p-4 sm:p-5">
             <PostHeader
               authorName={partnerName}
               authorAvatarUrl={data.partnerAvatarUrl}
@@ -243,7 +243,7 @@ function SharedSessionFilesTab({
           <li key={wave.jobId}>
             <Card
               className={cn(
-                "border-border bg-white/[0.03] text-foreground",
+                "border-border bg-card text-foreground",
                 isActive && "ring-1 ring-primary/40",
               )}
             >
@@ -503,7 +503,7 @@ export function SharedSessionView({
           </Button>
         </div>
 
-        <Card className="border-border bg-white/[0.03] text-foreground">
+        <Card className="border-border bg-card text-foreground">
           <CardContent className="space-y-3 p-4">
             <div>
               <p className="font-medium text-foreground">
@@ -541,7 +541,7 @@ export function SharedSessionView({
             {waveCountLabel}
           </h2>
           <div
-            className="inline-flex rounded-lg border border-border bg-white/[0.03] p-0.5"
+            className="inline-flex rounded-lg border border-border bg-card p-0.5"
             role="tablist"
             aria-label="Session view"
           >

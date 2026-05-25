@@ -160,7 +160,7 @@ export function SessionSummaryCard({
   return (
     <Card
       className={cn(
-        "border-border bg-white/[0.03] text-foreground",
+        "border-border bg-card text-foreground",
         className,
       )}
     >
