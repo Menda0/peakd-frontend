@@ -246,7 +246,7 @@ export function AdminRegionEdit({
   };
 
   if (loading) {
-    return <p className="text-sm text-zinc-400">Loading region…</p>;
+    return <p className="text-sm text-muted-foreground">Loading region…</p>;
   }
 
   if (!region) {
@@ -255,7 +255,7 @@ export function AdminRegionEdit({
         <p className="text-sm text-red-200">{error ?? "Region not found."}</p>
         <Link
           href={regionsListHref}
-          className="inline-flex h-8 items-center justify-center rounded-lg border border-white/15 px-2.5 text-sm text-zinc-200 hover:bg-white/5"
+          className="inline-flex h-8 items-center justify-center rounded-lg border border-border px-2.5 text-sm text-foreground hover:bg-accent"
         >
           Back to regions
         </Link>
@@ -269,14 +269,14 @@ export function AdminRegionEdit({
         <div>
           <Link
             href={regionsListHref}
-            className="text-sm text-zinc-400 hover:text-zinc-200"
+            className="text-sm text-muted-foreground hover:text-foreground"
           >
             ← Regions
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-50">
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
             {region.name}
           </h1>
-          <p className="mt-1 text-sm text-zinc-400">Edit region details and manage spots.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Edit region details and manage spots.</p>
         </div>
         <AdminStatusBadge
           label={region.disabled ? "Disabled" : region.verified ? "Verified" : "Unverified"}
@@ -290,10 +290,10 @@ export function AdminRegionEdit({
         </p>
       ) : null}
 
-      <Card className="border-white/10 bg-white/5">
+      <Card className="border-border bg-muted/50">
         <CardHeader>
-          <CardTitle className="text-zinc-100">Region</CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardTitle className="text-foreground">Region</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Changes apply to how this region appears across Peakd.
           </CardDescription>
         </CardHeader>
@@ -334,7 +334,7 @@ export function AdminRegionEdit({
                 variant="outline"
                 onClick={() => void handleEnableRegion()}
                 disabled={regionBusy}
-                className="border-white/15 bg-transparent text-zinc-200"
+                className="border-border bg-transparent text-foreground"
               >
                 Enable region
               </Button>
@@ -344,7 +344,7 @@ export function AdminRegionEdit({
                 variant="outline"
                 onClick={() => void handleDisableRegion()}
                 disabled={regionBusy}
-                className="border-white/15 bg-transparent text-red-300"
+                className="border-border bg-transparent text-red-300"
               >
                 Disable region
               </Button>
@@ -354,11 +354,11 @@ export function AdminRegionEdit({
       </Card>
 
 
-      <Card className="border-white/10 bg-white/5">
+      <Card className="border-border bg-muted/50">
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0">
           <div>
-            <CardTitle className="text-zinc-100">Spots</CardTitle>
-            <CardDescription className="text-zinc-400">
+            <CardTitle className="text-foreground">Spots</CardTitle>
+            <CardDescription className="text-muted-foreground">
               {spots.length} spot{spots.length === 1 ? "" : "s"} in this region
             </CardDescription>
           </div>
@@ -378,11 +378,11 @@ export function AdminRegionEdit({
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {spots.length === 0 ? (
-            <p className="text-sm text-zinc-500">No spots yet.</p>
+            <p className="text-sm text-muted-foreground">No spots yet.</p>
           ) : (
             <table className="w-full min-w-[48rem] border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-zinc-400">
+                <tr className="border-b border-border text-muted-foreground">
                   <th className="py-2 pr-3 font-medium">Name</th>
                   <th className="py-2 pr-3 font-medium">Level</th>
                   <th className="py-2 pr-3 font-medium">Break</th>
@@ -397,7 +397,7 @@ export function AdminRegionEdit({
                   const busy = spotRowBusy === spot.spotId;
                   if (isEditing) {
                     return (
-                      <tr key={spot.spotId} className="border-b border-white/10 bg-white/5">
+                      <tr key={spot.spotId} className="border-b border-border bg-muted/50">
                         <td className="py-2 pr-3">
                           <Input
                             value={spotEdit.name}
@@ -467,7 +467,7 @@ export function AdminRegionEdit({
                               variant="outline"
                               onClick={cancelSpotEdit}
                               disabled={busy}
-                              className="border-white/15 bg-transparent"
+                              className="border-border bg-transparent"
                             >
                               Cancel
                             </Button>
@@ -480,14 +480,14 @@ export function AdminRegionEdit({
                     <tr
                       key={spot.spotId}
                       className={cn(
-                        "border-b border-white/5",
+                        "border-b border-border/50",
                         spot.disabled && "opacity-60",
                       )}
                     >
-                      <td className="py-3 pr-3 font-medium text-zinc-100">{spot.name}</td>
-                      <td className="py-3 pr-3 text-zinc-300">{spot.level ?? "—"}</td>
-                      <td className="py-3 pr-3 text-zinc-300">{spot.breakType ?? "—"}</td>
-                      <td className="py-3 pr-3 text-zinc-300">{spot.consistency ?? "—"}</td>
+                      <td className="py-3 pr-3 font-medium text-foreground">{spot.name}</td>
+                      <td className="py-3 pr-3 text-muted-foreground">{spot.level ?? "—"}</td>
+                      <td className="py-3 pr-3 text-muted-foreground">{spot.breakType ?? "—"}</td>
+                      <td className="py-3 pr-3 text-muted-foreground">{spot.consistency ?? "—"}</td>
                       <td className="py-3 pr-3">
                         <AdminStatusBadge
                           label={
@@ -508,7 +508,7 @@ export function AdminRegionEdit({
                             variant="outline"
                             onClick={() => startSpotEdit(spot)}
                             disabled={busy || spot.disabled}
-                            className="border-white/15 bg-transparent text-zinc-200"
+                            className="border-border bg-transparent text-foreground"
                           >
                             Edit
                           </Button>
@@ -528,7 +528,7 @@ export function AdminRegionEdit({
                               variant="outline"
                               onClick={() => void handleDisableSpot(spot.spotId)}
                               disabled={busy}
-                              className="border-white/15 bg-transparent text-red-300"
+                              className="border-border bg-transparent text-red-300"
                             >
                               Disable
                             </Button>

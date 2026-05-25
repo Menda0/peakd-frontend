@@ -37,17 +37,17 @@ function PackRow({
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-4 sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-2 rounded-xl border border-border bg-white/[0.03] p-4 sm:flex-row sm:items-center sm:justify-between",
         highlight && "border-[#26c2c9]/40 bg-[#26c2c9]/5",
       )}
     >
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <PeakIcon size={22} />
-          <span className="text-base font-semibold text-zinc-50">
+          <span className="text-base font-semibold text-foreground">
             {formatPeaksCount(pack.peaks)} peaks
           </span>
-          <span className="text-sm text-zinc-500">· {pack.label}</span>
+          <span className="text-sm text-muted-foreground">· {pack.label}</span>
           {highlight ? (
             <span className="rounded-full bg-[#26c2c9]/15 px-2 py-0.5 text-xs font-medium text-[#26c2c9]">
               Best value
@@ -55,17 +55,17 @@ function PackRow({
           ) : null}
         </div>
         {platformFeePercent > 0 ? (
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted-foreground">
             {formatEur(pack.baseAmountCents)} + {platformFeePercent}% platform fee ={" "}
-            <span className="text-zinc-300">{formatEur(pack.totalAmountCents)}</span>
+            <span className="text-muted-foreground">{formatEur(pack.totalAmountCents)}</span>
           </p>
         ) : (
-          <p className="text-xs text-zinc-500">{formatEur(pack.totalAmountCents)} total</p>
+          <p className="text-xs text-muted-foreground">{formatEur(pack.totalAmountCents)} total</p>
         )}
       </div>
       <Button
         type="button"
-        className="shrink-0 bg-[#26c2c9] text-[#040A10] hover:bg-[#2dd4dc]"
+        className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
         disabled={Boolean(buying)}
         onClick={() => onBuy(pack.id)}
       >
@@ -123,10 +123,10 @@ export function BuyPeaksDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-white/10 bg-[#0a1218] text-zinc-100 sm:max-w-lg">
+      <DialogContent className="border-border bg-popover text-foreground sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-zinc-50">Buy peaks</DialogTitle>
-          <DialogDescription className="text-zinc-400">
+          <DialogTitle className="text-foreground">Buy peaks</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             Peaks are added to your balance after payment.
           </DialogDescription>
         </DialogHeader>
@@ -142,7 +142,7 @@ export function BuyPeaksDialog({
             />
           ))}
           {!wallet ? (
-            <div className="flex items-center justify-center gap-2 py-8 text-sm text-zinc-500">
+            <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
               <Loader2Icon className="size-4 animate-spin" aria-hidden />
               Loading packs…
             </div>

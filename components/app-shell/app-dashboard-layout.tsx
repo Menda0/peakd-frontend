@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { PeakdLogo } from "@/components/peakd-logo";
 import { usePathname } from "next/navigation";
 import type { User } from "@auth0/nextjs-auth0/types";
 import { ClapperboardIcon, HomeIcon, LayoutGridIcon } from "lucide-react";
@@ -139,14 +139,7 @@ export function AppDashboardLayout({
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-background px-4">
           <Link href={userPathPrefix} className="flex shrink-0 items-center gap-2">
-            <Image
-              src="/logos/logo_horizontal.png"
-              alt="Peakd"
-              width={120}
-              height={28}
-              className="h-7 w-auto object-contain object-left"
-              priority
-            />
+            <PeakdLogo className="h-7" priority />
           </Link>
           <Separator orientation="vertical" className="h-6" />
           <div className="min-w-0 flex-1">

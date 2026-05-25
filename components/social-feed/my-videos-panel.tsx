@@ -4,7 +4,10 @@ import { formatDistanceToNow } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 import type { DiscoverFeedPost } from "@/lib/discover-feed";
 import { WAVE_CLAIMED_EVENT } from "@/lib/claim-wave";
-import { PERSONAL_UPLOAD_EVENT } from "@/lib/discover-feed";
+import {
+  COMMERCIAL_WAVE_UNLOCKED_EVENT,
+  PERSONAL_UPLOAD_EVENT,
+} from "@/lib/discover-feed";
 import { fetchMyVideos, myVideoItemToPost } from "@/lib/my-videos";
 import { cn } from "@/lib/utils";
 import { VideoPostCard } from "./video-post-card";
@@ -15,16 +18,16 @@ function MyVideosSkeleton() {
       {[0, 1, 2, 3].map((i) => (
         <div
           key={i}
-          className="animate-pulse rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+          className="animate-pulse rounded-2xl border border-border bg-white/[0.03] p-4"
         >
           <div className="mb-3 flex items-center gap-2">
-            <div className="size-8 shrink-0 rounded-full bg-zinc-800" />
+            <div className="size-8 shrink-0 rounded-full bg-muted" />
             <div className="flex flex-1 flex-col gap-1.5">
-              <div className="h-3 w-20 rounded bg-zinc-800" />
-              <div className="h-2.5 w-28 rounded bg-zinc-800/80" />
+              <div className="h-3 w-20 rounded bg-muted" />
+              <div className="h-2.5 w-28 rounded bg-muted/80" />
             </div>
           </div>
-          <div className="aspect-video w-full rounded-2xl bg-zinc-800/80" />
+          <div className="aspect-video w-full rounded-2xl bg-muted/80" />
         </div>
       ))}
     </div>
@@ -65,9 +68,11 @@ export function MyVideosPanel() {
     };
     window.addEventListener(PERSONAL_UPLOAD_EVENT, refresh);
     window.addEventListener(WAVE_CLAIMED_EVENT, refresh);
+    window.addEventListener(COMMERCIAL_WAVE_UNLOCKED_EVENT, refresh);
     return () => {
       window.removeEventListener(PERSONAL_UPLOAD_EVENT, refresh);
       window.removeEventListener(WAVE_CLAIMED_EVENT, refresh);
+      window.removeEventListener(COMMERCIAL_WAVE_UNLOCKED_EVENT, refresh);
     };
   }, [load]);
 
@@ -105,9 +110,9 @@ export function MyVideosPanel() {
 
   if (videos.length === 0) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-12 text-center">
-        <p className="text-sm font-medium text-zinc-200">No videos yet</p>
-        <p className="mt-2 text-sm text-zinc-500">
+      <div className="rounded-2xl border border-border bg-white/[0.03] px-4 py-12 text-center">
+        <p className="text-sm font-medium text-foreground">No videos yet</p>
+        <p className="mt-2 text-sm text-muted-foreground">
           Upload a video from the top bar, or claim a partner upload from your feed. Personal
           uploads are auto-claimed and appear here while processing.
         </p>

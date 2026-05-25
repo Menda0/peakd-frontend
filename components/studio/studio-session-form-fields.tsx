@@ -165,7 +165,7 @@ export function StudioSessionConditionsFields({
     <div className="flex flex-col gap-5">
       <Field>
         <FieldLabel className={formLabelClassName}>Conditions rating</FieldLabel>
-        <FieldDescription className="text-zinc-500">
+        <FieldDescription className="text-muted-foreground">
           Optional. How good were the overall conditions?
         </FieldDescription>
         <div className="flex flex-wrap gap-2">
@@ -174,10 +174,10 @@ export function StudioSessionConditionsFields({
             variant="outline"
             size="sm"
             className={cn(
-              "border-white/15",
+              "border-border",
               values.conditionsRating === null
-                ? "bg-primary/20 text-zinc-50"
-                : "bg-transparent text-zinc-300",
+                ? "bg-primary/20 text-foreground"
+                : "bg-transparent text-muted-foreground",
             )}
             onClick={() => onChange({ conditionsRating: null })}
           >
@@ -190,10 +190,10 @@ export function StudioSessionConditionsFields({
               variant="outline"
               size="sm"
               className={cn(
-                "min-w-9 border-white/15",
+                "min-w-9 border-border",
                 values.conditionsRating === n
                   ? "bg-primary/25 text-primary"
-                  : "bg-transparent text-zinc-300",
+                  : "bg-transparent text-muted-foreground",
               )}
               onClick={() => onChange({ conditionsRating: n })}
             >
@@ -207,7 +207,7 @@ export function StudioSessionConditionsFields({
         <FieldLegend variant="label" className={formLabelClassName}>
           Wave types
         </FieldLegend>
-        <FieldDescription className="text-zinc-500">
+        <FieldDescription className="text-muted-foreground">
           Select all that match. You can pick multiple.
         </FieldDescription>
         <WaveTypeCheckboxGrid
@@ -233,13 +233,13 @@ export function StudioSessionCommercialPricingFields({
 }) {
   return (
     <FieldSet className="gap-3">
-      <FieldDescription className="text-zinc-500">
+      <FieldDescription className="text-muted-foreground">
         On the discover feed, waves show snapshot images only. Surfers can claim for free or pay
         Peaks to unlock video playback.
       </FieldDescription>
-      <div className="space-y-3 rounded-lg border border-white/10 bg-white/[0.02] p-3">
+      <div className="space-y-3 rounded-lg border border-border bg-white/[0.02] p-3">
         {partnerCommercialDefaults && !values.customizeCommercialPricing ? (
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-muted-foreground">
             Using partner defaults: {formatDiscountSummary(partnerCommercialDefaults)}
           </p>
         ) : null}
@@ -264,7 +264,7 @@ export function StudioSessionCommercialPricingFields({
           />
           <FieldLabel
             htmlFor={`${idPrefix}-commercial-custom`}
-            className="text-sm text-zinc-100"
+            className="text-sm text-foreground"
           >
             Customize pricing for this session
           </FieldLabel>
@@ -315,10 +315,10 @@ export function StudioSessionFormFields({
       />
       {showCommercialFields ? (
         <FieldSet className="gap-3">
-          <FieldLegend className="text-sm font-medium text-zinc-200">
+          <FieldLegend className="text-sm font-medium text-foreground">
             {showCommercialToggle ? "Commercial session" : "Commercial pricing"}
           </FieldLegend>
-          <FieldDescription className="text-zinc-500">
+          <FieldDescription className="text-muted-foreground">
             On the discover feed, waves show snapshot images only. Surfers can claim for free or
             pay Peaks to unlock video playback.
           </FieldDescription>
@@ -335,7 +335,7 @@ export function StudioSessionFormFields({
                   })
                 }
               />
-              <FieldLabel htmlFor={`${idPrefix}-commercial`} className="text-sm text-zinc-100">
+              <FieldLabel htmlFor={`${idPrefix}-commercial`} className="text-sm text-foreground">
                 Mark as commercial
               </FieldLabel>
             </Field>

@@ -52,14 +52,14 @@ export function PeaksBalanceBar() {
         type="button"
         onClick={() => setBuyOpen(true)}
         className={cn(
-          "group flex max-w-[9.5rem] shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] py-1.5 pl-2 pr-2.5 text-left transition hover:border-[#26c2c9]/35 hover:bg-white/[0.07] sm:max-w-none sm:pl-2.5 sm:pr-3",
+          "group flex max-w-[9.5rem] shrink-0 items-center gap-2 rounded-full border border-border bg-white/[0.04] py-1.5 pl-2 pr-2.5 text-left transition hover:border-[#26c2c9]/35 hover:bg-white/[0.07] sm:max-w-none sm:pl-2.5 sm:pr-3",
         )}
         aria-label="Peaks balance. Click to buy peaks."
       >
         <PeakIcon size={22} className="size-5 sm:size-[22px]" />
-        <span className="flex items-center gap-1 text-sm font-semibold tabular-nums text-zinc-50">
+        <span className="flex items-center gap-1 text-sm font-semibold tabular-nums text-foreground">
           {loading ? (
-            <Loader2Icon className="size-3.5 animate-spin text-zinc-400" aria-hidden />
+            <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" aria-hidden />
           ) : (
             formatPeaksCount(wallet?.peaksBalance ?? 0)
           )}

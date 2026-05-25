@@ -119,7 +119,7 @@ export function FeedSearchBar({ homeHref }: { homeHref: string }) {
     <div className="flex w-full max-w-md min-w-0 items-center gap-2 sm:max-w-xl lg:max-w-2xl">
       <div className="relative min-w-0 flex-1">
         <SearchIcon
-          className="pointer-events-none absolute left-4 top-1/2 z-10 size-4 -translate-y-1/2 text-zinc-500"
+          className="pointer-events-none absolute left-4 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden
         />
         <FeedGeoSearchInput
