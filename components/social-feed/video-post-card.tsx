@@ -125,7 +125,11 @@ function DiscoverVideoPostCard({
         />
       )}
       <PostSessionInfo sessionSummary={post.sessionSummary} session={post.session} />
-      <PostActionsBar likes={post.likes} comments={post.comments} shares={post.shares} />
+      <PostActionsBar
+        jobId={post.id}
+        shakaCount={post.shakaCount}
+        shakaedByViewer={post.shakaedByViewer}
+      />
     </article>
   );
 }
@@ -166,9 +170,9 @@ export function VideoPostCard({
         hashtags={placeholder.hashtags}
       />
       <PostActionsBar
-        likes={placeholder.likes}
-        comments={placeholder.comments}
-        shares={placeholder.shares}
+        jobId=""
+        shakaCount={placeholder.likes}
+        shakaedByViewer={false}
       />
     </article>
   );

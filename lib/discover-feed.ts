@@ -34,6 +34,7 @@ export type DiscoverFeedItem = {
   location: DiscoverFeedLocation;
   session: DiscoverFeedSession;
   shakaCount: number;
+  shakaedByViewer: boolean;
   followedByViewer: boolean;
   claimStatus: "none" | "auto" | "claimed";
   uploadSource: "studio" | "personal";
@@ -75,7 +76,8 @@ export type DiscoverFeedPost = {
   claimedByViewer: boolean;
   isOwnUpload: boolean;
   surfer: SurferProfile | null;
-  likes: number;
+  shakaCount: number;
+  shakaedByViewer: boolean;
   comments: number;
   shares: number;
   isCommercial: boolean;
@@ -157,7 +159,8 @@ export function discoverItemToPost(
     claimedByViewer: item.claimedByViewer,
     isOwnUpload: item.isOwnUpload,
     surfer: item.surfer,
-    likes: item.shakaCount,
+    shakaCount: item.shakaCount,
+    shakaedByViewer: item.shakaedByViewer,
     comments: 0,
     shares: 0,
     isCommercial: item.isCommercial,
@@ -236,6 +239,7 @@ function normalizeDiscoverItem(raw: unknown): DiscoverFeedItem | null {
     },
     session,
     shakaCount: typeof o.shakaCount === "number" ? o.shakaCount : 0,
+    shakaedByViewer: o.shakaedByViewer === true,
     followedByViewer: o.followedByViewer === true,
     claimStatus: claim,
     uploadSource,
@@ -327,4 +331,41 @@ export async function publishVideoToDiscover(jobId: string): Promise<void> {
   if (!res.ok) {
     throw new Error(await res.text().catch(() => res.statusText));
   }
+}
+
+export type ShakaResponse = {
+  shakaCount: number;
+  shakaedByViewer: boolean;
+};
+
+function normalizeShakaResponse(raw: unknown): ShakaResponse {
+  const o = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  return {
+    shakaCount: typeof o.shakaCount === "number" ? o.shakaCount : 0,
+    shakaedByViewer: o.shakaedByViewer === true,
+  };
+}
+
+export async function shakaVideo(jobId: string): Promise<ShakaResponse> {
+  const base = getApiBase();
+  const res = await fetch(
+    `${base}/discover/videos/${encodeURIComponent(jobId)}/shaka`,
+    { method: "POST", credentials: "include" },
+  );
+  if (!res.ok) {
+    throw new Error(await res.text().catch(() => res.statusText));
+  }
+  return normalizeShakaResponse(await res.json().catch(() => ({})));
+}
+
+export async function unshakaVideo(jobId: string): Promise<ShakaResponse> {
+  const base = getApiBase();
+  const res = await fetch(
+    `${base}/discover/videos/${encodeURIComponent(jobId)}/shaka`,
+    { method: "DELETE", credentials: "include" },
+  );
+  if (!res.ok) {
+    throw new Error(await res.text().catch(() => res.statusText));
+  }
+  return normalizeShakaResponse(await res.json().catch(() => ({})));
 }
