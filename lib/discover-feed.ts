@@ -34,6 +34,7 @@ export type DiscoverFeedItem = {
   location: DiscoverFeedLocation;
   session: DiscoverFeedSession;
   shakaCount: number;
+  shakaedByViewer: boolean;
   followedByViewer: boolean;
   claimStatus: "none" | "auto" | "claimed";
   uploadSource: "studio" | "personal";
@@ -75,7 +76,8 @@ export type DiscoverFeedPost = {
   claimedByViewer: boolean;
   isOwnUpload: boolean;
   surfer: SurferProfile | null;
-  likes: number;
+  shakaCount: number;
+  shakaedByViewer: boolean;
   comments: number;
   shares: number;
   isCommercial: boolean;
@@ -89,6 +91,7 @@ export type DiscoverFeedPost = {
 };
 
 export const PERSONAL_UPLOAD_EVENT = "peakd:personal-upload";
+export const COMMERCIAL_WAVE_UNLOCKED_EVENT = "peakd:commercial-wave-unlocked";
 
 export function formatLocationLabel(location: DiscoverFeedLocation): string {
   const country = englishCountryLabel(location.countryCode) ?? location.countryCode;
@@ -156,7 +159,8 @@ export function discoverItemToPost(
     claimedByViewer: item.claimedByViewer,
     isOwnUpload: item.isOwnUpload,
     surfer: item.surfer,
-    likes: item.shakaCount,
+    shakaCount: item.shakaCount,
+    shakaedByViewer: item.shakaedByViewer,
     comments: 0,
     shares: 0,
     isCommercial: item.isCommercial,
@@ -235,6 +239,7 @@ function normalizeDiscoverItem(raw: unknown): DiscoverFeedItem | null {
     },
     session,
     shakaCount: typeof o.shakaCount === "number" ? o.shakaCount : 0,
+    shakaedByViewer: o.shakaedByViewer === true,
     followedByViewer: o.followedByViewer === true,
     claimStatus: claim,
     uploadSource,
@@ -277,11 +282,32 @@ export function normalizeDiscoverFeedPage(raw: unknown): DiscoverFeedPage | null
 export async function fetchDiscoverFeed(options?: {
   cursor?: string | null;
   limit?: number;
+  countryCode?: string | null;
+  regionId?: string | null;
+  regionIds?: string[] | null;
+  spotIds?: string[] | null;
 }): Promise<DiscoverFeedPage> {
   const base = getApiBase();
   const params = new URLSearchParams();
   if (options?.limit != null) params.set("limit", String(options.limit));
   if (options?.cursor?.trim()) params.set("cursor", options.cursor.trim());
+  if (options?.countryCode?.trim()) {
+    params.set("countryCode", options.countryCode.trim().toUpperCase());
+  }
+  const regionIds = options?.regionIds
+    ?.map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (regionIds && regionIds.length > 0) {
+    params.set("regionIds", regionIds.join(","));
+  } else if (options?.regionId?.trim()) {
+    params.set("regionId", options.regionId.trim());
+  }
+  const spotIds = options?.spotIds
+    ?.map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (spotIds && spotIds.length > 0) {
+    params.set("spotIds", spotIds.join(","));
+  }
   const qs = params.toString();
   const res = await fetch(`${base}/feed/discover${qs ? `?${qs}` : ""}`, {
     credentials: "include",
@@ -305,4 +331,41 @@ export async function publishVideoToDiscover(jobId: string): Promise<void> {
   if (!res.ok) {
     throw new Error(await res.text().catch(() => res.statusText));
   }
+}
+
+export type ShakaResponse = {
+  shakaCount: number;
+  shakaedByViewer: boolean;
+};
+
+function normalizeShakaResponse(raw: unknown): ShakaResponse {
+  const o = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  return {
+    shakaCount: typeof o.shakaCount === "number" ? o.shakaCount : 0,
+    shakaedByViewer: o.shakaedByViewer === true,
+  };
+}
+
+export async function shakaVideo(jobId: string): Promise<ShakaResponse> {
+  const base = getApiBase();
+  const res = await fetch(
+    `${base}/discover/videos/${encodeURIComponent(jobId)}/shaka`,
+    { method: "POST", credentials: "include" },
+  );
+  if (!res.ok) {
+    throw new Error(await res.text().catch(() => res.statusText));
+  }
+  return normalizeShakaResponse(await res.json().catch(() => ({})));
+}
+
+export async function unshakaVideo(jobId: string): Promise<ShakaResponse> {
+  const base = getApiBase();
+  const res = await fetch(
+    `${base}/discover/videos/${encodeURIComponent(jobId)}/shaka`,
+    { method: "DELETE", credentials: "include" },
+  );
+  if (!res.ok) {
+    throw new Error(await res.text().catch(() => res.statusText));
+  }
+  return normalizeShakaResponse(await res.json().catch(() => ({})));
 }

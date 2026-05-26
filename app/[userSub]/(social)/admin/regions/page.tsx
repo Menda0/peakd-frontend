@@ -30,12 +30,14 @@ export default async function AdminRegionsPage({
     <SocialFeedLayout
       {...nav}
       adminRegionsHref={`${prefix}/admin/regions`}
+      adminPeaksHref={`${prefix}/admin/peaks`}
+      adminFinanceHref={`${prefix}/admin/finance`}
       showAdminNav
       userPicture={session.user.picture}
       userName={session.user.name}
       userEmail={session.user.email}
     >
-      <Suspense fallback={<p className="text-sm text-zinc-400">Loading regions…</p>}>
+      <Suspense fallback={<p className="text-sm text-muted-foreground">Loading regions…</p>}>
         <AdminRegionsManager regionsBasePath={`${prefix}/admin/regions`} />
       </Suspense>
     </SocialFeedLayout>

@@ -22,24 +22,30 @@ import {
   partnerCommercialFormSchema,
   type PartnerCommercialFormValues,
 } from "@/lib/partner-profile-schemas";
-import type { CommercialSettings } from "@/lib/commercial-settings";
+import {
+  peaksFromEurInput,
+  type CommercialSettings,
+} from "@/lib/commercial-settings";
 import { cn } from "@/lib/utils";
 
 export function PartnerCommercialForm({
   savedSettings,
+  peaksPerEuro,
   showSuggestedDefaultsHint = false,
   saving,
   onSave,
 }: {
   /** Persisted settings from the API; null means show suggested defaults only. */
   savedSettings: CommercialSettings | null;
+  /** Current Peaks-per-EUR exchange rate from the partner-profile DTO. */
+  peaksPerEuro: number;
   showSuggestedDefaultsHint?: boolean;
   saving: boolean;
   onSave: (settings: CommercialSettings) => Promise<void>;
 }) {
   const form = useForm<PartnerCommercialFormValues>({
     resolver: zodResolver(partnerCommercialFormSchema),
-    defaultValues: commercialSettingsToFormValues(savedSettings),
+    defaultValues: commercialSettingsToFormValues(savedSettings, peaksPerEuro),
     mode: "onSubmit",
     reValidateMode: "onSubmit",
   });
@@ -50,12 +56,15 @@ export function PartnerCommercialForm({
   });
 
   useEffect(() => {
-    form.reset(commercialSettingsToFormValues(savedSettings));
-  }, [savedSettings, form]);
+    form.reset(commercialSettingsToFormValues(savedSettings, peaksPerEuro));
+  }, [savedSettings, peaksPerEuro, form]);
 
   const onSubmit = form.handleSubmit(async (values) => {
-    await onSave(commercialFormToSettings(values));
+    await onSave(commercialFormToSettings(values, peaksPerEuro));
   });
+
+  const liveEur = form.watch("videoPriceEur");
+  const livePeaks = peaksFromEurInput(liveEur ?? "", peaksPerEuro);
 
   return (
     <Form {...form}>
@@ -69,21 +78,39 @@ export function PartnerCommercialForm({
 
         <FormField
           control={form.control}
-          name="videoPricePeaks"
+          name="videoPriceEur"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-zinc-200">Price per wave (Peaks)</FormLabel>
+              <FormLabel className="text-foreground">Price per wave (EUR)</FormLabel>
               <FormControl>
-                <Input
-                  {...field}
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="e.g. 50"
-                  className={cn(formInputClassName, "max-w-xs")}
-                />
+                <div className="relative max-w-xs">
+                  <span
+                    className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground"
+                    aria-hidden
+                  >
+                    €
+                  </span>
+                  <Input
+                    {...field}
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="e.g. 5.00"
+                    className={cn(formInputClassName, "pl-7")}
+                  />
+                </div>
               </FormControl>
-              <FormDescription className="text-zinc-500">
-                Surfers pay this many Peaks to buy and unlock a wave.
+              <FormDescription className="text-muted-foreground">
+                You earn this amount per wave. Surfers still pay in Peaks at the
+                current rate ({peaksPerEuro} Peaks = €1).
+                {livePeaks != null ? (
+                  <>
+                    {" "}
+                    <span className="text-foreground">
+                      Buyers will see ≈ {livePeaks.toLocaleString()} Peaks per
+                      wave.
+                    </span>
+                  </>
+                ) : null}
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -91,8 +118,8 @@ export function PartnerCommercialForm({
         />
 
         <div>
-          <p className="mb-1 text-sm font-medium text-zinc-200">Volume discounts</p>
-          <p className="mb-3 text-xs text-zinc-500">
+          <p className="mb-1 text-sm font-medium text-foreground">Volume discounts</p>
+          <p className="mb-3 text-xs text-muted-foreground">
             Applied when buying multiple waves in one purchase (buy &amp; claim). Leave a row
             empty to remove it on save.
           </p>
@@ -100,14 +127,14 @@ export function PartnerCommercialForm({
             {fields.map((field, index) => (
               <div
                 key={field.id}
-                className="flex flex-wrap items-start gap-2 rounded-lg border border-white/10 bg-white/[0.02] p-3"
+                className="flex flex-wrap items-start gap-2 rounded-lg border border-border bg-white/[0.02] p-3"
               >
                 <FormField
                   control={form.control}
                   name={`volumeDiscounts.${index}.minVideos`}
                   render={({ field: f }) => (
                     <FormItem className="w-28">
-                      <FormLabel className="text-xs text-zinc-400">Min. waves</FormLabel>
+                      <FormLabel className="text-xs text-muted-foreground">Min. waves</FormLabel>
                       <FormControl>
                         <Input
                           {...f}
@@ -126,7 +153,7 @@ export function PartnerCommercialForm({
                   name={`volumeDiscounts.${index}.discountPercent`}
                   render={({ field: f }) => (
                     <FormItem className="w-28">
-                      <FormLabel className="text-xs text-zinc-400">Discount %</FormLabel>
+                      <FormLabel className="text-xs text-muted-foreground">Discount %</FormLabel>
                       <FormControl>
                         <Input
                           {...f}
@@ -144,7 +171,7 @@ export function PartnerCommercialForm({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="mt-6 shrink-0 text-zinc-400 hover:text-red-300"
+                  className="mt-6 shrink-0 text-muted-foreground hover:text-red-300"
                   aria-label="Remove tier"
                   onClick={() => remove(index)}
                 >
@@ -157,7 +184,7 @@ export function PartnerCommercialForm({
             type="button"
             variant="outline"
             size="sm"
-            className="mt-2 border-white/15 text-zinc-200"
+            className="mt-2 border-border text-foreground"
             onClick={() => append({ minVideos: "", discountPercent: "" })}
           >
             <Plus className="size-3.5" aria-hidden />
@@ -165,7 +192,7 @@ export function PartnerCommercialForm({
           </Button>
         </div>
 
-        <div className="flex justify-end border-t border-white/10 pt-4">
+        <div className="flex justify-end border-t border-border pt-4">
           <Button
             type="submit"
             className="bg-primary text-primary-foreground hover:bg-primary/90"

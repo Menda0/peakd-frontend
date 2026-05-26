@@ -26,7 +26,7 @@ export function FormField({
       </FieldLabel>
       {children}
       {description ? (
-        <FieldDescription className="text-zinc-500">{description}</FieldDescription>
+        <FieldDescription className="text-muted-foreground">{description}</FieldDescription>
       ) : null}
     </Field>
   );

@@ -1,10 +1,4 @@
 import type { ReactNode } from "react";
-import {
-  MOCK_SPOTS,
-  MOCK_STORIES,
-  MOCK_SUGGESTED_USERS,
-  MOCK_TRENDING,
-} from "@/lib/social-feed-placeholder";
 import { DiscoverySidebar } from "./discovery-sidebar";
 import { FeedAppBar } from "./feed-app-bar";
 import { FeedMainColumn } from "./feed-main-column";
@@ -15,7 +9,10 @@ export function SocialFeedLayout({
   myVideosHref,
   studioHref,
   partnerProfileHref,
+  partnerIncomeHref,
   adminRegionsHref,
+  adminPeaksHref,
+  adminFinanceHref,
   showPartnerNav,
   showAdminNav,
   userPicture,
@@ -27,7 +24,10 @@ export function SocialFeedLayout({
   myVideosHref: string;
   studioHref: string;
   partnerProfileHref?: string;
+  partnerIncomeHref?: string;
   adminRegionsHref?: string;
+  adminPeaksHref?: string;
+  adminFinanceHref?: string;
   showPartnerNav: boolean;
   showAdminNav: boolean;
   userPicture?: string | null;
@@ -36,35 +36,32 @@ export function SocialFeedLayout({
   children?: ReactNode;
 }) {
   return (
-    <div className="dark flex min-h-[100dvh] flex-col bg-[#040F1E] text-zinc-100">
-      <FeedAppBar
-        homeHref={homeHref}
-        userPicture={userPicture}
-        userName={userName}
-        userEmail={userEmail}
-      />
+    <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
+      <FeedAppBar homeHref={homeHref} />
       <div className="flex min-h-0 flex-1">
         <FeedNavSidebar
           homeHref={homeHref}
           myVideosHref={myVideosHref}
           studioHref={studioHref}
           partnerProfileHref={partnerProfileHref}
+          partnerIncomeHref={partnerIncomeHref}
           adminRegionsHref={adminRegionsHref}
+          adminPeaksHref={adminPeaksHref}
+          adminFinanceHref={adminFinanceHref}
           showPartnerNav={showPartnerNav}
           showAdminNav={showAdminNav}
+          userPicture={userPicture}
+          userName={userName}
+          userEmail={userEmail}
         />
         {children ? (
           <main className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
             <div className="mx-auto w-full max-w-4xl">{children}</div>
           </main>
         ) : (
-          <FeedMainColumn stories={MOCK_STORIES} />
+          <FeedMainColumn />
         )}
-        <DiscoverySidebar
-          trending={MOCK_TRENDING}
-          suggestedUsers={MOCK_SUGGESTED_USERS}
-          spots={MOCK_SPOTS}
-        />
+        <DiscoverySidebar />
       </div>
     </div>
   );

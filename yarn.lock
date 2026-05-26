@@ -4687,6 +4687,11 @@ negotiator@^1.0.0:
   resolved "https://registry.npmjs.org/negotiator/-/negotiator-1.0.0.tgz"
   integrity sha512-8Ofs/AUQh8MaEcrlq5xOX0CQ9ypTF5dl78mjlMNfOK08fzpgTHQRQPBxcPlEtIw0yRpws+Zo/3r+5WRby7u3Gg==
 
+next-themes@^0.4.6:
+  version "0.4.6"
+  resolved "https://registry.npmjs.org/next-themes/-/next-themes-0.4.6.tgz"
+  integrity sha512-pZvgD5L0IEvX5/9GWyHMf3m8BKiVQwsCMHfoFosXtXBMnaS0ZnIJ9ST4b4NqLVKDEm8QBxoNNGNaBv2JNF6XNA==
+
 next@16.2.6:
   version "16.2.6"
   resolved "https://registry.npmjs.org/next/-/next-16.2.6.tgz"
@@ -5129,7 +5134,7 @@ punycode@^2.1.0:
   resolved "https://registry.npmjs.org/punycode/-/punycode-2.3.1.tgz"
   integrity sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==
 
-qs@^6.14.0, qs@^6.14.1:
+qs@^6.11.0, qs@^6.14.0, qs@^6.14.1:
   version "6.15.1"
   resolved "https://registry.npmjs.org/qs/-/qs-6.15.1.tgz"
   integrity sha512-6YHEFRL9mfgcAvql/XhwTvf5jKcOiiupt2FiJxHkiX1z4j7WL8J/jRHYLluORvc1XxB5rV20KoeK00gVJamspg==
@@ -5943,6 +5948,13 @@ strip-json-comments@^3.1.1:
   version "3.1.1"
   resolved "https://registry.npmjs.org/strip-json-comments/-/strip-json-comments-3.1.1.tgz"
   integrity sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==
+
+stripe@^18.5.0:
+  version "18.5.0"
+  resolved "https://registry.npmjs.org/stripe/-/stripe-18.5.0.tgz"
+  integrity sha512-Hp+wFiEQtCB0LlNgcFh5uVyKznpDjzyUZ+CNVEf+I3fhlYvh7rZruIg+jOwzJRCpy0ZTPMjlzm7J2/M2N6d+DA==
+  dependencies:
+    qs "^6.11.0"
 
 style-to-js@^1.0.0:
   version "1.1.21"

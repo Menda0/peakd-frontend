@@ -107,11 +107,11 @@ export function StudioSessionsDashboard({
   }, [loadAll]);
 
   if (!userPathPrefix) {
-    return <div className="text-sm text-zinc-400">Loading workspace…</div>;
+    return <div className="text-sm text-muted-foreground">Loading workspace…</div>;
   }
 
   return (
-    <div className="text-zinc-100">
+    <div className="text-foreground">
       <StudioNewSessionDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
@@ -125,10 +125,10 @@ export function StudioSessionsDashboard({
       />
 
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
-        <header className="flex flex-col gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1">
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Studio</h1>
-            <p className="max-w-xl text-sm leading-relaxed text-zinc-400">
+            <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
               Surf sessions work like folders. Open a session to upload and manage videos from
               that day and place.
             </p>
@@ -149,7 +149,7 @@ export function StudioSessionsDashboard({
               type="button"
               variant="outline"
               size="sm"
-              className="border-white/15 bg-transparent text-zinc-200 hover:bg-white/5"
+              className="border-border bg-transparent text-foreground hover:bg-accent"
               onClick={() => void loadAll()}
               disabled={loading}
             >
@@ -163,10 +163,10 @@ export function StudioSessionsDashboard({
             </p>
           ) : null}
 
-          {loading && !error ? <p className="text-sm text-zinc-500">Loading…</p> : null}
+          {loading && !error ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
 
           {!loading && sessions.length === 0 && !error ? (
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-muted-foreground">
               No sessions yet. Create one to start organizing uploads.
             </p>
           ) : null}
@@ -189,9 +189,9 @@ export function StudioSessionsDashboard({
         </section>
 
         {legacyJobs.length > 0 ? (
-          <section className="space-y-4 border-t border-white/10 pt-8">
+          <section className="space-y-4 border-t border-border pt-8">
             <h2 className="text-lg font-semibold tracking-tight">Legacy uploads</h2>
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-muted-foreground">
               Videos uploaded before sessions existed. Open to view; new uploads should use a
               session folder.
             </p>
@@ -199,9 +199,9 @@ export function StudioSessionsDashboard({
               {legacyJobs.map((job) => (
                 <li key={job.jobId}>
                   <Link href={`${userPathPrefix}/studio/${job.jobId}`} className="block">
-                    <Card className="border-white/10 bg-white/[0.03] transition-colors hover:border-primary/30">
+                    <Card className="border-border bg-card transition-colors hover:border-primary/30">
                       <CardContent className="flex gap-4 p-4">
-                        <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
+                        <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-muted">
                           {job.thumbnailUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
@@ -210,16 +210,16 @@ export function StudioSessionsDashboard({
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <span className="flex h-full w-full items-center justify-center text-xs text-zinc-500">
+                            <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
                               No preview
                             </span>
                           )}
                         </div>
                         <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-                          <span className="truncate font-medium text-zinc-100">
+                          <span className="truncate font-medium text-foreground">
                             {job.originalFilename}
                           </span>
-                          <span className="text-xs text-zinc-500">
+                          <span className="text-xs text-muted-foreground">
                             {new Date(job.createdAt).toLocaleString()}
                           </span>
                         </div>

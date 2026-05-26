@@ -38,6 +38,8 @@ export default async function AdminRegionEditPage({
     <SocialFeedLayout
       {...nav}
       adminRegionsHref={`${regionsBasePath}`}
+      adminPeaksHref={`${prefix}/admin/peaks`}
+      adminFinanceHref={`${prefix}/admin/finance`}
       showAdminNav
       userPicture={session.user.picture}
       userName={session.user.name}

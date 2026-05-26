@@ -36,14 +36,14 @@ export function RemoveFromCartDialog({
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="remove-cart-title"
-        className="w-full max-w-sm border-white/10 bg-[#0a1218] text-zinc-100 ring-white/10"
+        className="w-full max-w-sm border-border bg-popover text-foreground ring-white/10"
       >
         <CardHeader className="pb-2">
           <CardTitle id="remove-cart-title" className="text-lg">
             Remove from cart?
           </CardTitle>
-          <CardDescription className="text-zinc-500">
-            <span className="font-medium text-zinc-300">{videoName}</span> will be
+          <CardDescription className="text-muted-foreground">
+            <span className="font-medium text-muted-foreground">{videoName}</span> will be
             removed from your unlock cart. You can add it again later.
           </CardDescription>
         </CardHeader>
@@ -51,7 +51,7 @@ export function RemoveFromCartDialog({
           <Button
             type="button"
             variant="outline"
-            className="border-white/15 bg-transparent text-zinc-200"
+            className="border-border bg-transparent text-foreground"
             onClick={close}
           >
             Keep in cart

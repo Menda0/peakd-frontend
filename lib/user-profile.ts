@@ -8,6 +8,7 @@ export type UserProfileDto = {
   nickname: string | null;
   countryCode: string | null;
   homeRegionId: string | null;
+  homeRegionName: string | null;
   surfLevel: SurfLevel | null;
   avatarUrl: string | null;
   peaksBalance: number;
@@ -39,6 +40,7 @@ export function normalizeUserProfileDto(raw: unknown): UserProfileDto | null {
     nickname: o.nickname == null ? null : String(o.nickname),
     countryCode: o.countryCode == null ? null : String(o.countryCode),
     homeRegionId: o.homeRegionId == null ? null : String(o.homeRegionId),
+    homeRegionName: o.homeRegionName == null ? null : String(o.homeRegionName),
     surfLevel,
     avatarUrl: o.avatarUrl == null ? null : String(o.avatarUrl),
     peaksBalance,

@@ -66,11 +66,15 @@ export function resolvePartnerNavItems(
   options: {
     studioHref: string;
     partnerProfileHref?: string;
+    partnerIncomeHref?: string;
   },
 ): ResolvedNavItem[] {
   const studioActive = pathMatchesOrChild(options.studioHref, pathname);
   const profileActive = options.partnerProfileHref
     ? pathMatchesOrChild(options.partnerProfileHref, pathname)
+    : false;
+  const incomeActive = options.partnerIncomeHref
+    ? pathMatchesOrChild(options.partnerIncomeHref, pathname)
     : false;
 
   return PARTNER_NAV_ITEMS.map((item) => {
@@ -87,6 +91,12 @@ export function resolvePartnerNavItems(
           href: options.partnerProfileHref,
           active: profileActive,
         };
+      case "income":
+        return {
+          ...item,
+          href: options.partnerIncomeHref,
+          active: incomeActive,
+        };
       default:
         return { ...item, active: false };
     }
@@ -95,10 +105,20 @@ export function resolvePartnerNavItems(
 
 export function resolveAdminNavItems(
   pathname: string,
-  options: { adminRegionsHref?: string },
+  options: {
+    adminRegionsHref?: string;
+    adminPeaksHref?: string;
+    adminFinanceHref?: string;
+  },
 ): ResolvedNavItem[] {
   const regionsActive = options.adminRegionsHref
     ? pathMatchesOrChild(options.adminRegionsHref, pathname)
+    : false;
+  const peaksActive = options.adminPeaksHref
+    ? pathMatchesOrChild(options.adminPeaksHref, pathname)
+    : false;
+  const financeActive = options.adminFinanceHref
+    ? pathMatchesOrChild(options.adminFinanceHref, pathname)
     : false;
 
   return ADMIN_NAV_ITEMS.map((item) => {
@@ -108,6 +128,18 @@ export function resolveAdminNavItems(
           ...item,
           href: options.adminRegionsHref,
           active: regionsActive,
+        };
+      case "peaks":
+        return {
+          ...item,
+          href: options.adminPeaksHref,
+          active: peaksActive,
+        };
+      case "finance":
+        return {
+          ...item,
+          href: options.adminFinanceHref,
+          active: financeActive,
         };
       default:
         return { ...item, active: false };

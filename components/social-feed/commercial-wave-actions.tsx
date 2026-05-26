@@ -72,8 +72,8 @@ export function CommercialWaveActions({
           : "mt-3",
         inCart
           ? overlay
-            ? "border border-white/20 bg-zinc-900/90 text-zinc-100 hover:bg-zinc-800/90"
-            : "border border-white/15 bg-zinc-800/80 text-zinc-100 hover:bg-zinc-800"
+            ? "border border-white/15 bg-black/55 text-white hover:bg-black/65 backdrop-blur-sm"
+            : "border border-border bg-muted/80 text-foreground hover:bg-muted"
           : overlay
             ? undefined
             : "bg-primary text-primary-foreground hover:bg-primary/90",
