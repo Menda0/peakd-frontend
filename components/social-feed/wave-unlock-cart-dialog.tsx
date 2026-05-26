@@ -247,7 +247,7 @@ export function WaveUnlockCartPanel({ onClose }: { onClose?: () => void }) {
                 </div>
               ) : null}
               <div className="flex justify-between text-muted-foreground">
-                <dt>Total community fees</dt>
+                <dt>Total community fund</dt>
                 <dd>{totalCommunityFees} Peaks</dd>
               </div>
               <div className="flex justify-between border-t border-border pt-2 font-semibold text-foreground">

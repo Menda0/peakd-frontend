@@ -31,6 +31,7 @@ export default async function AdminPeaksPage({
       {...nav}
       adminRegionsHref={`${prefix}/admin/regions`}
       adminPeaksHref={`${prefix}/admin/peaks`}
+      adminFinanceHref={`${prefix}/admin/finance`}
       showAdminNav
       userPicture={session.user.picture}
       userName={session.user.name}
