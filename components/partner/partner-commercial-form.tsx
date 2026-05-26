@@ -22,24 +22,30 @@ import {
   partnerCommercialFormSchema,
   type PartnerCommercialFormValues,
 } from "@/lib/partner-profile-schemas";
-import type { CommercialSettings } from "@/lib/commercial-settings";
+import {
+  peaksFromEurInput,
+  type CommercialSettings,
+} from "@/lib/commercial-settings";
 import { cn } from "@/lib/utils";
 
 export function PartnerCommercialForm({
   savedSettings,
+  peaksPerEuro,
   showSuggestedDefaultsHint = false,
   saving,
   onSave,
 }: {
   /** Persisted settings from the API; null means show suggested defaults only. */
   savedSettings: CommercialSettings | null;
+  /** Current Peaks-per-EUR exchange rate from the partner-profile DTO. */
+  peaksPerEuro: number;
   showSuggestedDefaultsHint?: boolean;
   saving: boolean;
   onSave: (settings: CommercialSettings) => Promise<void>;
 }) {
   const form = useForm<PartnerCommercialFormValues>({
     resolver: zodResolver(partnerCommercialFormSchema),
-    defaultValues: commercialSettingsToFormValues(savedSettings),
+    defaultValues: commercialSettingsToFormValues(savedSettings, peaksPerEuro),
     mode: "onSubmit",
     reValidateMode: "onSubmit",
   });
@@ -50,12 +56,15 @@ export function PartnerCommercialForm({
   });
 
   useEffect(() => {
-    form.reset(commercialSettingsToFormValues(savedSettings));
-  }, [savedSettings, form]);
+    form.reset(commercialSettingsToFormValues(savedSettings, peaksPerEuro));
+  }, [savedSettings, peaksPerEuro, form]);
 
   const onSubmit = form.handleSubmit(async (values) => {
-    await onSave(commercialFormToSettings(values));
+    await onSave(commercialFormToSettings(values, peaksPerEuro));
   });
+
+  const liveEur = form.watch("videoPriceEur");
+  const livePeaks = peaksFromEurInput(liveEur ?? "", peaksPerEuro);
 
   return (
     <Form {...form}>
@@ -69,21 +78,39 @@ export function PartnerCommercialForm({
 
         <FormField
           control={form.control}
-          name="videoPricePeaks"
+          name="videoPriceEur"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-foreground">Price per wave (Peaks)</FormLabel>
+              <FormLabel className="text-foreground">Price per wave (EUR)</FormLabel>
               <FormControl>
-                <Input
-                  {...field}
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="e.g. 50"
-                  className={cn(formInputClassName, "max-w-xs")}
-                />
+                <div className="relative max-w-xs">
+                  <span
+                    className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground"
+                    aria-hidden
+                  >
+                    €
+                  </span>
+                  <Input
+                    {...field}
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="e.g. 5.00"
+                    className={cn(formInputClassName, "pl-7")}
+                  />
+                </div>
               </FormControl>
               <FormDescription className="text-muted-foreground">
-                Surfers pay this many Peaks to buy and unlock a wave.
+                You earn this amount per wave. Surfers still pay in Peaks at the
+                current rate ({peaksPerEuro} Peaks = €1).
+                {livePeaks != null ? (
+                  <>
+                    {" "}
+                    <span className="text-foreground">
+                      Buyers will see ≈ {livePeaks.toLocaleString()} Peaks per
+                      wave.
+                    </span>
+                  </>
+                ) : null}
               </FormDescription>
               <FormMessage />
             </FormItem>

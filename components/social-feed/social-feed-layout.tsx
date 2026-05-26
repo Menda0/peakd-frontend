@@ -1,9 +1,4 @@
 import type { ReactNode } from "react";
-import {
-  MOCK_SPOTS,
-  MOCK_SUGGESTED_USERS,
-  MOCK_TRENDING,
-} from "@/lib/social-feed-placeholder";
 import { DiscoverySidebar } from "./discovery-sidebar";
 import { FeedAppBar } from "./feed-app-bar";
 import { FeedMainColumn } from "./feed-main-column";
@@ -17,6 +12,7 @@ export function SocialFeedLayout({
   partnerIncomeHref,
   adminRegionsHref,
   adminPeaksHref,
+  adminFinanceHref,
   showPartnerNav,
   showAdminNav,
   userPicture,
@@ -31,6 +27,7 @@ export function SocialFeedLayout({
   partnerIncomeHref?: string;
   adminRegionsHref?: string;
   adminPeaksHref?: string;
+  adminFinanceHref?: string;
   showPartnerNav: boolean;
   showAdminNav: boolean;
   userPicture?: string | null;
@@ -50,6 +47,7 @@ export function SocialFeedLayout({
           partnerIncomeHref={partnerIncomeHref}
           adminRegionsHref={adminRegionsHref}
           adminPeaksHref={adminPeaksHref}
+          adminFinanceHref={adminFinanceHref}
           showPartnerNav={showPartnerNav}
           showAdminNav={showAdminNav}
           userPicture={userPicture}
@@ -63,11 +61,7 @@ export function SocialFeedLayout({
         ) : (
           <FeedMainColumn />
         )}
-        <DiscoverySidebar
-          trending={MOCK_TRENDING}
-          suggestedUsers={MOCK_SUGGESTED_USERS}
-          spots={MOCK_SPOTS}
-        />
+        <DiscoverySidebar />
       </div>
     </div>
   );
