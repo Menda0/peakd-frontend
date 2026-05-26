@@ -34,26 +34,6 @@ export type PlaceholderPost = {
   shares: number;
 };
 
-export type TrendingItem = {
-  id: string;
-  rank: number;
-  title: string;
-  creator: string;
-  views: string;
-};
-
-export type SuggestedUser = {
-  id: string;
-  name: string;
-  handle: string;
-};
-
-export type PopularSpot = {
-  id: string;
-  name: string;
-  region: string;
-};
-
 export const MAIN_NAV_ITEMS: NavItemConfig[] = [
   { id: "explore", label: "Explore", icon: CompassIcon },
   { id: "my-videos", label: "My Videos", icon: SquarePlayIcon },
@@ -115,22 +95,3 @@ export const MOCK_POSTS: PlaceholderPost[] = [
   },
 ];
 
-export const MOCK_TRENDING: TrendingItem[] = [
-  { id: "t1", rank: 1, title: "Teahupo'o highlights", creator: "Wave Films", views: "1.2M" },
-  { id: "t2", rank: 2, title: "Indonesia barrel reel", creator: "Salt Line", views: "890K" },
-  { id: "t3", rank: 3, title: "Nazaré tow-in day", creator: "Big Blue", views: "720K" },
-  { id: "t4", rank: 4, title: "J-Bay lines", creator: "Point Break Co", views: "540K" },
-  { id: "t5", rank: 5, title: "Maldives crystal water", creator: "Drift", views: "410K" },
-];
-
-export const MOCK_SUGGESTED_USERS: SuggestedUser[] = [
-  { id: "u1", name: "Alex Rivera", handle: "arivera" },
-  { id: "u2", name: "Jordan Lee", handle: "jdlee" },
-  { id: "u3", name: "Sam Okonkwo", handle: "samok" },
-];
-
-export const MOCK_SPOTS: PopularSpot[] = [
-  { id: "s1", name: "Pipeline, Oahu", region: "Hawaii, USA" },
-  { id: "s2", name: "Jeffreys Bay", region: "Eastern Cape, ZA" },
-  { id: "s3", name: "Uluwatu", region: "Bali, Indonesia" },
-];

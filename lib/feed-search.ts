@@ -326,6 +326,30 @@ export async function fetchSearchSessions(options: {
   };
 }
 
+export async function fetchLatestSessions(
+  options: { limit?: number } = {},
+): Promise<SearchSessionItem[]> {
+  const params = new URLSearchParams();
+  if (typeof options.limit === "number" && options.limit > 0) {
+    params.set("limit", String(Math.floor(options.limit)));
+  }
+  const base = getApiBase();
+  const qs = params.toString();
+  const res = await fetch(
+    `${base}/feed/latest-sessions${qs ? `?${qs}` : ""}`,
+    { credentials: "include" },
+  );
+  if (!res.ok) {
+    throw new Error(await res.text().catch(() => res.statusText));
+  }
+  const data = (await res.json()) as { sessions?: unknown[] };
+  return Array.isArray(data.sessions)
+    ? data.sessions
+        .map(normalizeSearchSession)
+        .filter((s): s is SearchSessionItem => s != null)
+    : [];
+}
+
 export type FeedSearchParams = {
   countryCode: string;
   regionId: string | null;
