@@ -5,6 +5,7 @@ import {
   type CountryOption,
 } from "@/lib/countries";
 import { filterGeoByQuery } from "@/lib/geo-picker-utils";
+import { normalizeSurferProfile, type SurferProfile } from "@/lib/surfer-profile";
 
 export type GeoSuggestType = "country" | "region" | "spot";
 
@@ -347,6 +348,104 @@ export async function fetchLatestSessions(
     ? data.sessions
         .map(normalizeSearchSession)
         .filter((s): s is SearchSessionItem => s != null)
+    : [];
+}
+
+export type LatestWaveLocation = {
+  countryCode: string;
+  regionName: string;
+  spotName: string | null;
+  isUndisclosed: boolean;
+};
+
+export type LatestWaveItem = {
+  jobId: string;
+  sessionId: string;
+  shareToken: string | null;
+  claimStatus: "auto" | "claimed";
+  claimedAt: string;
+  thumbnailUrl: string | null;
+  isCommercial: boolean;
+  surfer: SurferProfile | null;
+  location: LatestWaveLocation;
+  sessionDate: string;
+  sessionTime: string;
+};
+
+function normalizeLatestWave(raw: unknown): LatestWaveItem | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const jobId = typeof o.jobId === "string" ? o.jobId.trim() : "";
+  if (!jobId) return null;
+  const sessionId = typeof o.sessionId === "string" ? o.sessionId.trim() : "";
+  if (!sessionId) return null;
+  const claimedAt = typeof o.claimedAt === "string" ? o.claimedAt : "";
+  if (!claimedAt) return null;
+  const claimStatus =
+    o.claimStatus === "auto" || o.claimStatus === "claimed"
+      ? o.claimStatus
+      : null;
+  if (!claimStatus) return null;
+  const locationRaw = o.location;
+  if (!locationRaw || typeof locationRaw !== "object") return null;
+  const loc = locationRaw as Record<string, unknown>;
+  return {
+    jobId,
+    sessionId,
+    shareToken:
+      typeof o.shareToken === "string" && o.shareToken.trim()
+        ? o.shareToken.trim()
+        : null,
+    claimStatus,
+    claimedAt,
+    thumbnailUrl:
+      typeof o.thumbnailUrl === "string" && o.thumbnailUrl.trim()
+        ? o.thumbnailUrl
+        : null,
+    isCommercial: o.isCommercial === true,
+    surfer: normalizeSurferProfile(o.surfer),
+    location: {
+      countryCode:
+        typeof loc.countryCode === "string"
+          ? loc.countryCode.toUpperCase()
+          : "",
+      regionName:
+        typeof loc.regionName === "string" ? loc.regionName : "Unknown",
+      spotName:
+        typeof loc.spotName === "string" && loc.spotName.trim()
+          ? loc.spotName
+          : null,
+      isUndisclosed: loc.isUndisclosed === true,
+    },
+    sessionDate: typeof o.sessionDate === "string" ? o.sessionDate : "",
+    sessionTime:
+      typeof o.sessionTime === "string" && o.sessionTime.trim()
+        ? o.sessionTime
+        : "12:00",
+  };
+}
+
+export async function fetchLatestWaves(
+  options: { limit?: number } = {},
+): Promise<LatestWaveItem[]> {
+  const params = new URLSearchParams();
+  if (typeof options.limit === "number" && options.limit > 0) {
+    params.set("limit", String(Math.floor(options.limit)));
+  }
+  const base = getApiBase();
+  const qs = params.toString();
+  const res = await fetch(
+    `${base}/feed/latest-waves${qs ? `?${qs}` : ""}`,
+    { credentials: "include" },
+  );
+  if (!res.ok) {
+    throw new Error(await res.text().catch(() => res.statusText));
+  }
+  const data = (await res.json()) as { waves?: unknown[] };
+  return Array.isArray(data.waves)
+    ? data.waves
+        .map(normalizeLatestWave)
+        .filter((w): w is LatestWaveItem => w != null)
     : [];
 }
 
