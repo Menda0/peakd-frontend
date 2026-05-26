@@ -1,4 +1,5 @@
-import { BookmarkIcon, HeartIcon, MessageCircleIcon, Share2Icon } from "lucide-react";
+import { BookmarkIcon, MessageCircleIcon, Share2Icon } from "lucide-react";
+import { ShakaButton } from "./shaka-button";
 
 function countLabel(n: number) {
   if (n >= 1000) {
@@ -8,27 +9,32 @@ function countLabel(n: number) {
 }
 
 export function PostActionsBar({
-  likes,
+  jobId,
+  shakaCount,
+  shakaedByViewer,
   comments,
   shares,
 }: {
-  likes: number;
+  jobId: string;
+  shakaCount: number;
+  shakaedByViewer: boolean;
   comments: number;
   shares: number;
 }) {
   return (
     <div className="mt-4 flex items-center gap-6 text-muted-foreground">
-      <button type="button" className="flex items-center gap-1.5 hover:text-primary">
-        <HeartIcon className="size-5" />
-        <span className="text-sm">{countLabel(likes)}</span>
-      </button>
+      <ShakaButton
+        jobId={jobId}
+        initialCount={shakaCount}
+        initialShakaed={shakaedByViewer}
+      />
       <button type="button" className="flex items-center gap-1.5 hover:text-primary">
         <MessageCircleIcon className="size-5" />
-        <span className="text-sm">{comments}</span>
+        <span className="text-sm">{countLabel(comments)}</span>
       </button>
       <button type="button" className="flex items-center gap-1.5 hover:text-primary">
         <Share2Icon className="size-5" />
-        <span className="text-sm">{shares}</span>
+        <span className="text-sm">{countLabel(shares)}</span>
       </button>
       <button
         type="button"
