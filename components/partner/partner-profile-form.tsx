@@ -42,9 +42,9 @@ const TAB_COPY: Record<
   commercial: {
     title: "Commercial pricing",
     description:
-      "Default Peaks pricing when you mark a studio session as commercial.",
+      "Default pricing in euros when you mark a studio session as commercial.",
     objective:
-      "Define how much surfers pay in Peaks to buy and unlock a wave, plus optional volume discounts for multi-wave purchases. These defaults apply to new commercial sessions unless you override them per session. Surfers can still claim a wave for free without unlocking the video; sponsors can pay to unlock for someone who already claimed.",
+      "Set how much you earn per wave in euros, plus optional volume discounts for multi-wave purchases. These defaults apply to new commercial sessions unless you override them per session. Surfers still pay in Peaks at the current rate — the conversion is automatic. Surfers can claim a wave for free without unlocking the video; sponsors can pay to unlock for someone who already claimed.",
   },
 };
 
@@ -249,6 +249,7 @@ export function PartnerProfileForm({
           <TabsContent value="commercial" className="mt-0 outline-none">
             <PartnerCommercialForm
               savedSettings={dto.commercialSettings}
+              peaksPerEuro={dto.peaksPerEuro}
               showSuggestedDefaultsHint={!hasSavedCommercialSettings}
               saving={commercialSaving}
               onSave={saveCommercial}
