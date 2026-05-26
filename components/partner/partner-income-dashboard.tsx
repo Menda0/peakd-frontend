@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownToLineIcon,
   CheckCircle2Icon,
   ExternalLinkIcon,
+  ImageOffIcon,
   Loader2Icon,
   XCircleIcon,
 } from "lucide-react";
@@ -19,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { formatEur } from "@/lib/billing";
 import {
+  type PartnerEarningRowDto,
   type PartnerEarningsPageDto,
   type PartnerOnboardingStatus,
   type PartnerPayoutsStatusDto,
@@ -32,6 +35,13 @@ import {
   requestPartnerWithdrawalAction,
   startPartnerOnboardingAction,
 } from "@/app/[userSub]/(social)/partner/income/actions";
+
+function buyerInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]!.charAt(0).toUpperCase();
+  return `${parts[0]!.charAt(0)}${parts[parts.length - 1]!.charAt(0)}`.toUpperCase();
+}
 
 type StatusBadge = {
   label: string;
@@ -112,9 +122,13 @@ function parseEurInputToCents(raw: string): number | null {
 export function PartnerIncomeDashboard({
   initialStatus,
   initialEarnings,
+  userPathPrefix,
 }: {
   initialStatus: PartnerPayoutsActionResult<PartnerPayoutsStatusDto>;
   initialEarnings: PartnerPayoutsActionResult<PartnerEarningsPageDto>;
+  /** URL prefix for the signed-in user (e.g. "/auth0%7C123"), used to
+   *  build links to the video details page from each earnings row. */
+  userPathPrefix: string;
 }) {
   const [status, setStatus] = useState<PartnerPayoutsStatusDto | null>(
     initialStatus.ok ? initialStatus.data : null,
@@ -402,7 +416,11 @@ export function PartnerIncomeDashboard({
       </Card>
 
       <WithdrawalsHistory withdrawals={status.recentWithdrawals} />
-      <EarningsHistory earnings={earnings} error={earningsError} />
+      <EarningsHistory
+        earnings={earnings}
+        error={earningsError}
+        userPathPrefix={userPathPrefix}
+      />
     </div>
   );
 }
@@ -447,9 +465,11 @@ function WithdrawalsHistory({
 function EarningsHistory({
   earnings,
   error,
+  userPathPrefix,
 }: {
   earnings: PartnerEarningsPageDto | null;
   error: string | null;
+  userPathPrefix: string;
 }) {
   return (
     <Card>
@@ -465,27 +485,113 @@ function EarningsHistory({
         ) : !earnings || earnings.items.length === 0 ? (
           <p className="text-sm text-muted-foreground">No earnings yet.</p>
         ) : (
-          <ul className="divide-y divide-border text-sm">
+          <ul className="divide-y divide-border">
             {earnings.items.map((row) => (
-              <li
+              <EarningsRow
                 key={row.id}
-                className="flex items-center justify-between py-2"
-              >
-                <div className="space-y-0.5">
-                  <p className="font-medium">+{formatEur(row.amountCents)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {row.type === "buy_claim" ? "Buy & claim" : "Sponsor"} ·{" "}
-                    {row.countryCode || "??"} · {formatDate(row.createdAt)}
-                  </p>
-                </div>
-                <code className="font-mono text-[11px] text-muted-foreground">
-                  {row.jobId.slice(0, 10)}…
-                </code>
-              </li>
+                row={row}
+                userPathPrefix={userPathPrefix}
+              />
             ))}
           </ul>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function EarningsRow({
+  row,
+  userPathPrefix,
+}: {
+  row: PartnerEarningRowDto;
+  userPathPrefix: string;
+}) {
+  const buyerName = row.buyer.displayName?.trim() || "Unknown user";
+  const videoHref = `${userPathPrefix}/studio/${encodeURIComponent(row.jobId)}`;
+
+  return (
+    <li className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-center gap-3">
+        {row.buyer.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={row.buyer.avatarUrl}
+            alt=""
+            className="size-9 shrink-0 rounded-full object-cover ring-1 ring-white/15"
+          />
+        ) : (
+          <div
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-xs font-semibold text-zinc-200 ring-1 ring-white/15"
+            aria-hidden
+          >
+            {buyerInitials(buyerName)}
+          </div>
+        )}
+        <div className="min-w-0 space-y-0.5">
+          <p className="truncate text-sm font-medium">
+            {buyerName}{" "}
+            <span className="text-muted-foreground">
+              {row.type === "buy_claim" ? "bought & claimed" : "sponsored"}
+            </span>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            +{formatEur(row.amountCents)} · {row.countryCode || "??"} ·{" "}
+            {formatDate(row.createdAt)}
+          </p>
+        </div>
+      </div>
+      <EarningsRowPreviews
+        videoHref={videoHref}
+        thumbnails={row.previewThumbnailUrls}
+        jobId={row.jobId}
+      />
+    </li>
+  );
+}
+
+function EarningsRowPreviews({
+  videoHref,
+  thumbnails,
+  jobId,
+}: {
+  videoHref: string;
+  thumbnails: string[];
+  jobId: string;
+}) {
+  const previews = thumbnails.slice(0, 3);
+  const ariaLabel = `Open video ${jobId.slice(0, 10)}…`;
+
+  if (previews.length === 0) {
+    return (
+      <Link
+        href={videoHref}
+        aria-label={ariaLabel}
+        className="flex size-14 shrink-0 items-center justify-center rounded-md border border-border bg-muted/30 text-muted-foreground transition hover:bg-muted/60"
+      >
+        <ImageOffIcon className="size-5" aria-hidden />
+      </Link>
+    );
+  }
+
+  return (
+    <div className="flex shrink-0 items-center gap-1.5">
+      {previews.map((url, i) => (
+        <Link
+          key={`${jobId}-${i}`}
+          href={videoHref}
+          aria-label={ariaLabel}
+          className="block size-14 overflow-hidden rounded-md ring-1 ring-white/10 transition hover:ring-white/30"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={url}
+            alt=""
+            loading="lazy"
+            className="size-full object-cover"
+          />
+        </Link>
+      ))}
+    </div>
   );
 }

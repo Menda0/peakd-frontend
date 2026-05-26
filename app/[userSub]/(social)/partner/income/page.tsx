@@ -46,6 +46,7 @@ export default async function PartnerIncomePage({
       <PartnerIncomeDashboard
         initialStatus={initialStatus}
         initialEarnings={initialEarnings}
+        userPathPrefix={prefix}
       />
     </SocialFeedLayout>
   );

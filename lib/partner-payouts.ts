@@ -37,6 +37,12 @@ export type PartnerPayoutsStatusDto = {
   recentWithdrawals: PartnerWithdrawalDto[];
 };
 
+export type PartnerEarningBuyerDto = {
+  userId: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+};
+
 export type PartnerEarningRowDto = {
   id: string;
   jobId: string;
@@ -45,6 +51,9 @@ export type PartnerEarningRowDto = {
   regionId: string;
   type: string;
   createdAt: string;
+  buyer: PartnerEarningBuyerDto;
+  /** Up to 3 thumbnail URLs for the unlocked video. */
+  previewThumbnailUrls: string[];
 };
 
 export type PartnerEarningsPageDto = {
@@ -130,10 +139,34 @@ export function normalizePartnerEarningsPage(
         typeof row.createdAt === "string"
           ? row.createdAt
           : new Date().toISOString(),
+      buyer: normalizeBuyer(row.buyer),
+      previewThumbnailUrls: Array.isArray(row.previewThumbnailUrls)
+        ? row.previewThumbnailUrls
+            .filter((x): x is string => typeof x === "string" && x.length > 0)
+            .slice(0, 3)
+        : [],
     });
   }
   return {
     items,
     nextCursor: typeof o.nextCursor === "string" ? o.nextCursor : null,
+  };
+}
+
+function normalizeBuyer(raw: unknown): PartnerEarningBuyerDto {
+  if (!raw || typeof raw !== "object") {
+    return { userId: "", displayName: null, avatarUrl: null };
+  }
+  const o = raw as Record<string, unknown>;
+  return {
+    userId: typeof o.userId === "string" ? o.userId : "",
+    displayName:
+      typeof o.displayName === "string" && o.displayName.trim()
+        ? o.displayName
+        : null,
+    avatarUrl:
+      typeof o.avatarUrl === "string" && o.avatarUrl.trim()
+        ? o.avatarUrl
+        : null,
   };
 }
