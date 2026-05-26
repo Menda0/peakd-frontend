@@ -15,7 +15,15 @@ export type PartnerProfileDto = {
   avatarUrl: string | null;
   countryCode: string | null;
   commercialSettings: CommercialSettings | null;
+  /**
+   * Current Peaks-per-EUR exchange rate. Partners enter their video price in
+   * EUR on the commercial tab; the value is stored in Peaks (so buyer checkout
+   * is unchanged) and converted in both directions with this rate.
+   */
+  peaksPerEuro: number;
 };
+
+export const DEFAULT_PEAKS_PER_EURO_FALLBACK = 100;
 
 export type PartnerProfilePatch = Partial<PartnerProfileDto>;
 
@@ -30,6 +38,11 @@ export function normalizePartnerProfileDto(raw: unknown): PartnerProfileDto | nu
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
   const partnerType: PartnerType = isPartnerType(o.partnerType) ? o.partnerType : "other";
+  const peaksPerEuroRaw = Number(o.peaksPerEuro);
+  const peaksPerEuro =
+    Number.isFinite(peaksPerEuroRaw) && peaksPerEuroRaw > 0
+      ? Math.floor(peaksPerEuroRaw)
+      : DEFAULT_PEAKS_PER_EURO_FALLBACK;
   return {
     partnerName: o.partnerName == null ? null : String(o.partnerName),
     partnerType,
@@ -37,5 +50,6 @@ export function normalizePartnerProfileDto(raw: unknown): PartnerProfileDto | nu
     avatarUrl: o.avatarUrl == null ? null : String(o.avatarUrl),
     countryCode: o.countryCode == null ? null : String(o.countryCode),
     commercialSettings: normalizeCommercialSettings(o.commercialSettings),
+    peaksPerEuro,
   };
 }

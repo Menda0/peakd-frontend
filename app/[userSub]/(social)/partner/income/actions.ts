@@ -132,13 +132,13 @@ export async function startPartnerOnboardingAction(): Promise<
 }
 
 export async function requestPartnerWithdrawalAction(
-  peaksAmount: number,
+  amountCents: number,
 ): Promise<PartnerPayoutsActionResult<PartnerWithdrawalDto>> {
   try {
     const res = await payoutsFetch(`${PARTNER_PAYOUTS_BASE_PATH}/withdraw`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ peaksAmount }),
+      body: JSON.stringify({ amountCents }),
     });
     const text = await res.text();
     if (!res.ok) {

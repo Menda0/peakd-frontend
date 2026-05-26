@@ -147,3 +147,70 @@ export function formatDiscountSummary(settings: CommercialSettings): string {
   );
   return `${settings.videoPricePeaks} Peaks/wave · ${parts.join(" · ")}`;
 }
+
+/**
+ * Convert a stored Peaks price into an EUR string with 2-decimal precision.
+ * Used by the partner-facing forms — buyer-facing flows continue to display
+ * Peaks directly.
+ */
+export function eurStringFromPeaks(
+  peaks: number,
+  peaksPerEuro: number,
+): string {
+  if (!Number.isFinite(peaksPerEuro) || peaksPerEuro <= 0) return "";
+  const rounded = Math.max(0, Math.round(peaks));
+  const cents = Math.round((rounded * 100) / peaksPerEuro);
+  return (cents / 100).toFixed(2);
+}
+
+/**
+ * Convert an EUR string (typed by the partner) into a Peaks integer that gets
+ * persisted on the commercial settings. Uses ceil so the partner is never
+ * "short-changed" on the buyer charge when `peaksPerEuro` is not a round number.
+ *
+ * Returns `null` when the input is not a valid non-negative euro amount.
+ */
+export function peaksFromEurInput(
+  euroInput: string,
+  peaksPerEuro: number,
+): number | null {
+  if (!Number.isFinite(peaksPerEuro) || peaksPerEuro <= 0) return null;
+  const trimmed = euroInput.trim().replace(",", ".");
+  if (trimmed === "") return null;
+  if (!/^\d+(?:\.\d{1,2})?$/.test(trimmed)) return null;
+  const euros = Number.parseFloat(trimmed);
+  if (!Number.isFinite(euros) || euros < 0) return null;
+  const cents = Math.round(euros * 100);
+  return Math.max(1, Math.ceil((cents * peaksPerEuro) / 100));
+}
+
+/** Locale-friendly EUR formatter (matches partner-income UI). */
+export function formatEurDisplay(eurString: string): string {
+  const n = Number.parseFloat(eurString);
+  if (!Number.isFinite(n)) return "—";
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 2,
+  }).format(n);
+}
+
+/**
+ * Partner-side variant of `formatDiscountSummary` that prices the wave in EUR
+ * rather than Peaks. Buyer-facing surfaces should keep using
+ * `formatDiscountSummary` (Peaks) — buyers still pay in Peaks.
+ */
+export function formatDiscountSummaryEur(
+  settings: CommercialSettings,
+  peaksPerEuro: number,
+): string {
+  const eur = formatEurDisplay(eurStringFromPeaks(settings.videoPricePeaks, peaksPerEuro));
+  const tiers = settings.volumeDiscounts;
+  if (tiers.length === 0) {
+    return `${eur} per wave`;
+  }
+  const parts = tiers.map(
+    (t) => `${t.minVideos}+ waves: ${t.discountPercent}% off`,
+  );
+  return `${eur}/wave · ${parts.join(" · ")}`;
+}

@@ -18,6 +18,7 @@ export function FeedNavSidebar({
   partnerIncomeHref,
   adminRegionsHref,
   adminPeaksHref,
+  adminFinanceHref,
   showPartnerNav,
   showAdminNav,
   studioHref,
@@ -32,6 +33,7 @@ export function FeedNavSidebar({
   partnerIncomeHref?: string;
   adminRegionsHref?: string;
   adminPeaksHref?: string;
+  adminFinanceHref?: string;
   showPartnerNav: boolean;
   showAdminNav: boolean;
   userPicture?: string | null;
@@ -54,6 +56,7 @@ export function FeedNavSidebar({
   const adminItems = resolveAdminNavItems(pathname, {
     adminRegionsHref,
     adminPeaksHref,
+    adminFinanceHref,
   });
 
   return (
