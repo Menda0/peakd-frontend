@@ -56,9 +56,16 @@ export type AdminPeaksGeoRowDto = {
   regionId?: string;
   regionName?: string | null;
   transactionCount: number;
+  /** Legacy alias kept for backwards compat; same value as `platformRetentionPeaks`. */
   communityFeePeaks: number;
+  platformRetentionPeaks: number;
   partnerPeaks: number;
   totalPeaksCharged: number;
+  /** Server-computed EUR-cent equivalents. */
+  communityFeeEurCents: number;
+  platformRetentionEurCents: number;
+  partnerEurCents: number;
+  totalEurCents: number;
 };
 
 function num(v: unknown): number {
@@ -134,14 +141,26 @@ export function normalizeAdminPeaksTransactionsPage(
 export function normalizeAdminPeaksGeoRow(raw: unknown): AdminPeaksGeoRowDto | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
+  const retentionPeaks =
+    o.platformRetentionPeaks != null
+      ? num(o.platformRetentionPeaks)
+      : num(o.communityFeePeaks);
   return {
     countryCode: o.countryCode == null ? undefined : str(o.countryCode),
     regionId: o.regionId == null ? undefined : str(o.regionId),
     regionName: o.regionName == null ? null : str(o.regionName) || null,
     transactionCount: num(o.transactionCount),
     communityFeePeaks: num(o.communityFeePeaks),
+    platformRetentionPeaks: retentionPeaks,
     partnerPeaks: num(o.partnerPeaks),
     totalPeaksCharged: num(o.totalPeaksCharged),
+    communityFeeEurCents: num(o.communityFeeEurCents),
+    platformRetentionEurCents:
+      o.platformRetentionEurCents != null
+        ? num(o.platformRetentionEurCents)
+        : num(o.communityFeeEurCents),
+    partnerEurCents: num(o.partnerEurCents),
+    totalEurCents: num(o.totalEurCents),
   };
 }
 

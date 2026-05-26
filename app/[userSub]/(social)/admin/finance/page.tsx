@@ -1,20 +1,18 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { auth0 } from "@/lib/auth0";
 import { sessionHasAdminRole } from "@/lib/auth0-admin";
 import { getSocialFeedNavProps } from "@/lib/social-feed-nav";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 import { SocialFeedLayout } from "@/components/social-feed/social-feed-layout";
-import { AdminRegionEdit } from "@/components/admin/admin-region-edit";
+import { AdminFinanceDashboard } from "@/components/admin/admin-finance-dashboard";
 
-export default async function AdminRegionEditPage({
+export default async function AdminFinancePage({
   params,
-  searchParams,
 }: {
-  params: Promise<{ userSub: string; regionId: string }>;
-  searchParams: Promise<{ country?: string }>;
+  params: Promise<{ userSub: string }>;
 }) {
-  const { regionId } = await params;
-  const { country } = await searchParams;
+  await params;
   const session = await auth0.getSession();
   if (!session?.user?.sub) {
     return null;
@@ -27,17 +25,11 @@ export default async function AdminRegionEditPage({
   }
 
   const nav = await getSocialFeedNavProps(session);
-  const regionsBasePath = `${prefix}/admin/regions`;
-  const countryQ =
-    typeof country === "string" && country.trim()
-      ? `?country=${encodeURIComponent(country.trim().toUpperCase())}`
-      : "";
-  const regionsListHref = `${regionsBasePath}${countryQ}`;
 
   return (
     <SocialFeedLayout
       {...nav}
-      adminRegionsHref={`${regionsBasePath}`}
+      adminRegionsHref={`${prefix}/admin/regions`}
       adminPeaksHref={`${prefix}/admin/peaks`}
       adminFinanceHref={`${prefix}/admin/finance`}
       showAdminNav
@@ -45,7 +37,9 @@ export default async function AdminRegionEditPage({
       userName={session.user.name}
       userEmail={session.user.email}
     >
-      <AdminRegionEdit regionId={regionId} regionsListHref={regionsListHref} />
+      <Suspense fallback={<p className="text-sm text-zinc-400">Loading finance…</p>}>
+        <AdminFinanceDashboard />
+      </Suspense>
     </SocialFeedLayout>
   );
 }

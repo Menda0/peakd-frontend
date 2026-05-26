@@ -174,7 +174,7 @@ function PeaksCountryTable({
         <tr className="border-b border-white/10 text-zinc-400">
           <th className="py-2 pr-4 font-medium">Country</th>
           <th className="py-2 pr-4 text-right font-medium">Txns</th>
-          <th className="py-2 pr-4 text-right font-medium">Community fees</th>
+          <th className="py-2 pr-4 text-right font-medium">Platform retention</th>
           <th className="py-2 pr-4 text-right font-medium">Partner paid</th>
           <th className="py-2 pr-4 text-right font-medium">Total charged</th>
         </tr>
@@ -226,7 +226,7 @@ function PeaksRegionTable({
           {showCountry ? <th className="py-2 pr-4 font-medium">Country</th> : null}
           <th className="py-2 pr-4 font-medium">Region</th>
           <th className="py-2 pr-4 text-right font-medium">Txns</th>
-          <th className="py-2 pr-4 text-right font-medium">Community fees</th>
+          <th className="py-2 pr-4 text-right font-medium">Platform retention</th>
           <th className="py-2 pr-4 text-right font-medium">Partner paid</th>
           <th className="py-2 pr-4 text-right font-medium">Total charged</th>
         </tr>
@@ -573,8 +573,9 @@ export function AdminPeaksDashboard() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Peaks</h1>
         <p className="mt-1 text-sm text-zinc-400">
-          Commercial wave unlocks: partner payouts, community fees by session location, and
-          circulating Peaks in user wallets.
+          Commercial wave unlocks: partner payouts, platform retention by session location, and
+          circulating Peaks in user wallets. Platform retention is the surcharge that funds
+          community awards at the platform&apos;s discretion (not held as a per-region liability).
         </p>
       </div>
 
@@ -607,7 +608,7 @@ export function AdminPeaksDashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base text-zinc-100">Location</CardTitle>
               <CardDescription className="text-zinc-400">
-                View Peaks and community fees for a country and optional region.
+                View Peaks and platform retention for a country and optional region.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -648,14 +649,16 @@ export function AdminPeaksDashboard() {
                   hint={filterLabel ? `In ${filterLabel}` : undefined}
                 />
                 <PeaksSummaryCard
-                  label="Community fees (country)"
+                  label="Platform retention (country)"
                   peaks={localSummary?.countryCommunityFeePeaks ?? 0}
                   peaksPerEuro={peaksPerEuro}
                   loading={localLoading}
                   hint={countryLabel ?? countryCode}
                 />
                 <PeaksSummaryCard
-                  label={regionId ? "Community fees (region)" : "Community fees (regions)"}
+                  label={
+                    regionId ? "Platform retention (region)" : "Platform retention (regions)"
+                  }
                   peaks={localSummary?.regionsCommunityFeePeaks ?? 0}
                   peaksPerEuro={peaksPerEuro}
                   loading={localLoading}
@@ -671,7 +674,7 @@ export function AdminPeaksDashboard() {
                 <CardHeader>
                   <CardTitle className="text-zinc-100">Peaks by country</CardTitle>
                   <CardDescription className="text-zinc-400">
-                    Community fees and partner payouts for {countryLabel ?? countryCode}.
+                    Platform retention and partner payouts for {countryLabel ?? countryCode}.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="overflow-x-auto">
@@ -739,7 +742,7 @@ export function AdminPeaksDashboard() {
               hint="All countries"
             />
             <PeaksSummaryCard
-              label="Community fees"
+              label="Platform retention"
               peaks={globalSummary?.totalCommunityFeePeaks ?? 0}
               peaksPerEuro={peaksPerEuro}
               loading={globalLoading}
@@ -758,7 +761,7 @@ export function AdminPeaksDashboard() {
             <CardHeader>
               <CardTitle className="text-zinc-100">Peaks by country</CardTitle>
               <CardDescription className="text-zinc-400">
-                All countries ranked by community fees (disclosed locations only).
+                All countries ranked by platform retention (disclosed locations only).
               </CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto">

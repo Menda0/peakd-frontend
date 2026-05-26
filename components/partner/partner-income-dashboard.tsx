@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownToLineIcon,
   CheckCircle2Icon,
   ExternalLinkIcon,
+  ImageOffIcon,
   Loader2Icon,
   XCircleIcon,
 } from "lucide-react";
@@ -17,9 +19,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { PeakIcon } from "@/components/peaks/peak-icon";
-import { formatEur, formatPeaksCount } from "@/lib/billing";
+import { formatEur } from "@/lib/billing";
 import {
+  type PartnerEarningRowDto,
   type PartnerEarningsPageDto,
   type PartnerOnboardingStatus,
   type PartnerPayoutsStatusDto,
@@ -33,6 +35,13 @@ import {
   requestPartnerWithdrawalAction,
   startPartnerOnboardingAction,
 } from "@/app/[userSub]/(social)/partner/income/actions";
+
+function buyerInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]!.charAt(0).toUpperCase();
+  return `${parts[0]!.charAt(0)}${parts[parts.length - 1]!.charAt(0)}`.toUpperCase();
+}
 
 type StatusBadge = {
   label: string;
@@ -96,17 +105,30 @@ function formatDate(iso: string): string {
   }
 }
 
-function peaksToCents(peaks: number, peaksPerEuro: number): number {
-  if (peaksPerEuro <= 0) return 0;
-  return Math.floor((peaks * 100) / peaksPerEuro);
+/**
+ * Parses a user-entered EUR amount (e.g. "12", "12.50", "12,5") into cents,
+ * returning null when the input is empty or not a valid positive amount.
+ * Caps fractional digits at 2 to avoid sub-cent values like €0.005.
+ */
+function parseEurInputToCents(raw: string): number | null {
+  const trimmed = raw.trim().replace(",", ".");
+  if (!trimmed) return null;
+  if (!/^\d+(?:\.\d{0,2})?$/.test(trimmed)) return null;
+  const n = Number.parseFloat(trimmed);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.round(n * 100);
 }
 
 export function PartnerIncomeDashboard({
   initialStatus,
   initialEarnings,
+  userPathPrefix,
 }: {
   initialStatus: PartnerPayoutsActionResult<PartnerPayoutsStatusDto>;
   initialEarnings: PartnerPayoutsActionResult<PartnerEarningsPageDto>;
+  /** URL prefix for the signed-in user (e.g. "/auth0%7C123"), used to
+   *  build links to the video details page from each earnings row. */
+  userPathPrefix: string;
 }) {
   const [status, setStatus] = useState<PartnerPayoutsStatusDto | null>(
     initialStatus.ok ? initialStatus.data : null,
@@ -147,18 +169,30 @@ export function PartnerIncomeDashboard({
     }
   }, []);
 
+  const didMountRefreshRef = useRef(false);
   useEffect(() => {
-    // If the user just returned from Stripe onboarding (`?refresh=1`), pull
-    // the latest cached state in case the webhook is still in flight. Deferred
-    // so the state update doesn't cascade inside the same render pass.
+    // Stripe sends the user to `return_url` (no query string) on success and
+    // to `refresh_url` (`?refresh=1`) when the account link expires. In both
+    // cases the cached onboarding state may still be `pending` because the
+    // `account.updated` webhook hasn't arrived yet. If we mount and aren't
+    // fully `enabled`, refresh once now and once shortly after — the server
+    // action reconciles live against Stripe.
     if (typeof window === "undefined") return;
-    const sp = new URLSearchParams(window.location.search);
-    if (sp.get("refresh") !== "1") return;
-    const handle = window.setTimeout(() => {
-      void refreshStatus();
-    }, 0);
-    return () => window.clearTimeout(handle);
-  }, [refreshStatus]);
+    if (didMountRefreshRef.current) return;
+    if (status?.onboardingStatus === "enabled") return;
+    didMountRefreshRef.current = true;
+    const handles: number[] = [
+      window.setTimeout(() => {
+        void refreshStatus();
+      }, 0),
+      window.setTimeout(() => {
+        void refreshStatus();
+      }, 3000),
+    ];
+    return () => {
+      for (const h of handles) window.clearTimeout(h);
+    };
+  }, [refreshStatus, status?.onboardingStatus]);
 
   const onConnect = useCallback(async () => {
     setActionError(null);
@@ -178,31 +212,27 @@ export function PartnerIncomeDashboard({
     }
   }, []);
 
-  const peaksAmount = useMemo(() => {
-    const trimmed = amountText.trim();
-    if (!trimmed) return null;
-    const n = Number.parseInt(trimmed, 10);
-    if (!Number.isFinite(n) || n <= 0) return null;
-    return n;
-  }, [amountText]);
+  const amountCents = useMemo(() => parseEurInputToCents(amountText), [
+    amountText,
+  ]);
 
   const onWithdraw = useCallback(async () => {
-    if (!status || peaksAmount == null) return;
+    if (!status || amountCents == null) return;
     setActionError(null);
     setActionSuccess(null);
-    if (peaksAmount > status.withdrawablePeaks) {
+    if (amountCents > status.withdrawableAmountCents) {
       setActionError("Amount exceeds available balance");
       return;
     }
-    if (peaksAmount < status.minWithdrawalPeaks) {
+    if (amountCents < status.minWithdrawalAmountCents) {
       setActionError(
-        `Minimum withdrawal is ${formatPeaksCount(status.minWithdrawalPeaks)} Peaks`,
+        `Minimum withdrawal is ${formatEur(status.minWithdrawalAmountCents)}`,
       );
       return;
     }
     setSubmitting("withdraw");
     try {
-      const res = await requestPartnerWithdrawalAction(peaksAmount);
+      const res = await requestPartnerWithdrawalAction(amountCents);
       if (!res.ok) {
         setActionError(res.error);
         return;
@@ -217,11 +247,11 @@ export function PartnerIncomeDashboard({
     } finally {
       setSubmitting(null);
     }
-  }, [peaksAmount, refreshEarnings, refreshStatus, status]);
+  }, [amountCents, refreshEarnings, refreshStatus, status]);
 
   const onMaxClick = useCallback(() => {
     if (!status) return;
-    setAmountText(String(status.withdrawablePeaks));
+    setAmountText((status.withdrawableAmountCents / 100).toFixed(2));
   }, [status]);
 
   if (!status) {
@@ -239,19 +269,16 @@ export function PartnerIncomeDashboard({
   }
 
   const onboardingBadge = ONBOARDING_BADGES[status.onboardingStatus];
-  const peaksPerEuro = status.peaksPerEuro;
-  const previewCents =
-    peaksAmount != null ? peaksToCents(peaksAmount, peaksPerEuro) : 0;
   const canWithdraw =
     status.onboardingStatus === "enabled" &&
-    status.withdrawablePeaks >= status.minWithdrawalPeaks;
+    status.withdrawableAmountCents >= status.minWithdrawalAmountCents;
 
   return (
     <div className="space-y-6">
       <header className="space-y-1">
         <h1 className="font-heading text-2xl font-semibold">Income</h1>
         <p className="text-sm text-muted-foreground">
-          Cash out the Peaks you earned from commercial wave unlocks straight to
+          Cash out the money you earned from commercial wave unlocks straight to
           your bank account via Stripe.
         </p>
       </header>
@@ -260,20 +287,13 @@ export function PartnerIncomeDashboard({
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Withdrawable balance</CardDescription>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <PeakIcon size={24} />
-              {formatPeaksCount(status.withdrawablePeaks)}
+            <CardTitle className="text-2xl">
+              {formatEur(status.withdrawableAmountCents)}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              ≈ {formatEur(status.withdrawableAmountCents)} at{" "}
-              {formatPeaksCount(peaksPerEuro)} Peaks per €1
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Minimum withdrawal:{" "}
-              {formatPeaksCount(status.minWithdrawalPeaks)} Peaks (
-              {formatEur(status.minWithdrawalAmountCents)})
+            <p className="text-xs text-muted-foreground">
+              Minimum withdrawal: {formatEur(status.minWithdrawalAmountCents)}
             </p>
           </CardContent>
         </Card>
@@ -342,16 +362,20 @@ export function PartnerIncomeDashboard({
         <CardContent className="space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <label className="block text-sm">
-              <span className="mb-1 block text-muted-foreground">Peaks</span>
+              <span className="mb-1 block text-muted-foreground">
+                Amount (EUR)
+              </span>
               <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">€</span>
                 <Input
-                  inputMode="numeric"
-                  pattern="[0-9]*"
+                  inputMode="decimal"
                   value={amountText}
                   onChange={(e) =>
-                    setAmountText(e.target.value.replace(/[^0-9]/g, ""))
+                    setAmountText(e.target.value.replace(/[^0-9.,]/g, ""))
                   }
-                  placeholder={String(status.minWithdrawalPeaks)}
+                  placeholder={(status.minWithdrawalAmountCents / 100).toFixed(
+                    2,
+                  )}
                   className="w-40"
                   disabled={!canWithdraw || submitting === "withdraw"}
                 />
@@ -366,16 +390,11 @@ export function PartnerIncomeDashboard({
                 </Button>
               </div>
             </label>
-            <div className="text-sm text-muted-foreground">
-              {peaksAmount != null
-                ? `≈ ${formatEur(previewCents)}`
-                : "Enter an amount above"}
-            </div>
             <Button
               type="button"
               onClick={onWithdraw}
               disabled={
-                !canWithdraw || peaksAmount == null || submitting === "withdraw"
+                !canWithdraw || amountCents == null || submitting === "withdraw"
               }
               className="sm:ml-auto"
             >
@@ -400,7 +419,7 @@ export function PartnerIncomeDashboard({
       <EarningsHistory
         earnings={earnings}
         error={earningsError}
-        peaksPerEuro={peaksPerEuro}
+        userPathPrefix={userPathPrefix}
       />
     </div>
   );
@@ -427,12 +446,7 @@ function WithdrawalsHistory({
                 className="flex items-center justify-between py-2"
               >
                 <div className="space-y-0.5">
-                  <p className="font-medium">
-                    {formatEur(w.amountCents)} ·{" "}
-                    <span className="text-muted-foreground">
-                      {formatPeaksCount(w.peaksDebited)} Peaks
-                    </span>
-                  </p>
+                  <p className="font-medium">{formatEur(w.amountCents)}</p>
                   <p className="text-xs text-muted-foreground">
                     {formatDate(w.createdAt)}
                     {w.failureReason ? ` · ${w.failureReason}` : ""}
@@ -451,11 +465,11 @@ function WithdrawalsHistory({
 function EarningsHistory({
   earnings,
   error,
-  peaksPerEuro,
+  userPathPrefix,
 }: {
   earnings: PartnerEarningsPageDto | null;
   error: string | null;
-  peaksPerEuro: number;
+  userPathPrefix: string;
 }) {
   return (
     <Card>
@@ -471,32 +485,113 @@ function EarningsHistory({
         ) : !earnings || earnings.items.length === 0 ? (
           <p className="text-sm text-muted-foreground">No earnings yet.</p>
         ) : (
-          <ul className="divide-y divide-border text-sm">
+          <ul className="divide-y divide-border">
             {earnings.items.map((row) => (
-              <li
+              <EarningsRow
                 key={row.id}
-                className="flex items-center justify-between py-2"
-              >
-                <div className="space-y-0.5">
-                  <p className="font-medium">
-                    +{formatPeaksCount(row.basePeaks)} Peaks{" "}
-                    <span className="text-muted-foreground">
-                      ({formatEur(peaksToCents(row.basePeaks, peaksPerEuro))})
-                    </span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {row.type === "buy_claim" ? "Buy & claim" : "Sponsor"} ·{" "}
-                    {row.countryCode || "??"} · {formatDate(row.createdAt)}
-                  </p>
-                </div>
-                <code className="font-mono text-[11px] text-muted-foreground">
-                  {row.jobId.slice(0, 10)}…
-                </code>
-              </li>
+                row={row}
+                userPathPrefix={userPathPrefix}
+              />
             ))}
           </ul>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function EarningsRow({
+  row,
+  userPathPrefix,
+}: {
+  row: PartnerEarningRowDto;
+  userPathPrefix: string;
+}) {
+  const buyerName = row.buyer.displayName?.trim() || "Unknown user";
+  const videoHref = `${userPathPrefix}/studio/${encodeURIComponent(row.jobId)}`;
+
+  return (
+    <li className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-center gap-3">
+        {row.buyer.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={row.buyer.avatarUrl}
+            alt=""
+            className="size-9 shrink-0 rounded-full object-cover ring-1 ring-white/15"
+          />
+        ) : (
+          <div
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-xs font-semibold text-zinc-200 ring-1 ring-white/15"
+            aria-hidden
+          >
+            {buyerInitials(buyerName)}
+          </div>
+        )}
+        <div className="min-w-0 space-y-0.5">
+          <p className="truncate text-sm font-medium">
+            {buyerName}{" "}
+            <span className="text-muted-foreground">
+              {row.type === "buy_claim" ? "bought & claimed" : "sponsored"}
+            </span>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            +{formatEur(row.amountCents)} · {row.countryCode || "??"} ·{" "}
+            {formatDate(row.createdAt)}
+          </p>
+        </div>
+      </div>
+      <EarningsRowPreviews
+        videoHref={videoHref}
+        thumbnails={row.previewThumbnailUrls}
+        jobId={row.jobId}
+      />
+    </li>
+  );
+}
+
+function EarningsRowPreviews({
+  videoHref,
+  thumbnails,
+  jobId,
+}: {
+  videoHref: string;
+  thumbnails: string[];
+  jobId: string;
+}) {
+  const previews = thumbnails.slice(0, 3);
+  const ariaLabel = `Open video ${jobId.slice(0, 10)}…`;
+
+  if (previews.length === 0) {
+    return (
+      <Link
+        href={videoHref}
+        aria-label={ariaLabel}
+        className="flex size-14 shrink-0 items-center justify-center rounded-md border border-border bg-muted/30 text-muted-foreground transition hover:bg-muted/60"
+      >
+        <ImageOffIcon className="size-5" aria-hidden />
+      </Link>
+    );
+  }
+
+  return (
+    <div className="flex shrink-0 items-center gap-1.5">
+      {previews.map((url, i) => (
+        <Link
+          key={`${jobId}-${i}`}
+          href={videoHref}
+          aria-label={ariaLabel}
+          className="block size-14 overflow-hidden rounded-md ring-1 ring-white/10 transition hover:ring-white/30"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={url}
+            alt=""
+            loading="lazy"
+            className="size-full object-cover"
+          />
+        </Link>
+      ))}
+    </div>
   );
 }
