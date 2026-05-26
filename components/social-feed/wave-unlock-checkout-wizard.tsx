@@ -171,7 +171,7 @@ function PriceLineRows({
       </div>
       {breakdown.communityFeePeaks > 0 ? (
         <div className="flex justify-between gap-4 text-muted-foreground">
-          <dt>Community fee ({communityFeePercent}%)</dt>
+          <dt>Community fund ({communityFeePercent}%)</dt>
           <dd>{breakdown.communityFeePeaks} Peaks</dd>
         </div>
       ) : null}
@@ -188,7 +188,7 @@ function PriceLineRows({
             </div>
           ) : null}
           <div className="flex justify-between gap-4 border-t border-border pt-2 font-semibold text-foreground">
-            <dt>Total community fees</dt>
+            <dt>Total community fund</dt>
             <dd>{cartTotals.totalCommunityFeePeaks} Peaks</dd>
           </div>
         </>
@@ -244,19 +244,19 @@ function CheckoutSummaryPanel({
       />
       {communityFeePeaks > 0 ? (
         <p className="border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">
-          The {communityFeePercent}% community fee ({communityFeePeaks} Peaks
+          The {communityFeePercent}% community fund ({communityFeePeaks} Peaks
           {cartTotals && cartTotals.cartTotalPeaks > 0
             ? ", including your cart and this video"
             : ""}
-          ) goes to the surf community in{" "}
+          ) helps Peakd reward the surf community in{" "}
           <strong className="text-foreground">{communityLocation}</strong>.
           {intent === "sponsor"
             ? " You unlock the video for the surfer on this wave without taking the claim."
-            : " This helps fund local sessions, spots, and community programs in that area."}
+            : " It funds local sessions, spots, and community programs in that area."}
         </p>
       ) : (
         <p className="border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">
-          No community fee is charged when the session location is undisclosed.
+          No community fund contribution is charged when the session location is undisclosed.
           {intent === "sponsor"
             ? " You unlock the video for the surfer on this wave without taking the claim."
             : null}
@@ -294,13 +294,13 @@ function PriceBreakdown({
       </dl>
       {breakdown.communityFeePeaks > 0 ? (
         <p className="text-xs leading-relaxed text-muted-foreground">
-          The {communityFeePercent}% community fee ({breakdown.communityFeePeaks} Peaks) supports
-          the surf community in{" "}
+          The {communityFeePercent}% community fund ({breakdown.communityFeePeaks} Peaks) helps
+          Peakd reward the surf community in{" "}
           <strong className="text-foreground">{communityLocation}</strong>.
         </p>
       ) : (
         <p className="text-xs leading-relaxed text-muted-foreground">
-          No community fee is charged when the session location is undisclosed.
+          No community fund contribution is charged when the session location is undisclosed.
         </p>
       )}
     </div>
