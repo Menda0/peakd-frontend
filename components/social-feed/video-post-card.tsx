@@ -129,8 +129,6 @@ function DiscoverVideoPostCard({
         jobId={post.id}
         shakaCount={post.shakaCount}
         shakaedByViewer={post.shakaedByViewer}
-        comments={post.comments}
-        shares={post.shares}
       />
     </article>
   );
@@ -175,8 +173,6 @@ export function VideoPostCard({
         jobId=""
         shakaCount={placeholder.likes}
         shakaedByViewer={false}
-        comments={placeholder.comments}
-        shares={placeholder.shares}
       />
     </article>
   );

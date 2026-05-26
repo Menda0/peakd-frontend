@@ -263,4 +263,34 @@
     -webkit-mask-size: contain;
     mask-size: contain;
   }
+
+  .shaka-particle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    pointer-events: none;
+    animation: shaka-fly 900ms ease-out forwards;
+    will-change: transform, opacity;
+  }
+
+  @keyframes shaka-fly {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -50%)
+        scale(0.4)
+        rotate(0deg);
+    }
+    15% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(
+          calc(-50% + var(--shaka-x, 0px)),
+          calc(-50% + var(--shaka-y, -60px))
+        )
+        scale(var(--shaka-scale, 1))
+        rotate(var(--shaka-rotate, 0deg));
+    }
+  }
 }
