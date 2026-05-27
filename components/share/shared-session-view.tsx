@@ -7,8 +7,7 @@ import { SessionTagsRow } from "@/components/conditions/session-tags-row";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CommercialWaveActions } from "@/components/social-feed/commercial-wave-actions";
-import { PostHeader } from "@/components/social-feed/post-header";
-import { PostMedia } from "@/components/social-feed/post-media";
+import { FeedList } from "@/components/social-feed/feed-list";
 import { PostSurferBadge } from "@/components/social-feed/post-surfer-badge";
 import { VideoPostCard } from "@/components/social-feed/video-post-card";
 import { WaveSnapshotCarousel } from "@/components/social-feed/wave-snapshot-carousel";
@@ -19,7 +18,11 @@ import {
   SharedSessionWaveClaim,
   type SharedSessionWaveClaimState,
 } from "@/components/share/shared-session-wave-claim";
-import type { DiscoverFeedPost } from "@/lib/discover-feed";
+import type {
+  DiscoverFeedLocation,
+  DiscoverFeedPost,
+  DiscoverFeedSession,
+} from "@/lib/discover-feed";
 import type { PublicSharedSession, PublicSharedSessionWave } from "@/lib/shared-session";
 import {
   downloadFromUrl,
@@ -56,6 +59,51 @@ function OriginalAvailableTag() {
       Original available
     </span>
   );
+}
+
+function SharedSessionWaveFooter({ wave }: { wave: PublicSharedSessionWave }) {
+  return (
+    <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <span
+          className="min-w-0 truncate text-xs font-medium text-foreground sm:text-sm"
+          title={wave.originalFilename}
+        >
+          {wave.originalFilename}
+        </span>
+        {wave.hasOriginal ? <OriginalAvailableTag /> : null}
+      </div>
+      <WaveDownloadActions wave={wave} />
+    </div>
+  );
+}
+
+function sharedSessionWavePost(
+  wave: PublicSharedSessionWave,
+  waveState: SharedSessionWaveClaimState,
+  ctx: {
+    partnerName: string;
+    partnerAvatarUrl: string | null;
+    location: DiscoverFeedLocation;
+    feedSession: DiscoverFeedSession;
+  },
+): DiscoverFeedPost {
+  const base = sharedSessionWaveToDiscoverPost(wave, {
+    partnerName: ctx.partnerName,
+    partnerAvatarUrl: ctx.partnerAvatarUrl,
+    location: ctx.location,
+    feedSession: ctx.feedSession,
+  });
+  return {
+    ...base,
+    surfer: waveState.surfer,
+    claimStatus: waveState.claimStatus,
+    claimedByViewer: wave.claimedByViewer || waveState.claimStatus !== "none",
+    canClaim: waveState.canClaim,
+    canBuyClaim: waveState.canBuyClaim,
+    canSponsor: waveState.canSponsor,
+    videoUnlockedByViewer: waveState.videoUnlockedByViewer,
+  };
 }
 
 function WaveDownloadActions({ wave }: { wave: PublicSharedSessionWave }) {
@@ -108,17 +156,12 @@ function SharedSessionCommercialFeedTab({
   onUnlockChanged: () => void;
 }) {
   return (
-    <ul className="flex flex-col gap-4">
-      {posts.map((post) => (
-        <li key={post.id}>
-          <VideoPostCard
-            post={post}
-            onCommercialPurchased={onUnlockChanged}
-            onCommercialClaimed={onUnlockChanged}
-          />
-        </li>
-      ))}
-    </ul>
+    <FeedList
+      posts={posts}
+      hideActionsBar
+      onCommercialPurchased={onUnlockChanged}
+      onCommercialClaimed={onUnlockChanged}
+    />
   );
 }
 
@@ -126,65 +169,43 @@ function SharedSessionFeedTab({
   data,
   partnerName,
   location,
+  feedLocation,
+  feedSession,
   resolveWave,
   onWaveClaimed,
+  onUnlockChanged,
 }: {
   data: PublicSharedSession;
   partnerName: string;
   location: string;
+  feedLocation: DiscoverFeedLocation;
+  feedSession: DiscoverFeedSession;
   resolveWave: (wave: PublicSharedSessionWave) => SharedSessionWaveClaimState;
   onWaveClaimed: (jobId: string, surfer: SurferProfile) => void;
+  onUnlockChanged: () => void;
 }) {
   return (
-    <ul className="flex flex-col gap-4">
+    <div className="flex flex-col gap-0 sm:gap-6">
       {data.waves.map((wave) => {
         const waveState = resolveWave(wave);
+        const post = sharedSessionWavePost(wave, waveState, {
+          partnerName,
+          partnerAvatarUrl: data.partnerAvatarUrl,
+          location: feedLocation,
+          feedSession,
+        });
         return (
-        <li key={wave.jobId}>
-          <article className="rounded-2xl border border-border bg-card p-4 sm:p-5">
-            <PostHeader
-              authorName={partnerName}
-              authorAvatarUrl={data.partnerAvatarUrl}
-              partnerUpload
-              timeAgo={wave.createdAtLabel ?? wave.createdAt}
-              location={location}
-            />
-            <PostMedia
-              thumbnailUrl={wave.thumbnailUrl}
-              videoUrl={wave.videoUrl ?? undefined}
-              surfer={waveState.surfer}
-              claimWave={
-                waveState.surfer ? undefined : (
-                  <SharedSessionWaveClaim
-                    variant="overlay"
-                    wave={waveState}
-                    partnerName={partnerName}
-                    location={location}
-                    onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
-                  />
-                )
-              }
-              playbackId={wave.jobId}
-              autoPlayInView
-              className="mt-3"
-            />
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <span
-                  className="truncate text-sm font-medium text-foreground"
-                  title={wave.originalFilename}
-                >
-                  {wave.originalFilename}
-                </span>
-                {wave.hasOriginal ? <OriginalAvailableTag /> : null}
-              </div>
-              <WaveDownloadActions wave={wave} />
-            </div>
-          </article>
-        </li>
+          <VideoPostCard
+            key={wave.jobId}
+            post={post}
+            hideActionsBar
+            footer={<SharedSessionWaveFooter wave={wave} />}
+            onCommercialPurchased={onUnlockChanged}
+            onCommercialClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
+          />
         );
       })}
-    </ul>
+    </div>
   );
 }
 
@@ -223,10 +244,10 @@ function SharedSessionFilesTab({
               )}
             >
               <CardContent className="flex flex-col gap-4 p-4">
-                <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
+                <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
                   <button
                     type="button"
-                    className="flex min-w-0 flex-1 flex-col gap-4 text-left transition-opacity hover:opacity-90 sm:flex-row sm:items-center"
+                    className="flex min-w-0 flex-1 flex-col gap-3 text-left transition-opacity hover:opacity-90 sm:flex-row sm:items-center sm:gap-4"
                     onClick={() => onToggleWave(wave.jobId)}
                   >
                     <VideoThumbnailStrip
@@ -245,7 +266,7 @@ function SharedSessionFilesTab({
                       </span>
                     </div>
                   </button>
-                  <div className="flex flex-col items-stretch gap-2 sm:items-end">
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
                     <SharedSessionWaveClaim
                       variant="inline"
                       wave={waveState}
@@ -479,8 +500,8 @@ export function SharedSessionView({
           </Button>
         </div>
 
-        <Card className="border-border bg-card text-foreground">
-          <CardContent className="space-y-3 p-4">
+        <Card className="border-border bg-card text-foreground sm:shadow-sm">
+          <CardContent className="space-y-3 p-4 sm:p-4">
             <div>
               <p className="font-medium text-foreground">
                 {data.session.sessionDate} · {data.session.sessionTime}
@@ -501,8 +522,8 @@ export function SharedSessionView({
       </header>
 
       <section className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="w-full text-center text-lg font-semibold tracking-tight text-foreground sm:w-auto sm:text-left">
             {waveCountLabel}
           </h2>
           <div
@@ -547,8 +568,11 @@ export function SharedSessionView({
             data={data}
             partnerName={partnerName}
             location={location}
+            feedLocation={feedLocation}
+            feedSession={feedSession}
             resolveWave={resolveWave}
             onWaveClaimed={handleWaveClaimed}
+            onUnlockChanged={() => void refreshSession()}
           />
         ) : (
           <SharedSessionFilesTab

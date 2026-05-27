@@ -248,7 +248,7 @@ export function sharedSessionWaveToDiscoverPost(
     shakaedByViewer: false,
     comments: 0,
     shares: 0,
-    isCommercial: true,
+    isCommercial: wave.isCommercial,
     videoUnlockedByViewer: wave.videoUnlockedByViewer,
     currency: wave.currency,
     wavePriceMinor: wave.wavePriceMinor,

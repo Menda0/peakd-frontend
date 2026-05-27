@@ -30,44 +30,49 @@ export function SessionPreviewThumbs({
   urls,
   videoCount,
   slotCount = SESSION_PREVIEW_SLOTS_LIST,
+  className,
 }: {
   urls: string[];
   videoCount: number;
   slotCount?: number;
+  className?: string;
 }) {
   const slots = Array.from({ length: slotCount }, (_, i) => i);
   const videoLabel = videoCount === 1 ? "1 wave" : `${videoCount} waves`;
 
   return (
-    <div className="flex shrink-0 flex-col items-end justify-center gap-2">
-      <div className="flex items-center gap-2.5">
-        <span className="whitespace-nowrap text-xs font-medium tabular-nums text-muted-foreground">
-          {videoLabel}
-        </span>
-        <div className="flex items-stretch gap-1.5">
-          {slots.map((i) => {
-            const url = urls[i];
-            return (
-              <div
-                key={i}
-                className={cn(
-                  "relative h-[4.5rem] w-[4.5rem] overflow-hidden rounded-lg border border-border bg-muted sm:h-20 sm:w-[4.75rem]",
-                  i === 0 && videoCount > 0 && !url && "animate-pulse",
-                )}
-              >
-                {url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={url} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center px-1 text-center text-[10px] leading-tight text-muted-foreground">
-                    {videoCount > 0 && i === 0 ? "…" : ""}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
+    <div
+      className={cn(
+        "flex shrink-0 flex-col items-center justify-center gap-2",
+        className,
+      )}
+    >
+      <div className="flex items-stretch justify-center gap-1.5">
+        {slots.map((i) => {
+          const url = urls[i];
+          return (
+            <div
+              key={i}
+              className={cn(
+                "relative h-[4.5rem] w-[4.5rem] overflow-hidden rounded-lg border border-border bg-muted sm:h-20 sm:w-[4.75rem]",
+                i === 0 && videoCount > 0 && !url && "animate-pulse",
+              )}
+            >
+              {url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center px-1 text-center text-[10px] leading-tight text-muted-foreground">
+                  {videoCount > 0 && i === 0 ? "…" : ""}
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
+      <span className="w-full text-center text-xs font-medium tabular-nums text-muted-foreground">
+        {videoLabel}
+      </span>
     </div>
   );
 }
@@ -133,7 +138,7 @@ export function SessionSummaryCard({
         className,
       )}
     >
-      <CardContent className="flex items-stretch gap-4 p-4">
+      <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-stretch sm:gap-4">
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
@@ -165,6 +170,7 @@ export function SessionSummaryCard({
           urls={session.previewThumbnailUrls}
           videoCount={session.videoCount}
           slotCount={previewSlotCount}
+          className="w-full sm:w-auto sm:items-end"
         />
       </CardContent>
     </Card>

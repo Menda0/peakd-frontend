@@ -1,13 +1,21 @@
 "use client";
 
 import { Loader2Icon } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { DiscoverFeedPost } from "@/lib/discover-feed";
 import type { PlaceholderPost } from "@/lib/social-feed-placeholder";
 import type { SurferProfile } from "@/lib/surfer-profile";
 import { cn } from "@/lib/utils";
 import { CommercialWaveActions } from "./commercial-wave-actions";
 import { ClaimWaveButton } from "./claim-wave-button";
+import {
+  feedPostArticleClass,
+  feedPostFooterClass,
+  feedPostHeaderClass,
+  feedPostMediaClass,
+  feedPostMediaShellClass,
+  feedPostMetaClass,
+} from "./feed-post-layout";
 import { PostActionsBar } from "./post-actions-bar";
 import { WaveSnapshotCarousel } from "./wave-snapshot-carousel";
 import { PostContent } from "./post-content";
@@ -15,20 +23,16 @@ import { PostSessionInfo } from "./post-session-info";
 import { PostHeader } from "./post-header";
 import { PostMedia } from "./post-media";
 
-const feedPostArticleClass =
-  "border-b border-border bg-transparent sm:rounded-2xl sm:border sm:border-border sm:bg-card sm:p-4 sm:p-5";
-const feedPostMetaClass = "px-4 sm:px-0";
-const feedPostMediaClass =
-  "mt-3 max-sm:mt-0 max-sm:rounded-none max-sm:border-0";
-const feedPostMediaShellClass =
-  "relative mt-3 overflow-hidden rounded-2xl border border-border bg-secondary/80 max-sm:mt-0 max-sm:rounded-none max-sm:border-0";
-
 function DiscoverVideoPostCard({
   post,
+  footer,
+  hideActionsBar = false,
   onCommercialClaimed,
   onCommercialPurchased,
 }: {
   post: DiscoverFeedPost;
+  footer?: ReactNode;
+  hideActionsBar?: boolean;
   onCommercialClaimed?: (surfer: SurferProfile) => void;
   onCommercialPurchased?: () => void;
 }) {
@@ -63,7 +67,7 @@ function DiscoverVideoPostCard({
 
   return (
     <article className={feedPostArticleClass}>
-      <div className={cn(feedPostMetaClass, "pt-3 sm:pt-0")}>
+      <div className={cn(feedPostMetaClass, feedPostHeaderClass)}>
         <PostHeader
           authorName={post.authorName}
           authorAvatarUrl={post.authorAvatarUrl}
@@ -139,13 +143,16 @@ function DiscoverVideoPostCard({
           className={feedPostMediaClass}
         />
       )}
-      <div className={cn(feedPostMetaClass, "pb-4 sm:pb-0")}>
+      <div className={cn(feedPostMetaClass, feedPostFooterClass)}>
         <PostSessionInfo session={post.session} />
-        <PostActionsBar
-          jobId={post.id}
-          shakaCount={post.shakaCount}
-          shakaedByViewer={post.shakaedByViewer}
-        />
+        {footer}
+        {!hideActionsBar ? (
+          <PostActionsBar
+            jobId={post.id}
+            shakaCount={post.shakaCount}
+            shakaedByViewer={post.shakaedByViewer}
+          />
+        ) : null}
       </div>
     </article>
   );
@@ -154,11 +161,15 @@ function DiscoverVideoPostCard({
 export function VideoPostCard({
   post,
   placeholder,
+  footer,
+  hideActionsBar,
   onCommercialClaimed,
   onCommercialPurchased,
 }: {
   post?: DiscoverFeedPost;
   placeholder?: PlaceholderPost;
+  footer?: ReactNode;
+  hideActionsBar?: boolean;
   onCommercialClaimed?: (surfer: SurferProfile) => void;
   onCommercialPurchased?: () => void;
 }) {
@@ -166,6 +177,8 @@ export function VideoPostCard({
     return (
       <DiscoverVideoPostCard
         post={post}
+        footer={footer}
+        hideActionsBar={hideActionsBar}
         onCommercialClaimed={onCommercialClaimed}
         onCommercialPurchased={onCommercialPurchased}
       />
@@ -176,14 +189,14 @@ export function VideoPostCard({
 
   return (
     <article className={feedPostArticleClass}>
-      <div className={cn(feedPostMetaClass, "pt-3 sm:pt-0")}>
+      <div className={cn(feedPostMetaClass, feedPostHeaderClass)}>
         <PostHeader
           authorName={placeholder.authorName}
           timeAgo={placeholder.timeAgo}
         />
       </div>
       <PostMedia duration={placeholder.duration} className={feedPostMediaClass} />
-      <div className={cn(feedPostMetaClass, "pb-4 sm:pb-0")}>
+      <div className={cn(feedPostMetaClass, feedPostFooterClass)}>
         <PostContent
           title={placeholder.title}
           description={placeholder.description}
