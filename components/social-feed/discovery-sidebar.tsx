@@ -89,18 +89,19 @@ function LatestSessionItem({ session }: { session: SearchSessionItem }) {
     </div>
   );
 
-  if (session.shareToken) {
-    return (
-      <Link
-        href={`/share/sessions/${encodeURIComponent(session.shareToken)}`}
-        className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-        aria-label={`Open session at ${placeName} on ${dateLabel}`}
-      >
-        {body}
-      </Link>
-    );
+  if (!session.shareToken) {
+    return body;
   }
-  return body;
+
+  return (
+    <Link
+      href={`/share/sessions/${encodeURIComponent(session.shareToken)}`}
+      className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      aria-label={`Open session at ${placeName} on ${dateLabel}`}
+    >
+      {body}
+    </Link>
+  );
 }
 
 function LatestWaveRow({ wave }: { wave: LatestWaveItem }) {
@@ -218,7 +219,7 @@ function LatestSessionsSection() {
 
   return (
     <section>
-      <h2 className="mb-3 px-2 text-sm font-semibold text-foreground">
+      <h2 className="sticky top-0 z-10 -mx-2 mb-3 bg-sidebar px-2 py-1 text-sm font-semibold text-foreground">
         Latest sessions
       </h2>
       {loading ? (
@@ -273,7 +274,7 @@ function LatestWavesSection() {
 
   return (
     <section>
-      <h2 className="mb-3 px-2 text-sm font-semibold text-foreground">
+      <h2 className="sticky top-0 z-10 -mx-2 mb-3 bg-sidebar px-2 py-1 text-sm font-semibold text-foreground">
         Latest waves
       </h2>
       {loading ? (
@@ -303,8 +304,8 @@ function LatestWavesSection() {
 
 export function DiscoverySidebar() {
   return (
-    <aside className="hidden w-72 shrink-0 overflow-y-auto border-l border-sidebar-border bg-sidebar py-6 pl-3 pr-3 xl:block">
-      <div className="flex flex-col gap-6">
+    <aside className="sticky top-[4.25rem] z-10 hidden h-[calc(100dvh-4.25rem)] w-72 shrink-0 flex-col border-l border-sidebar-border bg-sidebar sm:top-[4.5rem] sm:h-[calc(100dvh-4.5rem)] xl:flex">
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto py-6 pl-3 pr-3">
         <LatestSessionsSection />
         <LatestWavesSection />
       </div>

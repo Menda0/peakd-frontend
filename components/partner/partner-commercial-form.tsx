@@ -15,37 +15,44 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formInputClassName } from "@/lib/form-styles";
 import {
   commercialFormToSettings,
   commercialSettingsToFormValues,
   partnerCommercialFormSchema,
+  SUPPORTED_PRICING_CURRENCIES,
   type PartnerCommercialFormValues,
 } from "@/lib/partner-profile-schemas";
+import type { CommercialSettings } from "@/lib/commercial-settings";
 import {
-  peaksFromEurInput,
-  type CommercialSettings,
-} from "@/lib/commercial-settings";
+  formatMoney,
+  majorToMinor,
+  priceInputStep,
+} from "@/lib/currencies";
 import { cn } from "@/lib/utils";
 
 export function PartnerCommercialForm({
   savedSettings,
-  peaksPerEuro,
   showSuggestedDefaultsHint = false,
   saving,
   onSave,
 }: {
   /** Persisted settings from the API; null means show suggested defaults only. */
   savedSettings: CommercialSettings | null;
-  /** Current Peaks-per-EUR exchange rate from the partner-profile DTO. */
-  peaksPerEuro: number;
   showSuggestedDefaultsHint?: boolean;
   saving: boolean;
   onSave: (settings: CommercialSettings) => Promise<void>;
 }) {
   const form = useForm<PartnerCommercialFormValues>({
     resolver: zodResolver(partnerCommercialFormSchema),
-    defaultValues: commercialSettingsToFormValues(savedSettings, peaksPerEuro),
+    defaultValues: commercialSettingsToFormValues(savedSettings),
     mode: "onSubmit",
     reValidateMode: "onSubmit",
   });
@@ -56,15 +63,21 @@ export function PartnerCommercialForm({
   });
 
   useEffect(() => {
-    form.reset(commercialSettingsToFormValues(savedSettings, peaksPerEuro));
-  }, [savedSettings, peaksPerEuro, form]);
+    form.reset(commercialSettingsToFormValues(savedSettings));
+  }, [savedSettings, form]);
 
   const onSubmit = form.handleSubmit(async (values) => {
-    await onSave(commercialFormToSettings(values, peaksPerEuro));
+    await onSave(commercialFormToSettings(values));
   });
 
-  const liveEur = form.watch("videoPriceEur");
-  const livePeaks = peaksFromEurInput(liveEur ?? "", peaksPerEuro);
+  const liveCurrency = form.watch("currency");
+  const livePrice = form.watch("videoPriceMajor");
+  const liveMinor = (() => {
+    const trimmed = (livePrice ?? "").trim().replace(",", ".");
+    const major = Number.parseFloat(trimmed);
+    if (!Number.isFinite(major) || major <= 0) return null;
+    return Math.max(1, majorToMinor(major, liveCurrency || "EUR"));
+  })();
 
   return (
     <Form {...form}>
@@ -76,46 +89,73 @@ export function PartnerCommercialForm({
           </p>
         ) : null}
 
-        <FormField
-          control={form.control}
-          name="videoPriceEur"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-foreground">Price per wave (EUR)</FormLabel>
-              <FormControl>
-                <div className="relative max-w-xs">
-                  <span
-                    className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground"
-                    aria-hidden
+        <div className="grid gap-6 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="currency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-foreground">Currency</FormLabel>
+                <FormControl>
+                  <Select
+                    value={field.value}
+                    onValueChange={(v) => field.onChange(v ?? field.value)}
                   >
-                    €
-                  </span>
+                    <SelectTrigger className={formInputClassName}>
+                      <SelectValue placeholder="Pick a currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPORTED_PRICING_CURRENCIES.map((cur) => (
+                        <SelectItem key={cur} value={cur}>
+                          {cur}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormDescription className="text-muted-foreground">
+                  Buyers are charged and you settle in this currency. Stripe
+                  auto-converts the displayed price for buyers in other regions.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="videoPriceMajor"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-foreground">
+                  Price per wave ({liveCurrency || "EUR"})
+                </FormLabel>
+                <FormControl>
                   <Input
                     {...field}
-                    type="text"
+                    type="number"
+                    step={priceInputStep(liveCurrency || "EUR")}
+                    min={0}
                     inputMode="decimal"
                     placeholder="e.g. 5.00"
-                    className={cn(formInputClassName, "pl-7")}
+                    className={cn(formInputClassName)}
                   />
-                </div>
-              </FormControl>
-              <FormDescription className="text-muted-foreground">
-                You earn this amount per wave. Surfers still pay in Peaks at the
-                current rate ({peaksPerEuro} Peaks = €1).
-                {livePeaks != null ? (
-                  <>
-                    {" "}
+                </FormControl>
+                <FormDescription className="text-muted-foreground">
+                  You earn this amount per wave.{" "}
+                  {liveMinor != null ? (
                     <span className="text-foreground">
-                      Buyers will see ≈ {livePeaks.toLocaleString()} Peaks per
-                      wave.
+                      Stripe charges buyers{" "}
+                      {formatMoney(liveMinor, liveCurrency || "EUR")} (plus a
+                      20% platform commission added on top).
                     </span>
-                  </>
-                ) : null}
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  ) : null}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <div>
           <p className="mb-1 text-sm font-medium text-foreground">Volume discounts</p>

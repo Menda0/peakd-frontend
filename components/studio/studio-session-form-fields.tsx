@@ -235,7 +235,7 @@ export function StudioSessionCommercialPricingFields({
     <FieldSet className="gap-3">
       <FieldDescription className="text-muted-foreground">
         On the discover feed, waves show snapshot images only. Surfers can claim for free or pay
-        Peaks to unlock video playback.
+        to unlock video playback in your chosen currency.
       </FieldDescription>
       <div className="space-y-3 rounded-lg border border-border bg-white/[0.02] p-3">
         {partnerCommercialDefaults && !values.customizeCommercialPricing ? (
@@ -320,7 +320,7 @@ export function StudioSessionFormFields({
           </FieldLegend>
           <FieldDescription className="text-muted-foreground">
             On the discover feed, waves show snapshot images only. Surfers can claim for free or
-            pay Peaks to unlock video playback.
+            pay to unlock video playback in your chosen currency.
           </FieldDescription>
           {showCommercialToggle ? (
             <Field orientation="horizontal" className="items-center gap-2">

@@ -1,11 +1,13 @@
 import { getApiBase } from "@/lib/api";
 import { readApiErrorMessage } from "@/lib/api-error";
 import { englishCountryLabel } from "@/lib/countries";
-import type { CommercialSettings } from "@/lib/commercial-settings";
 import {
   normalizeCommercialSettings,
-  type CheckoutPeaksBreakdown,
+  PLATFORM_COMMISSION_PERCENT_DEFAULT,
+  type CheckoutBreakdownMinor,
+  type CommercialSettings,
 } from "@/lib/commercial-settings";
+import { normalizeCurrency } from "@/lib/currencies";
 import type { DiscoverFeedSession } from "@/lib/discover-feed";
 import { normalizeSurferProfile, type SurferProfile } from "@/lib/surfer-profile";
 
@@ -16,14 +18,16 @@ export type WaveCheckoutSessionWave = {
   isCurrent: boolean;
   canBuyClaim: boolean;
   canSponsor: boolean;
-  buyClaimTotalPeaks: number | null;
-  sponsorTotalPeaks: number | null;
+  buyClaimTotalMinor: number | null;
+  sponsorTotalMinor: number | null;
 };
 
 export type WaveCheckoutContext = {
   jobId: string;
   sessionId: string;
   shareToken: string | null;
+  currency: string;
+  platformCommissionPercent: number;
   location: {
     countryCode: string;
     regionName: string;
@@ -37,49 +41,52 @@ export type WaveCheckoutContext = {
     descriptionMarkdown: string | null;
   };
   commercialSettings: CommercialSettings;
-  communityFeePercent: number;
   canClaim: boolean;
   canBuyClaim: boolean;
   canSponsor: boolean;
   claimStatus: "none" | "auto" | "claimed";
-  buyClaim: CheckoutPeaksBreakdown;
-  sponsor: CheckoutPeaksBreakdown;
+  buyClaim: CheckoutBreakdownMinor;
+  sponsor: CheckoutBreakdownMinor;
   surfer: SurferProfile | null;
   sessionWaves: WaveCheckoutSessionWave[];
 };
 
-function normalizeBreakdown(raw: unknown): CheckoutPeaksBreakdown | null {
+function normalizeBreakdown(raw: unknown): CheckoutBreakdownMinor | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
-  const basePeaks = Number(o.basePeaks);
-  const communityFeePeaks = Number(o.communityFeePeaks);
-  const totalPeaks = Number(o.totalPeaks);
-  const communityFeePercent = Number(o.communityFeePercent);
-  const listPricePeaks = Number(o.listPricePeaks);
+  const basePriceMinor = Number(o.basePriceMinor);
+  const commissionMinor = Number(o.commissionMinor);
+  const totalMinor = Number(o.totalMinor);
+  const stripeProcessingFeeMinor = Number(o.stripeProcessingFeeMinor);
+  const commissionPercent = Number(o.commissionPercent);
+  const listPriceMinor = Number(o.listPriceMinor);
   const discountPercent = Number(o.discountPercent);
-  const discountPeaksSaved = Number(o.discountPeaksSaved);
+  const discountSavedMinor = Number(o.discountSavedMinor);
   if (
-    !Number.isFinite(basePeaks) ||
-    !Number.isFinite(communityFeePeaks) ||
-    !Number.isFinite(totalPeaks)
+    !Number.isFinite(basePriceMinor) ||
+    !Number.isFinite(commissionMinor) ||
+    !Number.isFinite(totalMinor)
   ) {
     return null;
   }
-  const base = Math.round(basePeaks);
-  const list = Number.isFinite(listPricePeaks) ? Math.round(listPricePeaks) : base;
+  const base = Math.round(basePriceMinor);
+  const list = Number.isFinite(listPriceMinor) ? Math.round(listPriceMinor) : base;
   return {
-    basePeaks: base,
-    communityFeePeaks: Math.round(communityFeePeaks),
-    totalPeaks: Math.round(totalPeaks),
-    communityFeePercent: Number.isFinite(communityFeePercent)
-      ? Math.round(communityFeePercent)
-      : 20,
-    listPricePeaks: list,
+    basePriceMinor: base,
+    commissionMinor: Math.round(commissionMinor),
+    stripeProcessingFeeMinor: Number.isFinite(stripeProcessingFeeMinor)
+      ? Math.round(stripeProcessingFeeMinor)
+      : 0,
+    totalMinor: Math.round(totalMinor),
+    commissionPercent: Number.isFinite(commissionPercent)
+      ? Math.round(commissionPercent)
+      : PLATFORM_COMMISSION_PERCENT_DEFAULT,
+    listPriceMinor: list,
     discountPercent: Number.isFinite(discountPercent)
       ? Math.round(discountPercent)
       : 0,
-    discountPeaksSaved: Number.isFinite(discountPeaksSaved)
-      ? Math.round(discountPeaksSaved)
+    discountSavedMinor: Number.isFinite(discountSavedMinor)
+      ? Math.round(discountSavedMinor)
       : Math.max(0, list - base),
   };
 }
@@ -167,24 +174,32 @@ export async function fetchWaveCheckoutContext(
         isCurrent: w.isCurrent === true,
         canBuyClaim: w.canBuyClaim === true,
         canSponsor: w.canSponsor === true,
-        buyClaimTotalPeaks:
-          typeof w.buyClaimTotalPeaks === "number" ? w.buyClaimTotalPeaks : null,
-        sponsorTotalPeaks:
-          typeof w.sponsorTotalPeaks === "number" ? w.sponsorTotalPeaks : null,
+        buyClaimTotalMinor:
+          typeof w.buyClaimTotalMinor === "number" ? w.buyClaimTotalMinor : null,
+        sponsorTotalMinor:
+          typeof w.sponsorTotalMinor === "number" ? w.sponsorTotalMinor : null,
       });
     }
   }
+
+  const currency =
+    typeof o.currency === "string" && o.currency.trim()
+      ? normalizeCurrency(o.currency)
+      : settings.currency;
 
   return {
     jobId: typeof o.jobId === "string" ? o.jobId : jobId,
     sessionId: typeof o.sessionId === "string" ? o.sessionId : "",
     shareToken: typeof o.shareToken === "string" ? o.shareToken : null,
+    currency,
+    platformCommissionPercent:
+      typeof o.platformCommissionPercent === "number"
+        ? Math.round(o.platformCommissionPercent)
+        : PLATFORM_COMMISSION_PERCENT_DEFAULT,
     location,
     sessionSummary,
     partner,
     commercialSettings: settings,
-    communityFeePercent:
-      typeof o.communityFeePercent === "number" ? o.communityFeePercent : 20,
     canClaim: o.canClaim === true,
     canBuyClaim: o.canBuyClaim === true,
     canSponsor: o.canSponsor === true,
@@ -199,8 +214,8 @@ export async function fetchWaveCheckoutContext(
   };
 }
 
-/** Label for community-fee copy: country when undisclosed, otherwise region name. */
-export function communityFundLocationLabel(location: {
+/** Label for commission location copy: country when undisclosed, otherwise region name. */
+export function commissionLocationLabel(location: {
   countryCode: string;
   regionName: string;
   spotName: string | null;

@@ -11,7 +11,7 @@ export function SocialFeedLayout({
   partnerProfileHref,
   partnerIncomeHref,
   adminRegionsHref,
-  adminPeaksHref,
+  adminSalesHref,
   adminFinanceHref,
   showPartnerNav,
   showAdminNav,
@@ -26,7 +26,7 @@ export function SocialFeedLayout({
   partnerProfileHref?: string;
   partnerIncomeHref?: string;
   adminRegionsHref?: string;
-  adminPeaksHref?: string;
+  adminSalesHref?: string;
   adminFinanceHref?: string;
   showPartnerNav: boolean;
   showAdminNav: boolean;
@@ -37,7 +37,24 @@ export function SocialFeedLayout({
 }) {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
-      <FeedAppBar homeHref={homeHref} />
+      <FeedAppBar
+        homeHref={homeHref}
+        mobileMenu={{
+          homeHref,
+          myVideosHref,
+          studioHref,
+          partnerProfileHref,
+          partnerIncomeHref,
+          adminRegionsHref,
+          adminPeaksHref,
+          adminFinanceHref,
+          showPartnerNav,
+          showAdminNav,
+          userPicture,
+          userName,
+          userEmail,
+        }}
+      />
       <div className="flex min-h-0 flex-1">
         <FeedNavSidebar
           homeHref={homeHref}
@@ -46,7 +63,7 @@ export function SocialFeedLayout({
           partnerProfileHref={partnerProfileHref}
           partnerIncomeHref={partnerIncomeHref}
           adminRegionsHref={adminRegionsHref}
-          adminPeaksHref={adminPeaksHref}
+          adminSalesHref={adminSalesHref}
           adminFinanceHref={adminFinanceHref}
           showPartnerNav={showPartnerNav}
           showAdminNav={showAdminNav}

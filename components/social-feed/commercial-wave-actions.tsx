@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { formatMoney } from "@/lib/currencies";
 import type { DiscoverFeedPost } from "@/lib/discover-feed";
 import type { SurferProfile } from "@/lib/surfer-profile";
 import {
@@ -39,9 +40,10 @@ export function CommercialWaveActions({
   );
   const inCart = Boolean(cartItem);
 
-  const price = post.buyClaimPricePeaks ?? post.wavePricePeaks ?? 0;
-  const sponsorPrice = post.sponsorPricePeaks ?? post.wavePricePeaks ?? 0;
-  const unlockFromPrice =
+  const price = post.buyClaimPriceMinor ?? post.wavePriceMinor ?? 0;
+  const sponsorPrice = post.sponsorPriceMinor ?? post.wavePriceMinor ?? 0;
+  const currency = post.currency ?? "EUR";
+  const unlockFromPriceMinor =
     post.canBuyClaim && price > 0
       ? price
       : post.canSponsor && sponsorPrice > 0
@@ -50,8 +52,8 @@ export function CommercialWaveActions({
   const showUnlock =
     !post.videoUnlockedByViewer &&
     (post.canBuyClaim || post.canSponsor) &&
-    unlockFromPrice != null &&
-    unlockFromPrice > 0;
+    unlockFromPriceMinor != null &&
+    unlockFromPriceMinor > 0;
 
   if (post.videoUnlockedByViewer) {
     if (overlay) return null;
@@ -87,8 +89,8 @@ export function CommercialWaveActions({
       }}
     >
       {inCart ? "Added to cart" : "Unlock video"}
-      {!inCart && !overlay && unlockFromPrice > 0
-        ? ` · from ${unlockFromPrice} Peaks`
+      {!inCart && !overlay && unlockFromPriceMinor != null && unlockFromPriceMinor > 0
+        ? ` · from ${formatMoney(unlockFromPriceMinor, currency)}`
         : null}
     </Button>
   ) : null;

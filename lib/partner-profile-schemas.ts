@@ -1,9 +1,16 @@
 import { z } from "zod";
 import {
   DEFAULT_COMMERCIAL_SETTINGS,
-  eurStringFromPeaks,
-  peaksFromEurInput,
+  type CommercialSettings,
 } from "@/lib/commercial-settings";
+import {
+  currencyDecimals,
+  isSupportedCurrency,
+  majorToMinor,
+  minorToMajor,
+  normalizeCurrency,
+  SUPPORTED_CURRENCIES,
+} from "@/lib/currencies";
 import { PARTNER_TYPES } from "@/lib/partner-profile";
 
 export const partnerProfileFormSchema = z.object({
@@ -20,14 +27,18 @@ const tierSchema = z.object({
   discountPercent: z.string(),
 });
 
-/**
- * Maximum video price the partner can configure (€10,000). Mirrors the API-side
- * `MAX_VIDEO_PRICE` ceiling once converted into Peaks at any reasonable rate.
- */
-const MAX_VIDEO_PRICE_EUR = 10_000;
+/** Generous cap that mirrors the API-side `MAX_VIDEO_PRICE`. */
+const MAX_VIDEO_PRICE_MAJOR = 1_000_000;
 
 export const partnerCommercialFormSchema = z.object({
-  videoPriceEur: z.string().superRefine((val, ctx) => {
+  currency: z
+    .string()
+    .min(1, "Currency is required")
+    .refine(
+      (v) => isSupportedCurrency(v),
+      "Currency must be one of the supported ISO 4217 codes",
+    ),
+  videoPriceMajor: z.string().superRefine((val, ctx) => {
     const trimmed = val.trim().replace(",", ".");
     if (trimmed === "") {
       ctx.addIssue({
@@ -36,25 +47,25 @@ export const partnerCommercialFormSchema = z.object({
       });
       return;
     }
-    if (!/^\d+(?:\.\d{1,2})?$/.test(trimmed)) {
+    if (!/^\d+(?:\.\d{1,4})?$/.test(trimmed)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Enter a euro amount (e.g. 5 or 4.99)",
+        message: "Enter a positive amount (e.g. 5 or 4.99)",
       });
       return;
     }
     const n = Number.parseFloat(trimmed);
-    if (!Number.isFinite(n) || n < 0.01) {
+    if (!Number.isFinite(n) || n <= 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Price must be at least €0.01",
+        message: "Price must be greater than 0",
       });
       return;
     }
-    if (n > MAX_VIDEO_PRICE_EUR) {
+    if (n > MAX_VIDEO_PRICE_MAJOR) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: `Price must be at most €${MAX_VIDEO_PRICE_EUR.toLocaleString()}`,
+        message: `Price must be at most ${MAX_VIDEO_PRICE_MAJOR.toLocaleString()}`,
       });
     }
   }),
@@ -108,22 +119,29 @@ export const partnerCommercialFormSchema = z.object({
   }),
 });
 
-export type PartnerCommercialFormValues = z.infer<typeof partnerCommercialFormSchema>;
+export type PartnerCommercialFormValues = z.infer<
+  typeof partnerCommercialFormSchema
+>;
+
+export const SUPPORTED_PRICING_CURRENCIES = SUPPORTED_CURRENCIES;
 
 /**
- * Convert the EUR-denominated form into the persisted shape (Peaks). Buyers
- * still pay in Peaks, so the storage unit doesn't change — the partner UI is
- * the only layer that thinks in euros.
+ * Convert the form's string price into integer minor units of the selected
+ * currency. The form already validated the input, but we re-check to be
+ * defensive against callers bypassing zod.
  */
 export function commercialFormToSettings(
   values: PartnerCommercialFormValues,
-  peaksPerEuro: number,
 ): {
-  videoPricePeaks: number;
+  currency: string;
+  videoPriceMinor: number;
   volumeDiscounts: Array<{ minVideos: number; discountPercent: number }>;
 } {
-  const videoPricePeaks =
-    peaksFromEurInput(values.videoPriceEur, peaksPerEuro) ?? 0;
+  const currency = normalizeCurrency(values.currency);
+  const major = Number.parseFloat(values.videoPriceMajor.trim().replace(",", "."));
+  const videoPriceMinor = Number.isFinite(major)
+    ? Math.max(1, majorToMinor(major, currency))
+    : 0;
   const volumeDiscounts = values.volumeDiscounts
     .filter(
       (t) => t.minVideos.trim() !== "" || t.discountPercent.trim() !== "",
@@ -139,29 +157,24 @@ export function commercialFormToSettings(
         t.minVideos >= 2,
     )
     .sort((a, b) => a.minVideos - b.minVideos);
-  return { videoPricePeaks, volumeDiscounts };
+  return { currency, videoPriceMinor, volumeDiscounts };
 }
 
-/** Suggested defaults when the partner has not saved commercial settings yet. */
 export function commercialSettingsForForm(
-  saved: {
-    videoPricePeaks: number;
-    volumeDiscounts: Array<{ minVideos: number; discountPercent: number }>;
-  } | null,
-) {
+  saved: CommercialSettings | null,
+): CommercialSettings {
   return saved ?? DEFAULT_COMMERCIAL_SETTINGS;
 }
 
 export function commercialSettingsToFormValues(
-  settings: {
-    videoPricePeaks: number;
-    volumeDiscounts: Array<{ minVideos: number; discountPercent: number }>;
-  } | null,
-  peaksPerEuro: number,
+  settings: CommercialSettings | null,
 ): PartnerCommercialFormValues {
   const effective = commercialSettingsForForm(settings);
+  const major = minorToMajor(effective.videoPriceMinor, effective.currency);
+  const decimals = currencyDecimals(effective.currency);
   return {
-    videoPriceEur: eurStringFromPeaks(effective.videoPricePeaks, peaksPerEuro),
+    currency: effective.currency,
+    videoPriceMajor: major.toFixed(decimals),
     volumeDiscounts: effective.volumeDiscounts.map((t) => ({
       minVideos: String(t.minVideos),
       discountPercent: String(t.discountPercent),
