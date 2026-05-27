@@ -16,7 +16,7 @@ export type FeedAppBarActionsProps = {
     partnerProfileHref?: string;
     partnerIncomeHref?: string;
     adminRegionsHref?: string;
-    adminPeaksHref?: string;
+    adminSalesHref?: string;
     adminFinanceHref?: string;
     showPartnerNav: boolean;
     showAdminNav: boolean;
