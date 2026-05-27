@@ -89,18 +89,19 @@ function LatestSessionItem({ session }: { session: SearchSessionItem }) {
     </div>
   );
 
-  if (session.shareToken) {
-    return (
-      <Link
-        href={`/share/sessions/${encodeURIComponent(session.shareToken)}`}
-        className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-        aria-label={`Open session at ${placeName} on ${dateLabel}`}
-      >
-        {body}
-      </Link>
-    );
+  if (!session.shareToken) {
+    return body;
   }
-  return body;
+
+  return (
+    <Link
+      href={`/share/sessions/${encodeURIComponent(session.shareToken)}`}
+      className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      aria-label={`Open session at ${placeName} on ${dateLabel}`}
+    >
+      {body}
+    </Link>
+  );
 }
 
 function LatestWaveRow({ wave }: { wave: LatestWaveItem }) {
