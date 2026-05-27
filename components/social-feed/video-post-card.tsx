@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { DiscoverFeedPost } from "@/lib/discover-feed";
 import type { PlaceholderPost } from "@/lib/social-feed-placeholder";
 import type { SurferProfile } from "@/lib/surfer-profile";
+import { cn } from "@/lib/utils";
 import { CommercialWaveActions } from "./commercial-wave-actions";
 import { ClaimWaveButton } from "./claim-wave-button";
 import { PostActionsBar } from "./post-actions-bar";
@@ -13,6 +14,14 @@ import { PostContent } from "./post-content";
 import { PostSessionInfo } from "./post-session-info";
 import { PostHeader } from "./post-header";
 import { PostMedia } from "./post-media";
+
+const feedPostArticleClass =
+  "border-b border-border bg-transparent sm:rounded-2xl sm:border sm:border-border sm:bg-card sm:p-4 sm:p-5";
+const feedPostMetaClass = "px-4 sm:px-0";
+const feedPostMediaClass =
+  "mt-3 max-sm:mt-0 max-sm:rounded-none max-sm:border-0";
+const feedPostMediaShellClass =
+  "relative mt-3 overflow-hidden rounded-2xl border border-border bg-secondary/80 max-sm:mt-0 max-sm:rounded-none max-sm:border-0";
 
 function DiscoverVideoPostCard({
   post,
@@ -53,22 +62,24 @@ function DiscoverVideoPostCard({
         : [];
 
   return (
-    <article className="rounded-2xl border border-border bg-card p-4 sm:p-5">
-      <PostHeader
-        authorName={post.authorName}
-        authorAvatarUrl={post.authorAvatarUrl}
-        partnerUpload={post.isPartnerUpload}
-        timeAgo={timeLabel}
-      />
+    <article className={feedPostArticleClass}>
+      <div className={cn(feedPostMetaClass, "pt-3 sm:pt-0")}>
+        <PostHeader
+          authorName={post.authorName}
+          authorAvatarUrl={post.authorAvatarUrl}
+          partnerUpload={post.isPartnerUpload}
+          timeAgo={timeLabel}
+        />
+      </div>
       {isProcessing ? (
-        <div className="relative mt-3 overflow-hidden rounded-2xl border border-border bg-secondary/80">
-            <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-cyan-950/30 via-zinc-900 to-zinc-950">
+        <div className={feedPostMediaShellClass}>
+          <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-cyan-950/30 via-zinc-900 to-zinc-950">
             <Loader2Icon className="size-10 animate-spin text-primary" aria-hidden />
             <p className="text-sm text-muted-foreground">Your video is being processed</p>
           </div>
         </div>
       ) : isFailed ? (
-        <div className="relative mt-3 overflow-hidden rounded-2xl border border-red-500/20 bg-secondary/80">
+        <div className={cn(feedPostMediaShellClass, "border-red-500/20")}>
           <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-red-950/20 via-zinc-900 to-zinc-950 px-4 text-center">
             <p className="text-sm font-medium text-red-300">Upload failed</p>
             <p className="text-xs text-muted-foreground">This video could not be processed.</p>
@@ -81,7 +92,7 @@ function DiscoverVideoPostCard({
           surfer={surfer}
           playbackId={post.id}
           autoPlayInView
-          className="mt-3"
+          className={feedPostMediaClass}
           claimWave={
             !post.isCommercial && canClaim ? (
               <ClaimWaveButton
@@ -99,8 +110,11 @@ function DiscoverVideoPostCard({
           }
         />
       ) : commercialLocked ? (
-        <div className="relative mt-3">
-          <WaveSnapshotCarousel urls={snapshotUrls} />
+        <div className={cn("relative", feedPostMediaClass)}>
+          <WaveSnapshotCarousel
+            urls={snapshotUrls}
+            mediaClassName="max-sm:rounded-none max-sm:border-0"
+          />
           <CommercialWaveActions
             post={post}
             overlay
@@ -121,15 +135,17 @@ function DiscoverVideoPostCard({
           surfer={surfer}
           playbackId={post.id}
           autoPlayInView
-          className="mt-3"
+          className={feedPostMediaClass}
         />
       )}
-      <PostSessionInfo sessionSummary={post.sessionSummary} session={post.session} />
-      <PostActionsBar
-        jobId={post.id}
-        shakaCount={post.shakaCount}
-        shakaedByViewer={post.shakaedByViewer}
-      />
+      <div className={cn(feedPostMetaClass, "pb-4 sm:pb-0")}>
+        <PostSessionInfo sessionSummary={post.sessionSummary} session={post.session} />
+        <PostActionsBar
+          jobId={post.id}
+          shakaCount={post.shakaCount}
+          shakaedByViewer={post.shakaedByViewer}
+        />
+      </div>
     </article>
   );
 }
@@ -158,22 +174,26 @@ export function VideoPostCard({
   if (!placeholder) return null;
 
   return (
-    <article className="rounded-2xl border border-border bg-card p-4 sm:p-5">
-      <PostHeader
-        authorName={placeholder.authorName}
-        timeAgo={placeholder.timeAgo}
-      />
-      <PostMedia duration={placeholder.duration} />
-      <PostContent
-        title={placeholder.title}
-        description={placeholder.description}
-        hashtags={placeholder.hashtags}
-      />
-      <PostActionsBar
-        jobId=""
-        shakaCount={placeholder.likes}
-        shakaedByViewer={false}
-      />
+    <article className={feedPostArticleClass}>
+      <div className={cn(feedPostMetaClass, "pt-3 sm:pt-0")}>
+        <PostHeader
+          authorName={placeholder.authorName}
+          timeAgo={placeholder.timeAgo}
+        />
+      </div>
+      <PostMedia duration={placeholder.duration} className={feedPostMediaClass} />
+      <div className={cn(feedPostMetaClass, "pb-4 sm:pb-0")}>
+        <PostContent
+          title={placeholder.title}
+          description={placeholder.description}
+          hashtags={placeholder.hashtags}
+        />
+        <PostActionsBar
+          jobId=""
+          shakaCount={placeholder.likes}
+          shakaedByViewer={false}
+        />
+      </div>
     </article>
   );
 }
