@@ -9,25 +9,24 @@ import {
   PERSONAL_UPLOAD_EVENT,
 } from "@/lib/discover-feed";
 import { fetchMyVideos, myVideoItemToPost } from "@/lib/my-videos";
-import { cn } from "@/lib/utils";
-import { VideoPostCard } from "./video-post-card";
+import { FeedList } from "./feed-list";
 
 function MyVideosSkeleton() {
   return (
-    <div className="grid grid-cols-2 gap-4 pt-2">
-      {[0, 1, 2, 3].map((i) => (
+    <div className="flex flex-col gap-0 pt-0 sm:gap-6 sm:pt-4">
+      {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="animate-pulse rounded-2xl border border-border bg-card p-4"
+          className="animate-pulse border-b border-border px-4 py-3 sm:rounded-2xl sm:border sm:border-border sm:bg-card sm:p-5"
         >
-          <div className="mb-3 flex items-center gap-2">
-            <div className="size-8 shrink-0 rounded-full bg-muted" />
-            <div className="flex flex-1 flex-col gap-1.5">
-              <div className="h-3 w-20 rounded bg-muted" />
-              <div className="h-2.5 w-28 rounded bg-muted/80" />
+          <div className="mb-3 flex items-center gap-3">
+            <div className="size-10 rounded-full bg-muted" />
+            <div className="flex flex-1 flex-col gap-2">
+              <div className="h-4 w-32 rounded bg-muted" />
+              <div className="h-3 w-48 rounded bg-muted/80" />
             </div>
           </div>
-          <div className="aspect-video w-full rounded-2xl bg-muted/80" />
+          <div className="-mx-4 aspect-video w-[calc(100%+2rem)] bg-muted/80 sm:mx-0 sm:mt-3 sm:w-full sm:rounded-2xl" />
         </div>
       ))}
     </div>
@@ -92,7 +91,7 @@ export function MyVideosPanel() {
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-500/30 bg-red-950/20 px-4 py-6 text-center text-sm text-red-300">
+      <div className="mx-4 mt-4 rounded-2xl border border-red-500/30 bg-red-950/20 px-4 py-6 text-center text-sm text-red-300 sm:mx-0 sm:mt-0">
         <p>{error}</p>
         <button
           type="button"
@@ -110,7 +109,7 @@ export function MyVideosPanel() {
 
   if (videos.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-card px-4 py-12 text-center">
+      <div className="mx-4 mt-4 rounded-2xl border border-border bg-card px-4 py-12 text-center sm:mx-0 sm:mt-0">
         <p className="text-sm font-medium text-foreground">No videos yet</p>
         <p className="mt-2 text-sm text-muted-foreground">
           Upload a video from the top bar, or claim a partner upload from your feed. Personal
@@ -120,11 +119,5 @@ export function MyVideosPanel() {
     );
   }
 
-  return (
-    <div className={cn("grid grid-cols-2 gap-4 pt-2")}>
-      {videos.map((post) => (
-        <VideoPostCard key={post.id} post={post} />
-      ))}
-    </div>
-  );
+  return <FeedList posts={videos} />;
 }

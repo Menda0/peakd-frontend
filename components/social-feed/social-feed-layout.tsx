@@ -72,8 +72,8 @@ export function SocialFeedLayout({
           userEmail={userEmail}
         />
         {children ? (
-          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
-            <div className="mx-auto w-full max-w-4xl">{children}</div>
+          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto px-0 py-0 sm:px-6 sm:py-6">
+            <div className="mx-auto w-full sm:max-w-xl">{children}</div>
           </main>
         ) : (
           <FeedMainColumn />

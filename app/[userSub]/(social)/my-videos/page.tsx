@@ -23,9 +23,9 @@ export default async function MyVideosPage({
       userName={session.user.name}
       userEmail={session.user.email}
     >
-      <header className="mb-6 border-b border-border pb-4">
-        <h1 className="text-xl font-semibold text-foreground">My videos</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+      <header className="border-b border-border px-4 pb-3 pt-4 sm:mb-6 sm:border-0 sm:px-0 sm:pb-0 sm:pt-0">
+        <h1 className="text-lg font-semibold text-foreground sm:text-xl">My videos</h1>
+        <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
           Your waves — personal uploads (auto-claimed) and partner clips you have claimed.
         </p>
       </header>
