@@ -149,8 +149,16 @@ export function FeedGeoSearchInput({
         <ComboboxContent
           align="start"
           sideOffset={12}
-          className="!w-(--anchor-width) !min-w-(--anchor-width) !max-w-(--anchor-width) border-border"
-          positionerClassName="z-50 !w-(--anchor-width) !min-w-(--anchor-width) !max-w-(--anchor-width)"
+          className={cn(
+            "border-border",
+            "max-sm:!w-full max-sm:!min-w-0 max-sm:!max-w-none",
+            "sm:!w-(--anchor-width) sm:!min-w-(--anchor-width) sm:!max-w-(--anchor-width)",
+          )}
+          positionerClassName={cn(
+            "z-50",
+            "max-sm:!left-4 max-sm:!w-[calc(100vw-2rem)] max-sm:!min-w-[calc(100vw-2rem)] max-sm:!max-w-[calc(100vw-2rem)]",
+            "sm:!w-(--anchor-width) sm:!min-w-(--anchor-width) sm:!max-w-(--anchor-width)",
+          )}
         >
         <ComboboxList>
           {loading && items.length === 0 ? (
