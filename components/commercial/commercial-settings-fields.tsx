@@ -1,11 +1,29 @@
 "use client";
 
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-fields";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formInputClassName } from "@/lib/form-styles";
-import type { CommercialSettings, VolumeDiscountTier } from "@/lib/commercial-settings";
-import { Plus, Trash2 } from "lucide-react";
+import type {
+  CommercialSettings,
+  VolumeDiscountTier,
+} from "@/lib/commercial-settings";
+import {
+  currencyDecimals,
+  majorToMinor,
+  minorToMajor,
+  normalizeCurrency,
+  priceInputStep,
+  SUPPORTED_CURRENCIES,
+} from "@/lib/currencies";
 
 export function CommercialSettingsFields({
   values,
@@ -40,29 +58,79 @@ export function CommercialSettingsFields({
     });
   };
 
+  const handleCurrencyChange = (next: string) => {
+    const normalized = normalizeCurrency(next);
+    if (!normalized || normalized === values.currency) return;
+    // Re-snap the integer price into the new currency's decimal grid so
+    // the displayed major-unit value is preserved when the user toggles.
+    const major = minorToMajor(values.videoPriceMinor, values.currency);
+    onChange({
+      ...values,
+      currency: normalized,
+      videoPriceMinor: Math.max(1, majorToMinor(major, normalized)),
+    });
+  };
+
+  const decimals = currencyDecimals(values.currency);
+  const major = minorToMajor(values.videoPriceMinor, values.currency).toFixed(
+    decimals,
+  );
+
   return (
     <div className="flex flex-col gap-4">
-      <FormField
-        label="Price per wave (Peaks)"
-        htmlFor={`${idPrefix}-price`}
-        description="Surfers pay this many Peaks to buy and unlock a wave."
-      >
-        <Input
-          id={`${idPrefix}-price`}
-          type="number"
-          min={1}
-          step={1}
-          className={formInputClassName}
-          value={values.videoPricePeaks}
-          onChange={(e) => {
-            const n = Number.parseInt(e.target.value, 10);
-            onChange({
-              ...values,
-              videoPricePeaks: Number.isFinite(n) && n >= 1 ? n : 1,
-            });
-          }}
-        />
-      </FormField>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormField
+          label="Currency"
+          htmlFor={`${idPrefix}-currency`}
+          description="Stripe charges buyers in this currency (auto-converted for foreign buyers)."
+        >
+          <Select
+            value={values.currency}
+            onValueChange={(v) => handleCurrencyChange(v ?? values.currency)}
+          >
+            <SelectTrigger
+              id={`${idPrefix}-currency`}
+              className={formInputClassName}
+            >
+              <SelectValue placeholder="Currency" />
+            </SelectTrigger>
+            <SelectContent>
+              {SUPPORTED_CURRENCIES.map((cur) => (
+                <SelectItem key={cur} value={cur}>
+                  {cur}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+
+        <FormField
+          label={`Price per wave (${values.currency})`}
+          htmlFor={`${idPrefix}-price`}
+          description="Surfers pay this much to buy and unlock a wave."
+        >
+          <Input
+            id={`${idPrefix}-price`}
+            type="number"
+            min={0}
+            step={priceInputStep(values.currency)}
+            inputMode="decimal"
+            className={formInputClassName}
+            value={major}
+            onChange={(e) => {
+              const n = Number.parseFloat(e.target.value);
+              if (!Number.isFinite(n) || n <= 0) {
+                onChange({ ...values, videoPriceMinor: 1 });
+                return;
+              }
+              onChange({
+                ...values,
+                videoPriceMinor: Math.max(1, majorToMinor(n, values.currency)),
+              });
+            }}
+          />
+        </FormField>
+      </div>
 
       <div>
         <p className="mb-2 text-sm font-medium text-foreground">Volume discounts</p>

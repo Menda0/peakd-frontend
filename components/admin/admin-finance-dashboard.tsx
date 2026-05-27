@@ -9,9 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  formatEurCents,
-  type AdminFinanceOverviewDto,
+import { formatMoney } from "@/lib/currencies";
+import type {
+  AdminFinanceCurrencyRowDto,
+  AdminFinanceOverviewDto,
 } from "@/lib/admin-finance";
 import { fetchAdminFinanceOverviewAction } from "@/app/[userSub]/(social)/admin/finance/actions";
 
@@ -50,12 +51,73 @@ function FinanceCard({
 }
 
 function effectiveStripeFeePercent(
-  feesCents: number,
-  revenueCents: number,
+  feesMinor: number,
+  revenueMinor: number,
 ): string {
-  if (revenueCents <= 0) return "n/a";
-  const pct = (feesCents / revenueCents) * 100;
+  if (revenueMinor <= 0) return "n/a";
+  const pct = (feesMinor / revenueMinor) * 100;
   return `${pct.toFixed(2)}%`;
+}
+
+function CurrencyRowCard({ row }: { row: AdminFinanceCurrencyRowDto }) {
+  const fmt = (minor: number) => formatMoney(minor, row.currency);
+
+  return (
+    <section className="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-lg font-semibold text-zinc-50">
+          {row.currency}
+        </h2>
+        <p className="text-xs uppercase tracking-wide text-zinc-500">
+          {row.ledger.totalOrders.toLocaleString()} orders
+        </p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <FinanceCard
+          label={`Stripe available (${row.currency})`}
+          value={fmt(row.stripe.availableMinor)}
+          hint="Platform commission held after destination charges."
+          tone="good"
+        />
+        <FinanceCard
+          label={`Stripe pending (${row.currency})`}
+          value={fmt(row.stripe.pendingMinor)}
+          hint="Charges that have not yet cleared."
+        />
+        <FinanceCard
+          label="Net platform margin"
+          value={fmt(row.derived.netPlatformMarginMinor)}
+          hint="Commission earned minus Stripe fees."
+          tone={row.derived.netPlatformMarginMinor >= 0 ? "good" : "bad"}
+        />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <FinanceCard
+          label="Total revenue"
+          value={fmt(row.ledger.totalRevenueMinor)}
+          hint="Sum of buyer payments for completed orders."
+        />
+        <FinanceCard
+          label="Stripe fees paid"
+          value={fmt(row.ledger.totalStripeFeesMinor)}
+          hint={`Effective ${effectiveStripeFeePercent(row.ledger.totalStripeFeesMinor, row.ledger.totalRevenueMinor)}.`}
+          tone="bad"
+        />
+        <FinanceCard
+          label="Transferred to partners"
+          value={fmt(row.ledger.totalPartnerPaidOutMinor)}
+          hint="Routed to Connect accounts at checkout."
+        />
+        <FinanceCard
+          label="Platform commission earned"
+          value={fmt(row.ledger.totalPlatformCommissionMinor)}
+          hint="20% surcharge on partner prices."
+        />
+      </div>
+    </section>
+  );
 }
 
 export function AdminFinanceDashboard() {
@@ -117,10 +179,6 @@ export function AdminFinanceDashboard() {
     );
   }
 
-  const { stripe, ledger, derived } = overview;
-  const liabilityDeltaNegative = derived.liabilityVsBalanceDeltaCents < 0;
-  const stripeFeeNoteVisible = ledger.totalPurchases > ledger.purchasesWithFeeData;
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -129,9 +187,10 @@ export function AdminFinanceDashboard() {
             Finance
           </h1>
           <p className="mt-1 text-sm text-zinc-400">
-            Live snapshot of the platform&apos;s Stripe balance, lifetime revenue, processing
-            fees, partner liability, payouts, and platform retention. All amounts are in EUR
-            unless labeled otherwise. The Stripe balance is cached for 60 seconds.
+            Per-currency platform snapshot: Stripe balance, lifetime revenue,
+            processing fees, partner liability, payouts, and commission.
+            Platform commission is {overview.platformCommissionPercent}% on
+            top of every partner sale.
           </p>
         </div>
         <Button
@@ -149,117 +208,29 @@ export function AdminFinanceDashboard() {
         </p>
       ) : null}
 
-      {stripe.error ? (
+      {overview.stripeError ? (
         <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-          Stripe balance unavailable: {stripe.error}. Other figures below are still
-          accurate.
+          Stripe balance unavailable: {overview.stripeError}. Ledger figures
+          below are still accurate.
         </p>
       ) : null}
 
-      {liabilityDeltaNegative ? (
-        <p className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-          Warning: Stripe EUR available balance ({formatEurCents(stripe.availableEurCents)})
-          is below total partner liability (
-          {formatEurCents(ledger.totalPartnerLiabilityCents)}). A coordinated
-          withdrawal could fail with &quot;insufficient available funds&quot;. Shortfall:{" "}
-          {formatEurCents(-derived.liabilityVsBalanceDeltaCents)}.
-        </p>
-      ) : null}
+      <p className="text-xs text-zinc-500">
+        Snapshot taken {new Date(overview.fetchedAt).toLocaleTimeString()} ·
+        Stripe balance cached up to 60s.
+      </p>
 
-      {stripe.nonEurCurrencies.length > 0 ? (
-        <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-          Non-EUR Stripe balances detected ({stripe.nonEurCurrencies.join(", ")}). Partner
-          transfers use EUR exclusively, so funds in other currencies cannot be used.
+      {overview.rows.length === 0 ? (
+        <p className="rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-3 text-sm text-zinc-400">
+          No completed orders or partner balances yet.
         </p>
-      ) : null}
-
-      {stripeFeeNoteVisible ? (
-        <p className="rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-400">
-          {ledger.totalPurchases - ledger.purchasesWithFeeData} of {ledger.totalPurchases}{" "}
-          historical purchases pre-date Stripe-fee capture; the &quot;Stripe fees paid&quot;
-          figure is a lower bound until those rows are backfilled.
-        </p>
-      ) : null}
-
-      <section>
-        <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-zinc-400">
-          Stripe platform balance
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <FinanceCard
-            label="Available (EUR)"
-            value={formatEurCents(stripe.availableEurCents)}
-            hint="Funds ready to fund partner withdrawals right now."
-            tone={liabilityDeltaNegative ? "bad" : "good"}
-          />
-          <FinanceCard
-            label="Pending (EUR)"
-            value={formatEurCents(stripe.pendingEurCents)}
-            hint="Charges that have not yet cleared into the available balance."
-          />
-          <FinanceCard
-            label="Liability vs balance"
-            value={formatEurCents(derived.liabilityVsBalanceDeltaCents)}
-            hint="Available − total unwithdrawn partner earnings. Negative = shortfall."
-            tone={liabilityDeltaNegative ? "bad" : "good"}
-          />
+      ) : (
+        <div className="space-y-6">
+          {overview.rows.map((row) => (
+            <CurrencyRowCard key={row.currency} row={row} />
+          ))}
         </div>
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-zinc-400">
-          Revenue & costs (lifetime)
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <FinanceCard
-            label="Total revenue"
-            value={formatEurCents(ledger.totalRevenueCents)}
-            hint={`${ledger.totalPurchases.toLocaleString()} Peak-pack purchases.`}
-          />
-          <FinanceCard
-            label="Stripe fees paid"
-            value={formatEurCents(ledger.totalStripeFeesCents)}
-            hint={`Effective rate ${effectiveStripeFeePercent(ledger.totalStripeFeesCents, ledger.totalRevenueCents)}.`}
-            tone="bad"
-          />
-          <FinanceCard
-            label="Paid out to partners"
-            value={formatEurCents(ledger.totalPartnerPaidOutCents)}
-            hint="Sum of completed Stripe transfers to connected accounts."
-            tone="bad"
-          />
-          <FinanceCard
-            label="Net margin"
-            value={formatEurCents(derived.netPlatformMarginCents)}
-            hint="Revenue − Stripe fees − paid out − unwithdrawn liability."
-            tone={derived.netPlatformMarginCents >= 0 ? "good" : "bad"}
-          />
-        </div>
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-zinc-400">
-          Liability & retention
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <FinanceCard
-            label="Partner liability (unwithdrawn)"
-            value={formatEurCents(ledger.totalPartnerLiabilityCents)}
-            hint="Money owed to partners on UserProfile.partnerEarningsCents. Withdrawable on demand."
-            tone="bad"
-          />
-          <FinanceCard
-            label="Platform retention (lifetime)"
-            value={formatEurCents(ledger.totalPlatformRetentionEurCents)}
-            hint={`${ledger.totalPlatformRetentionPeaks.toLocaleString()} Peaks across disclosed regions. Funds community awards at admin discretion.`}
-          />
-          <FinanceCard
-            label="Snapshot taken"
-            value={new Date(overview.fetchedAt).toLocaleTimeString()}
-            hint={`1 EUR = ${overview.peaksPerEuro} Peaks · Stripe balance cached up to 60s.`}
-          />
-        </div>
-      </section>
+      )}
     </div>
   );
 }

@@ -1,15 +1,25 @@
+import {
+  formatMoney,
+  isSupportedCurrency,
+  normalizeCurrency,
+} from "@/lib/currencies";
+
 export type VolumeDiscountTier = {
   minVideos: number;
   discountPercent: number;
 };
 
 export type CommercialSettings = {
-  videoPricePeaks: number;
+  /** Uppercase ISO 4217 currency code, e.g. "EUR". */
+  currency: string;
+  /** Integer minor units of `currency` (e.g. cents). */
+  videoPriceMinor: number;
   volumeDiscounts: VolumeDiscountTier[];
 };
 
 export const DEFAULT_COMMERCIAL_SETTINGS: CommercialSettings = {
-  videoPricePeaks: 50,
+  currency: "EUR",
+  videoPriceMinor: 500,
   volumeDiscounts: [
     { minVideos: 3, discountPercent: 10 },
     { minVideos: 5, discountPercent: 15 },
@@ -17,11 +27,22 @@ export const DEFAULT_COMMERCIAL_SETTINGS: CommercialSettings = {
   ],
 };
 
-export function normalizeCommercialSettings(raw: unknown): CommercialSettings | null {
+export function normalizeCommercialSettings(
+  raw: unknown,
+): CommercialSettings | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
-  const videoPricePeaks = Number(o.videoPricePeaks);
-  if (!Number.isFinite(videoPricePeaks) || videoPricePeaks < 1) return null;
+  const currencyRaw =
+    typeof o.currency === "string" ? normalizeCurrency(o.currency) : "";
+  if (!currencyRaw || !isSupportedCurrency(currencyRaw)) return null;
+  const videoPriceMinor = Number(o.videoPriceMinor);
+  if (
+    !Number.isFinite(videoPriceMinor) ||
+    !Number.isInteger(videoPriceMinor) ||
+    videoPriceMinor < 1
+  ) {
+    return null;
+  }
   const volumeDiscounts: VolumeDiscountTier[] = [];
   if (Array.isArray(o.volumeDiscounts)) {
     for (const row of o.volumeDiscounts) {
@@ -42,19 +63,32 @@ export function normalizeCommercialSettings(raw: unknown): CommercialSettings | 
     }
   }
   volumeDiscounts.sort((a, b) => a.minVideos - b.minVideos);
-  return { videoPricePeaks: Math.round(videoPricePeaks), volumeDiscounts };
+  return {
+    currency: currencyRaw,
+    videoPriceMinor: Math.round(videoPriceMinor),
+    volumeDiscounts,
+  };
 }
 
-export const COMMUNITY_FEE_PERCENT = 20;
+/** Default platform commission percent charged on top of the partner's price. */
+export const PLATFORM_COMMISSION_PERCENT_DEFAULT = 20;
+export const STRIPE_PROCESSING_FEE_PERCENT_DEFAULT = 2.9;
+export const STRIPE_PROCESSING_FEE_FIXED_MINOR_DEFAULT = 30;
 
-export type CheckoutPeaksBreakdown = {
-  basePeaks: number;
-  communityFeePeaks: number;
-  totalPeaks: number;
-  communityFeePercent: number;
-  listPricePeaks: number;
+export type StripeProcessingFeeConfig = {
+  stripeProcessingFeePercent?: number;
+  stripeProcessingFeeFixedMinor?: number;
+};
+
+export type CheckoutBreakdownMinor = {
+  basePriceMinor: number;
+  commissionMinor: number;
+  stripeProcessingFeeMinor: number;
+  totalMinor: number;
+  commissionPercent: number;
+  listPriceMinor: number;
   discountPercent: number;
-  discountPeaksSaved: number;
+  discountSavedMinor: number;
 };
 
 export function volumeDiscountPercent(
@@ -71,19 +105,19 @@ export function volumeDiscountPercent(
   return best;
 }
 
-export function computeBuyClaimPeaks(
+export function computeBuyClaimMinor(
   settings: CommercialSettings,
   quantity: number,
-): { unitPricePeaks: number; discountPercent: number; totalPeaks: number } {
+): { unitPriceMinor: number; discountPercent: number; totalMinor: number } {
   const q = Math.max(1, Math.floor(quantity));
-  const unitPricePeaks = settings.videoPricePeaks;
+  const unitPriceMinor = settings.videoPriceMinor;
   const discountPercent = volumeDiscountPercent(q, settings.volumeDiscounts);
-  const subtotal = unitPricePeaks * q;
-  const totalPeaks = Math.max(
+  const subtotal = unitPriceMinor * q;
+  const totalMinor = Math.max(
     1,
     Math.round(subtotal * (1 - discountPercent / 100)),
   );
-  return { unitPricePeaks, discountPercent, totalPeaks };
+  return { unitPriceMinor, discountPercent, totalMinor };
 }
 
 function splitIntegerTotal(total: number, parts: number): number[] {
@@ -100,117 +134,107 @@ function splitIntegerTotal(total: number, parts: number): number[] {
   return out;
 }
 
-export function allocateBuyClaimLineBreakdowns(
+export function computeCheckoutTotalMinor(
+  basePriceMinor: number,
+  commissionPercent: number = PLATFORM_COMMISSION_PERCENT_DEFAULT,
+  stripeConfig?: StripeProcessingFeeConfig,
+): CheckoutBreakdownMinor {
+  const base = Math.max(0, Math.round(basePriceMinor));
+  const pct = Math.max(0, commissionPercent);
+  const stripePct = Math.max(
+    0,
+    stripeConfig?.stripeProcessingFeePercent ??
+      STRIPE_PROCESSING_FEE_PERCENT_DEFAULT,
+  );
+  const stripeFixed = Math.max(
+    0,
+    Math.round(
+      stripeConfig?.stripeProcessingFeeFixedMinor ??
+        STRIPE_PROCESSING_FEE_FIXED_MINOR_DEFAULT,
+    ),
+  );
+  const commissionMinor =
+    base > 0 ? Math.max(1, Math.round((base * pct) / 100)) : 0;
+  const targetNet = base + commissionMinor;
+  const stripeFeeForTotal = (amountMinor: number): number => {
+    if (amountMinor <= 0) return 0;
+    return Math.max(
+      0,
+      Math.round((amountMinor * stripePct) / 100) + stripeFixed,
+    );
+  };
+  let total = targetNet;
+  for (let i = 0; i < 8; i += 1) {
+    const fee = stripeFeeForTotal(total);
+    const next = targetNet + fee;
+    if (next <= total) break;
+    total = next;
+  }
+  const stripeProcessingFeeMinor = Math.max(0, total - targetNet);
+  return {
+    basePriceMinor: base,
+    commissionMinor,
+    stripeProcessingFeeMinor,
+    totalMinor: total,
+    commissionPercent: pct,
+    listPriceMinor: base,
+    discountPercent: 0,
+    discountSavedMinor: 0,
+  };
+}
+
+/** Payment processing fee for display (matches backend gross-up). */
+export function paymentProcessingFeeMinor(
+  breakdown: Pick<
+    CheckoutBreakdownMinor,
+    "basePriceMinor" | "commissionMinor" | "stripeProcessingFeeMinor" | "totalMinor"
+  >,
+): number {
+  if (breakdown.stripeProcessingFeeMinor > 0) {
+    return breakdown.stripeProcessingFeeMinor;
+  }
+  return Math.max(
+    0,
+    breakdown.totalMinor - breakdown.basePriceMinor - breakdown.commissionMinor,
+  );
+}
+
+export function allocateBuyClaimLineBreakdownsMinor(
   settings: CommercialSettings,
   waveCount: number,
-): CheckoutPeaksBreakdown[] {
+  commissionPercent: number = PLATFORM_COMMISSION_PERCENT_DEFAULT,
+  stripeConfig?: StripeProcessingFeeConfig,
+): CheckoutBreakdownMinor[] {
   const q = Math.max(1, Math.floor(waveCount));
-  const { unitPricePeaks, discountPercent, totalPeaks: discountedBaseTotal } =
-    computeBuyClaimPeaks(settings, q);
+  const {
+    unitPriceMinor,
+    discountPercent,
+    totalMinor: discountedBaseTotal,
+  } = computeBuyClaimMinor(settings, q);
   const baseShares = splitIntegerTotal(discountedBaseTotal, q);
-  return baseShares.map((basePeaks) => {
-    const checkout = computeCheckoutTotal(basePeaks);
-    const list = unitPricePeaks;
+  return baseShares.map((basePriceMinor) => {
+    const checkout = computeCheckoutTotalMinor(
+      basePriceMinor,
+      commissionPercent,
+      stripeConfig,
+    );
     return {
       ...checkout,
-      listPricePeaks: list,
+      listPriceMinor: unitPriceMinor,
       discountPercent,
-      discountPeaksSaved: Math.max(0, list - basePeaks),
+      discountSavedMinor: Math.max(0, unitPriceMinor - basePriceMinor),
     };
   });
 }
 
-export function computeCheckoutTotal(basePeaks: number): CheckoutPeaksBreakdown {
-  const base = Math.max(0, Math.round(basePeaks));
-  const communityFeePeaks = Math.max(
-    1,
-    Math.round((base * COMMUNITY_FEE_PERCENT) / 100),
-  );
-  return {
-    basePeaks: base,
-    communityFeePeaks,
-    totalPeaks: base + communityFeePeaks,
-    communityFeePercent: COMMUNITY_FEE_PERCENT,
-    listPricePeaks: base,
-    discountPercent: 0,
-    discountPeaksSaved: 0,
-  };
-}
-
 export function formatDiscountSummary(settings: CommercialSettings): string {
+  const price = formatMoney(settings.videoPriceMinor, settings.currency);
   const tiers = settings.volumeDiscounts;
   if (tiers.length === 0) {
-    return `${settings.videoPricePeaks} Peaks per wave`;
+    return `${price} per wave`;
   }
   const parts = tiers.map(
     (t) => `${t.minVideos}+ waves: ${t.discountPercent}% off`,
   );
-  return `${settings.videoPricePeaks} Peaks/wave · ${parts.join(" · ")}`;
-}
-
-/**
- * Convert a stored Peaks price into an EUR string with 2-decimal precision.
- * Used by the partner-facing forms — buyer-facing flows continue to display
- * Peaks directly.
- */
-export function eurStringFromPeaks(
-  peaks: number,
-  peaksPerEuro: number,
-): string {
-  if (!Number.isFinite(peaksPerEuro) || peaksPerEuro <= 0) return "";
-  const rounded = Math.max(0, Math.round(peaks));
-  const cents = Math.round((rounded * 100) / peaksPerEuro);
-  return (cents / 100).toFixed(2);
-}
-
-/**
- * Convert an EUR string (typed by the partner) into a Peaks integer that gets
- * persisted on the commercial settings. Uses ceil so the partner is never
- * "short-changed" on the buyer charge when `peaksPerEuro` is not a round number.
- *
- * Returns `null` when the input is not a valid non-negative euro amount.
- */
-export function peaksFromEurInput(
-  euroInput: string,
-  peaksPerEuro: number,
-): number | null {
-  if (!Number.isFinite(peaksPerEuro) || peaksPerEuro <= 0) return null;
-  const trimmed = euroInput.trim().replace(",", ".");
-  if (trimmed === "") return null;
-  if (!/^\d+(?:\.\d{1,2})?$/.test(trimmed)) return null;
-  const euros = Number.parseFloat(trimmed);
-  if (!Number.isFinite(euros) || euros < 0) return null;
-  const cents = Math.round(euros * 100);
-  return Math.max(1, Math.ceil((cents * peaksPerEuro) / 100));
-}
-
-/** Locale-friendly EUR formatter (matches partner-income UI). */
-export function formatEurDisplay(eurString: string): string {
-  const n = Number.parseFloat(eurString);
-  if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 2,
-  }).format(n);
-}
-
-/**
- * Partner-side variant of `formatDiscountSummary` that prices the wave in EUR
- * rather than Peaks. Buyer-facing surfaces should keep using
- * `formatDiscountSummary` (Peaks) — buyers still pay in Peaks.
- */
-export function formatDiscountSummaryEur(
-  settings: CommercialSettings,
-  peaksPerEuro: number,
-): string {
-  const eur = formatEurDisplay(eurStringFromPeaks(settings.videoPricePeaks, peaksPerEuro));
-  const tiers = settings.volumeDiscounts;
-  if (tiers.length === 0) {
-    return `${eur} per wave`;
-  }
-  const parts = tiers.map(
-    (t) => `${t.minVideos}+ waves: ${t.discountPercent}% off`,
-  );
-  return `${eur}/wave · ${parts.join(" · ")}`;
+  return `${price}/wave · ${parts.join(" · ")}`;
 }
