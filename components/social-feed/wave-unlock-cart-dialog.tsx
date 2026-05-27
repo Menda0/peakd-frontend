@@ -2,33 +2,27 @@
 
 import { Trash2 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { BuyPeaksDialog } from "@/components/peaks/buy-peaks-dialog";
 import { Button } from "@/components/ui/button";
-import { buyClaimCartBatch } from "@/lib/commercial-cart";
-import { sponsorWave, fetchPeaksBalance } from "@/lib/commercial-wave";
-import { dispatchWaveClaimedEvent } from "@/lib/claim-wave";
-import {
-  fetchWallet,
-  PEAKS_BALANCE_REFRESH_EVENT,
-  type WalletResponse,
-} from "@/lib/billing";
-import { COMMERCIAL_WAVE_UNLOCKED_EVENT } from "@/lib/discover-feed";
+import { startCartGroupCheckout } from "@/lib/commercial-cart";
+import { formatMoney } from "@/lib/currencies";
 import { intentLabel } from "@/lib/wave-unlock-wizard";
 import {
   clearWaveUnlockCart,
-  readWaveUnlockCart,
   removeFromWaveUnlockCart,
   useWaveUnlockCart,
-  type WaveUnlockCartLine,
+  type WaveUnlockCartGroup,
+  type WaveUnlockCartGroupedLine,
 } from "@/lib/wave-unlock-cart";
 
 function CartLineRow({
   line,
+  currency,
   onRemove,
 }: {
-  line: WaveUnlockCartLine;
+  line: WaveUnlockCartGroupedLine;
+  currency: string;
   onRemove: () => void;
 }) {
   return (
@@ -50,19 +44,31 @@ function CartLineRow({
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">{line.videoName}</p>
-        <p className="truncate text-xs text-muted-foreground">{line.sessionLabel}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{intentLabel(line.intent)}</p>
+        <p className="truncate text-sm font-medium text-foreground">
+          {line.videoName}
+        </p>
+        <p className="truncate text-xs text-muted-foreground">
+          {line.sessionLabel}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {intentLabel(line.intent)}
+        </p>
         <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
           <span className="text-muted-foreground">
-            List: <span className="text-muted-foreground">{line.listPricePeaks} Peaks</span>
+            List:{" "}
+            <span className="text-muted-foreground">
+              {formatMoney(line.listPriceMinor, currency)}
+            </span>
           </span>
           {line.discountPercent > 0 ? (
             <span className="text-emerald-400/90">
-              {line.discountPercent}% off (−{line.discountPeaksSaved})
+              {line.discountPercent}% off (−
+              {formatMoney(line.discountSavedMinor, currency)})
             </span>
           ) : null}
-          <span className="font-medium text-foreground">{line.totalPeaks} Peaks</span>
+          <span className="font-medium text-foreground">
+            {formatMoney(line.totalMinor, currency)}
+          </span>
         </div>
       </div>
       <button
@@ -77,225 +83,165 @@ function CartLineRow({
   );
 }
 
-/** Cart list + checkout actions (used inside app-bar popover). */
-export function WaveUnlockCartPanel({ onClose }: { onClose?: () => void }) {
-  const { lines, totalPeaks, quoteLoading, refresh } = useWaveUnlockCart();
-  const [submitting, setSubmitting] = useState(false);
-  const [wallet, setWallet] = useState<WalletResponse | null>(null);
-  const [buyPeaksOpen, setBuyPeaksOpen] = useState(false);
-  const [pendingCheckout, setPendingCheckout] = useState(false);
-
-  const listSubtotal = useMemo(
-    () => lines.reduce((sum, line) => sum + line.listPricePeaks, 0),
-    [lines],
+function CartGroupCard({
+  group,
+  submittingPartnerId,
+  onCheckout,
+  onRemoveLine,
+}: {
+  group: WaveUnlockCartGroup;
+  submittingPartnerId: string | null;
+  onCheckout: (group: WaveUnlockCartGroup) => void;
+  onRemoveLine: (jobId: string) => void;
+}) {
+  const submitting = submittingPartnerId === group.partnerUserId;
+  const intent = group.lines[0]?.intent ?? "buy_claim";
+  return (
+    <div className="space-y-3 rounded-lg border border-border bg-white/[0.01] p-3">
+      <div className="flex items-center gap-2">
+        {group.partnerAvatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={group.partnerAvatarUrl}
+            alt=""
+            className="size-7 shrink-0 rounded-full object-cover ring-1 ring-white/15"
+          />
+        ) : null}
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-foreground">
+            {group.partnerName}
+          </p>
+          <p className="text-xs text-muted-foreground">{group.currency}</p>
+        </div>
+      </div>
+      <ul className="space-y-2">
+        {group.lines.map((line) => (
+          <CartLineRow
+            key={line.jobId}
+            line={line}
+            currency={group.currency}
+            onRemove={() => onRemoveLine(line.jobId)}
+          />
+        ))}
+      </ul>
+      <dl className="space-y-1 text-sm text-muted-foreground">
+        <div className="flex justify-between">
+          <dt>Partner total</dt>
+          <dd>{formatMoney(group.partnerSubtotalMinor, group.currency)}</dd>
+        </div>
+        <div className="flex justify-between text-muted-foreground">
+          <dt>Platform commission</dt>
+          <dd>{formatMoney(group.platformCommissionMinor, group.currency)}</dd>
+        </div>
+        <div className="flex justify-between text-muted-foreground">
+          <dt>Payment processing fee</dt>
+          <dd>{formatMoney(group.stripeProcessingFeeMinor, group.currency)}</dd>
+        </div>
+        <div className="flex justify-between border-t border-border pt-2 font-semibold text-foreground">
+          <dt>You pay</dt>
+          <dd>{formatMoney(group.totalAmountMinor, group.currency)}</dd>
+        </div>
+      </dl>
+      <Button
+        type="button"
+        size="sm"
+        className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+        disabled={submitting || group.lines.length === 0}
+        onClick={() => onCheckout(group)}
+      >
+        {submitting
+          ? "Redirecting…"
+          : `Pay ${formatMoney(group.totalAmountMinor, group.currency)} · ${intent === "sponsor" ? "Sponsor" : "Unlock"}`}
+      </Button>
+    </div>
   );
-  const discountSaved = useMemo(
-    () => lines.reduce((sum, line) => sum + line.discountPeaksSaved, 0),
-    [lines],
-  );
-  const totalCommunityFees = useMemo(
-    () => lines.reduce((sum, line) => sum + line.communityFeePeaks, 0),
-    [lines],
-  );
+}
 
-  const refreshWallet = async () => {
-    try {
-      setWallet(await fetchWallet());
-    } catch {
-      setWallet(null);
-    }
-  };
+/** Cart list + per-partner checkout actions (used inside app-bar popover). */
+export function WaveUnlockCartPanel({ onClose: _onClose }: { onClose?: () => void }) {
+  const { groups, count, quoteLoading, refresh } = useWaveUnlockCart();
+  const [submittingPartnerId, setSubmittingPartnerId] = useState<
+    string | null
+  >(null);
 
-  const checkoutItem = async (line: WaveUnlockCartLine) => {
-    if (line.intent === "buy_claim") {
-      await buyClaimCartBatch([line.jobId]);
-      dispatchWaveClaimedEvent();
-    } else {
-      await sponsorWave(line.jobId);
-    }
-    removeFromWaveUnlockCart(line.jobId);
-  };
-
-  const runCheckoutAll = async () => {
-    const cart = readWaveUnlockCart();
-    if (cart.length === 0 || lines.length === 0) return;
-
-    const balance = wallet?.peaksBalance ?? (await fetchPeaksBalance().catch(() => 0));
-    if (balance < totalPeaks) {
-      setPendingCheckout(true);
-      setBuyPeaksOpen(true);
+  const onCheckoutGroup = async (group: WaveUnlockCartGroup) => {
+    if (group.lines.length === 0) return;
+    const intent = group.lines[0]!.intent;
+    if (group.lines.some((l) => l.intent !== intent)) {
+      toast.error("Mixed buy/sponsor in one group — split first");
       return;
     }
-
-    setSubmitting(true);
-    let successCount = 0;
+    setSubmittingPartnerId(group.partnerUserId);
     try {
-      const buyClaimBySession = new Map<string, string[]>();
-      const sponsors: WaveUnlockCartLine[] = [];
-
-      for (const line of lines) {
-        if (line.intent === "sponsor") {
-          sponsors.push(line);
-          continue;
-        }
-        const bucket = buyClaimBySession.get(line.sessionId) ?? [];
-        bucket.push(line.jobId);
-        buyClaimBySession.set(line.sessionId, bucket);
-      }
-
-      for (const [, jobIds] of buyClaimBySession) {
-        try {
-          await buyClaimCartBatch(jobIds);
-          for (const id of jobIds) {
-            removeFromWaveUnlockCart(id);
-            successCount += 1;
-          }
-          dispatchWaveClaimedEvent();
-        } catch (e) {
-          toast.error(e instanceof Error ? e.message : "Failed to unlock videos");
-          break;
-        }
-      }
-
-      for (const line of sponsors) {
-        try {
-          await checkoutItem(line);
-          successCount += 1;
-        } catch (e) {
-          toast.error(
-            e instanceof Error ? e.message : `Failed to unlock ${line.videoName}`,
-          );
-          break;
-        }
-      }
-
-      refresh();
-      window.dispatchEvent(new CustomEvent(PEAKS_BALANCE_REFRESH_EVENT));
-      if (successCount > 0) {
-        window.dispatchEvent(new CustomEvent(COMMERCIAL_WAVE_UNLOCKED_EVENT));
-      }
-      void refreshWallet();
-      if (successCount > 0) {
-        toast.success(
-          successCount === 1
-            ? "Video unlocked"
-            : `${successCount} videos unlocked`,
-        );
-      }
-      if (readWaveUnlockCart().length === 0) {
-        onClose?.();
-      }
-    } finally {
-      setSubmitting(false);
+      const { url } = await startCartGroupCheckout({
+        partnerUserId: group.partnerUserId,
+        intent,
+        jobIds: group.lines.map((l) => l.jobId),
+      });
+      window.location.href = url;
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Could not start checkout",
+      );
+      setSubmittingPartnerId(null);
     }
-  };
-
-  useEffect(() => {
-    void refreshWallet();
-  }, []);
-
-  const retryAfterTopUp = async () => {
-    if (!pendingCheckout) return;
-    const balance = await fetchPeaksBalance();
-    if (balance < totalPeaks) return;
-    setPendingCheckout(false);
-    void runCheckoutAll();
   };
 
   return (
-    <>
-      <div className="flex max-h-[min(70dvh,520px)] w-full flex-col">
-        <div className="shrink-0 border-b border-border px-4 py-3">
-          <p className="text-sm font-semibold text-foreground">Unlock cart</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Volume discounts apply per session when you claim multiple waves.
-          </p>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-          {lines.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Your cart is empty.</p>
-          ) : quoteLoading ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Updating prices…</p>
-          ) : (
-            <ul className="space-y-2">
-              {lines.map((line) => (
-                <CartLineRow
-                  key={line.jobId}
-                  line={line}
-                  onRemove={() => {
-                    removeFromWaveUnlockCart(line.jobId);
-                    refresh();
-                  }}
-                />
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="shrink-0 space-y-3 border-t border-border px-4 py-3">
-          {lines.length > 0 && !quoteLoading ? (
-            <dl className="space-y-1 text-sm text-muted-foreground">
-              <div className="flex justify-between">
-                <dt>List subtotal</dt>
-                <dd>{listSubtotal} Peaks</dd>
-              </div>
-              {discountSaved > 0 ? (
-                <div className="flex justify-between text-emerald-400/90">
-                  <dt>Volume discounts</dt>
-                  <dd>−{discountSaved} Peaks</dd>
-                </div>
-              ) : null}
-              <div className="flex justify-between text-muted-foreground">
-                <dt>Total community fund</dt>
-                <dd>{totalCommunityFees} Peaks</dd>
-              </div>
-              <div className="flex justify-between border-t border-border pt-2 font-semibold text-foreground">
-                <dt>Total in cart</dt>
-                <dd>{totalPeaks} Peaks</dd>
-              </div>
-            </dl>
-          ) : null}
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-border bg-transparent text-foreground"
-              disabled={submitting || lines.length === 0}
-              onClick={() => {
-                clearWaveUnlockCart();
-                refresh();
-                toast.success("Cart cleared");
-              }}
-            >
-              Clear
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-              disabled={submitting || lines.length === 0 || quoteLoading}
-              onClick={() => {
-                void refreshWallet();
-                void runCheckoutAll();
-              }}
-            >
-              {submitting ? "Processing…" : `Checkout · ${totalPeaks} Peaks`}
-            </Button>
-          </div>
-        </div>
+    <div className="flex max-h-[min(80dvh,640px)] w-full flex-col">
+      <div className="shrink-0 border-b border-border px-4 py-3">
+        <p className="text-sm font-semibold text-foreground">Unlock cart</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Items are grouped by partner — each group checks out in the
+          partner&apos;s currency.
+        </p>
       </div>
 
-      <BuyPeaksDialog
-        open={buyPeaksOpen}
-        onOpenChange={(o) => {
-          setBuyPeaksOpen(o);
-          if (!o && pendingCheckout) void retryAfterTopUp();
-        }}
-        wallet={wallet}
-        onWalletRefresh={refreshWallet}
-      />
-    </>
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+        {count === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Your cart is empty.
+          </p>
+        ) : quoteLoading && groups.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Updating prices…
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {groups.map((group) => (
+              <CartGroupCard
+                key={group.partnerUserId}
+                group={group}
+                submittingPartnerId={submittingPartnerId}
+                onCheckout={(g) => void onCheckoutGroup(g)}
+                onRemoveLine={(jobId) => {
+                  removeFromWaveUnlockCart(jobId);
+                  refresh();
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="shrink-0 space-y-3 border-t border-border px-4 py-3">
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="border-border bg-transparent text-foreground"
+            disabled={count === 0}
+            onClick={() => {
+              clearWaveUnlockCart();
+              refresh();
+              toast.success("Cart cleared");
+            }}
+          >
+            Clear cart
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

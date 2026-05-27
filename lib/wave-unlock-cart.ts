@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   fetchUnlockCartQuote,
   type UnlockCartQuote,
+  type UnlockCartQuoteGroup,
   type UnlockCartQuoteLine,
 } from "@/lib/commercial-cart";
 
@@ -23,7 +24,12 @@ export type WaveUnlockCartItem = {
   addedAt: string;
 };
 
-export type WaveUnlockCartLine = WaveUnlockCartItem & UnlockCartQuoteLine;
+export type WaveUnlockCartGroupedLine = WaveUnlockCartItem &
+  UnlockCartQuoteLine;
+
+export type WaveUnlockCartGroup = Omit<UnlockCartQuoteGroup, "lines"> & {
+  lines: WaveUnlockCartGroupedLine[];
+};
 
 export function readWaveUnlockCart(): WaveUnlockCartItem[] {
   if (typeof window === "undefined") return [];
@@ -78,51 +84,37 @@ export function clearWaveUnlockCart(): void {
   writeWaveUnlockCart([]);
 }
 
-export function cartQuoteTotalPeaks(quote: UnlockCartQuote | null): number {
-  return quote?.totalPeaks ?? 0;
-}
-
+/**
+ * Merge stored items with the priced groups returned by `/discover/cart/quote`.
+ * Items missing from the quote (e.g. just-added jobs the server hasn't priced
+ * yet) are dropped — the UI shows "Updating prices…" while a fresh quote is
+ * being fetched, so showing zero-priced rows is misleading.
+ */
 export function mergeCartWithQuote(
   items: WaveUnlockCartItem[],
   quote: UnlockCartQuote | null,
-): WaveUnlockCartLine[] {
-  if (!quote) {
-    return items.map((item) => ({
-      ...item,
-      listPricePeaks: 0,
-      discountPercent: 0,
-      discountPeaksSaved: 0,
-      basePeaks: 0,
-      communityFeePeaks: 0,
-      totalPeaks: 0,
-      communityFeePercent: 20,
-    }));
-  }
-  const byJob = new Map(quote.lines.map((line) => [line.jobId, line]));
-  return items.map((item) => {
-    const priced = byJob.get(item.jobId);
-    if (!priced) {
-      return {
-        ...item,
-        listPricePeaks: 0,
-        discountPercent: 0,
-        discountPeaksSaved: 0,
-        basePeaks: 0,
-        communityFeePeaks: 0,
-        totalPeaks: 0,
-        communityFeePercent: 20,
-      };
+): WaveUnlockCartGroup[] {
+  if (!quote) return [];
+  const byJob = new Map(items.map((item) => [item.jobId, item]));
+  const groups: WaveUnlockCartGroup[] = [];
+  for (const group of quote.groups) {
+    const lines: WaveUnlockCartGroupedLine[] = [];
+    for (const line of group.lines) {
+      const item = byJob.get(line.jobId);
+      if (!item) continue;
+      lines.push({ ...item, ...line });
     }
-    return { ...item, ...priced };
-  });
+    if (lines.length === 0) continue;
+    groups.push({ ...group, lines });
+  }
+  return groups;
 }
 
 export function useWaveUnlockCart(): {
   items: WaveUnlockCartItem[];
-  lines: WaveUnlockCartLine[];
+  groups: WaveUnlockCartGroup[];
   quote: UnlockCartQuote | null;
   count: number;
-  totalPeaks: number;
   quoteLoading: boolean;
   refresh: () => void;
 } {
@@ -138,7 +130,8 @@ export function useWaveUnlockCart(): {
     refresh();
     const onUpdate = () => refresh();
     window.addEventListener(WAVE_UNLOCK_CART_UPDATED_EVENT, onUpdate);
-    return () => window.removeEventListener(WAVE_UNLOCK_CART_UPDATED_EVENT, onUpdate);
+    return () =>
+      window.removeEventListener(WAVE_UNLOCK_CART_UPDATED_EVENT, onUpdate);
   }, [refresh]);
 
   useEffect(() => {
@@ -166,14 +159,13 @@ export function useWaveUnlockCart(): {
     };
   }, [items]);
 
-  const lines = mergeCartWithQuote(items, quote);
+  const groups = mergeCartWithQuote(items, quote);
 
   return {
     items,
-    lines,
+    groups,
     quote,
     count: items.length,
-    totalPeaks: cartQuoteTotalPeaks(quote),
     quoteLoading,
     refresh,
   };

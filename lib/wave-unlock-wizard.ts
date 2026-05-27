@@ -21,7 +21,7 @@ export const WAVE_UNLOCK_STEP_META: Record<
   details: {
     title: "Price & partner",
     description:
-      "Review partner details and your Peaks price, including the community contribution.",
+      "Review the partner and the price you'll pay, including the platform commission.",
   },
   session: {
     title: "More from this session",
