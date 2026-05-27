@@ -1,4 +1,6 @@
-/** DTOs aligned with Nest `/partners/me/payouts/*`. */
+/** DTOs aligned with Nest `/partners/me/payouts/*`. Direct Connect payouts. */
+
+import { normalizeCurrency } from "@/lib/currencies";
 
 export const PARTNER_PAYOUTS_BASE_PATH = "partners/me/payouts";
 
@@ -10,31 +12,17 @@ export const PARTNER_ONBOARDING_STATUSES = [
 export type PartnerOnboardingStatus =
   (typeof PARTNER_ONBOARDING_STATUSES)[number];
 
-export const PARTNER_WITHDRAWAL_STATUSES = [
-  "pending",
-  "completed",
-  "failed",
-] as const;
-export type PartnerWithdrawalStatus =
-  (typeof PARTNER_WITHDRAWAL_STATUSES)[number];
-
-export type PartnerWithdrawalDto = {
-  id: string;
-  amountCents: number;
+export type PartnerEarningsTotalDto = {
+  /** Uppercase ISO 4217 currency. */
   currency: string;
-  status: PartnerWithdrawalStatus;
-  failureReason: string | null;
-  createdAt: string;
+  totalMinor: number;
 };
 
 export type PartnerPayoutsStatusDto = {
-  withdrawableAmountCents: number;
-  minWithdrawalAmountCents: number;
-  currency: "eur";
+  earningsTotalsByCurrency: PartnerEarningsTotalDto[];
   onboardingStatus: PartnerOnboardingStatus;
   payoutsEnabled: boolean;
   requirementsDue: string[];
-  recentWithdrawals: PartnerWithdrawalDto[];
 };
 
 export type PartnerEarningBuyerDto = {
@@ -45,14 +33,17 @@ export type PartnerEarningBuyerDto = {
 
 export type PartnerEarningRowDto = {
   id: string;
-  jobId: string;
-  amountCents: number;
+  orderId: string;
+  jobIds: string[];
+  amountMinor: number;
+  /** Uppercase ISO 4217 currency. */
+  currency: string;
   countryCode: string;
   regionId: string;
-  type: string;
+  intent: "buy_claim" | "sponsor";
   createdAt: string;
   buyer: PartnerEarningBuyerDto;
-  /** Up to 3 thumbnail URLs for the unlocked video. */
+  /** Up to 3 thumbnail URLs for the unlocked video(s). */
   previewThumbnailUrls: string[];
 };
 
@@ -68,25 +59,21 @@ function isOnboardingStatus(value: unknown): value is PartnerOnboardingStatus {
   );
 }
 
-function isWithdrawalStatus(value: unknown): value is PartnerWithdrawalStatus {
-  return (
-    typeof value === "string" &&
-    (PARTNER_WITHDRAWAL_STATUSES as readonly string[]).includes(value)
-  );
+function num(v: unknown, fallback = 0): number {
+  return typeof v === "number" && Number.isFinite(v) ? Math.round(v) : fallback;
 }
 
-function normalizeWithdrawal(raw: unknown): PartnerWithdrawalDto | null {
+function normalizeEarningsTotal(raw: unknown): PartnerEarningsTotalDto | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
-  if (!isWithdrawalStatus(o.status)) return null;
+  const currency =
+    typeof o.currency === "string" && o.currency.trim()
+      ? normalizeCurrency(o.currency)
+      : null;
+  if (!currency) return null;
   return {
-    id: String(o.id ?? ""),
-    amountCents: Number(o.amountCents) || 0,
-    currency: typeof o.currency === "string" ? o.currency : "eur",
-    status: o.status,
-    failureReason: o.failureReason == null ? null : String(o.failureReason),
-    createdAt:
-      typeof o.createdAt === "string" ? o.createdAt : new Date().toISOString(),
+    currency,
+    totalMinor: Math.max(0, num(o.totalMinor)),
   };
 }
 
@@ -96,60 +83,19 @@ export function normalizePartnerPayoutsStatus(
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
   if (!isOnboardingStatus(o.onboardingStatus)) return null;
-  const recent = Array.isArray(o.recentWithdrawals)
-    ? (o.recentWithdrawals
-        .map(normalizeWithdrawal)
-        .filter((x): x is PartnerWithdrawalDto => x != null))
-    : [];
   const requirementsDue = Array.isArray(o.requirementsDue)
     ? o.requirementsDue.filter((x): x is string => typeof x === "string")
     : [];
+  const earningsTotalsByCurrency = Array.isArray(o.earningsTotalsByCurrency)
+    ? o.earningsTotalsByCurrency
+        .map(normalizeEarningsTotal)
+        .filter((t): t is PartnerEarningsTotalDto => t != null)
+    : [];
   return {
-    withdrawableAmountCents: Math.max(0, Number(o.withdrawableAmountCents) || 0),
-    minWithdrawalAmountCents: Math.max(
-      0,
-      Number(o.minWithdrawalAmountCents) || 0,
-    ),
-    currency: "eur",
+    earningsTotalsByCurrency,
     onboardingStatus: o.onboardingStatus,
     payoutsEnabled: Boolean(o.payoutsEnabled),
     requirementsDue,
-    recentWithdrawals: recent,
-  };
-}
-
-export function normalizePartnerEarningsPage(
-  raw: unknown,
-): PartnerEarningsPageDto | null {
-  if (!raw || typeof raw !== "object") return null;
-  const o = raw as Record<string, unknown>;
-  if (!Array.isArray(o.items)) return null;
-  const items: PartnerEarningRowDto[] = [];
-  for (const r of o.items) {
-    if (!r || typeof r !== "object") continue;
-    const row = r as Record<string, unknown>;
-    items.push({
-      id: String(row.id ?? ""),
-      jobId: String(row.jobId ?? ""),
-      amountCents: Math.max(0, Number(row.amountCents) || 0),
-      countryCode: typeof row.countryCode === "string" ? row.countryCode : "",
-      regionId: typeof row.regionId === "string" ? row.regionId : "",
-      type: typeof row.type === "string" ? row.type : "",
-      createdAt:
-        typeof row.createdAt === "string"
-          ? row.createdAt
-          : new Date().toISOString(),
-      buyer: normalizeBuyer(row.buyer),
-      previewThumbnailUrls: Array.isArray(row.previewThumbnailUrls)
-        ? row.previewThumbnailUrls
-            .filter((x): x is string => typeof x === "string" && x.length > 0)
-            .slice(0, 3)
-        : [],
-    });
-  }
-  return {
-    items,
-    nextCursor: typeof o.nextCursor === "string" ? o.nextCursor : null,
   };
 }
 
@@ -168,5 +114,50 @@ function normalizeBuyer(raw: unknown): PartnerEarningBuyerDto {
       typeof o.avatarUrl === "string" && o.avatarUrl.trim()
         ? o.avatarUrl
         : null,
+  };
+}
+
+export function normalizePartnerEarningsPage(
+  raw: unknown,
+): PartnerEarningsPageDto | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  if (!Array.isArray(o.items)) return null;
+  const items: PartnerEarningRowDto[] = [];
+  for (const r of o.items) {
+    if (!r || typeof r !== "object") continue;
+    const row = r as Record<string, unknown>;
+    const intent: "buy_claim" | "sponsor" =
+      row.intent === "sponsor" ? "sponsor" : "buy_claim";
+    const jobIds = Array.isArray(row.jobIds)
+      ? row.jobIds.filter((x): x is string => typeof x === "string")
+      : [];
+    items.push({
+      id: String(row.id ?? ""),
+      orderId: String(row.orderId ?? row.id ?? ""),
+      jobIds,
+      amountMinor: Math.max(0, num(row.amountMinor)),
+      currency:
+        typeof row.currency === "string" && row.currency.trim()
+          ? normalizeCurrency(row.currency)
+          : "EUR",
+      countryCode: typeof row.countryCode === "string" ? row.countryCode : "",
+      regionId: typeof row.regionId === "string" ? row.regionId : "",
+      intent,
+      createdAt:
+        typeof row.createdAt === "string"
+          ? row.createdAt
+          : new Date().toISOString(),
+      buyer: normalizeBuyer(row.buyer),
+      previewThumbnailUrls: Array.isArray(row.previewThumbnailUrls)
+        ? row.previewThumbnailUrls
+            .filter((x): x is string => typeof x === "string" && x.length > 0)
+            .slice(0, 3)
+        : [],
+    });
+  }
+  return {
+    items,
+    nextCursor: typeof o.nextCursor === "string" ? o.nextCursor : null,
   };
 }

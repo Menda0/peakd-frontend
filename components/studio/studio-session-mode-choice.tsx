@@ -19,17 +19,17 @@ const MODE_OPTIONS: ModeOption[] = [
     id: "free",
     icon: Waves,
     title: "Free Surf",
-    description: "Standard session on Discover with no Peaks charges.",
+    description: "Standard session on Discover with no paid unlocks.",
     objective:
-      "Share waves on Discover for free claims. Surfers claim and watch your videos without paying Peaks to unlock.",
+      "Share waves on Discover for free claims. Surfers claim and watch your videos without paying to unlock.",
   },
   {
     id: "commercial",
     icon: BadgeDollarSign,
     title: "Commercial",
-    description: "Commercial session selling Discover waves for Peaks.",
+    description: "Commercial session selling Discover waves in your currency.",
     objective:
-      "Waves show snapshot carousels until unlocked. Set Peaks pricing for buy & claim, or sponsor unlock for claimants.",
+      "Waves show snapshot carousels until unlocked. Set the price (in your settlement currency) for buy & claim, or sponsor unlock for claimants.",
   },
 ];
 

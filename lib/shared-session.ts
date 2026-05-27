@@ -7,6 +7,7 @@ import {
   type DiscoverFeedLocation,
   type DiscoverFeedSession,
 } from "@/lib/discover-feed";
+import { normalizeCurrency } from "@/lib/currencies";
 import {
   normalizeSurferProfile,
   type SurferProfile,
@@ -30,9 +31,10 @@ export type PublicSharedSessionWave = {
   surfer: SurferProfile | null;
   isCommercial: boolean;
   videoUnlockedByViewer: boolean;
-  wavePricePeaks: number | null;
-  buyClaimPricePeaks: number | null;
-  sponsorPricePeaks: number | null;
+  currency: string | null;
+  wavePriceMinor: number | null;
+  buyClaimPriceMinor: number | null;
+  sponsorPriceMinor: number | null;
   canBuyClaim: boolean;
   canSponsor: boolean;
   claimedByViewer: boolean;
@@ -167,14 +169,22 @@ function normalizePublicSharedSessionWave(
     canBuyClaim: wave.canBuyClaim === true,
     canSponsor: wave.canSponsor === true,
     claimedByViewer: wave.claimedByViewer === true,
-    wavePricePeaks:
-      typeof wave.wavePricePeaks === "number" ? wave.wavePricePeaks : null,
-    buyClaimPricePeaks:
-      typeof wave.buyClaimPricePeaks === "number"
-        ? wave.buyClaimPricePeaks
+    currency:
+      typeof wave.currency === "string" && wave.currency.trim()
+        ? normalizeCurrency(wave.currency)
         : null,
-    sponsorPricePeaks:
-      typeof wave.sponsorPricePeaks === "number" ? wave.sponsorPricePeaks : null,
+    wavePriceMinor:
+      typeof wave.wavePriceMinor === "number"
+        ? Math.round(wave.wavePriceMinor)
+        : null,
+    buyClaimPriceMinor:
+      typeof wave.buyClaimPriceMinor === "number"
+        ? Math.round(wave.buyClaimPriceMinor)
+        : null,
+    sponsorPriceMinor:
+      typeof wave.sponsorPriceMinor === "number"
+        ? Math.round(wave.sponsorPriceMinor)
+        : null,
   };
 }
 
@@ -238,9 +248,10 @@ export function sharedSessionWaveToDiscoverPost(
     shares: 0,
     isCommercial: true,
     videoUnlockedByViewer: wave.videoUnlockedByViewer,
-    wavePricePeaks: wave.wavePricePeaks,
-    buyClaimPricePeaks: wave.buyClaimPricePeaks,
-    sponsorPricePeaks: wave.sponsorPricePeaks,
+    currency: wave.currency,
+    wavePriceMinor: wave.wavePriceMinor,
+    buyClaimPriceMinor: wave.buyClaimPriceMinor,
+    sponsorPriceMinor: wave.sponsorPriceMinor,
     canClaim: wave.canClaim,
     canBuyClaim: wave.canBuyClaim,
     canSponsor: wave.canSponsor,

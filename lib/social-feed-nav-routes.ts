@@ -107,15 +107,15 @@ export function resolveAdminNavItems(
   pathname: string,
   options: {
     adminRegionsHref?: string;
-    adminPeaksHref?: string;
+    adminSalesHref?: string;
     adminFinanceHref?: string;
   },
 ): ResolvedNavItem[] {
   const regionsActive = options.adminRegionsHref
     ? pathMatchesOrChild(options.adminRegionsHref, pathname)
     : false;
-  const peaksActive = options.adminPeaksHref
-    ? pathMatchesOrChild(options.adminPeaksHref, pathname)
+  const salesActive = options.adminSalesHref
+    ? pathMatchesOrChild(options.adminSalesHref, pathname)
     : false;
   const financeActive = options.adminFinanceHref
     ? pathMatchesOrChild(options.adminFinanceHref, pathname)
@@ -129,11 +129,11 @@ export function resolveAdminNavItems(
           href: options.adminRegionsHref,
           active: regionsActive,
         };
-      case "peaks":
+      case "sales":
         return {
           ...item,
-          href: options.adminPeaksHref,
-          active: peaksActive,
+          href: options.adminSalesHref,
+          active: salesActive,
         };
       case "finance":
         return {
