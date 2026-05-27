@@ -11,7 +11,7 @@ export function SocialFeedLayout({
   partnerProfileHref,
   partnerIncomeHref,
   adminRegionsHref,
-  adminPeaksHref,
+  adminSalesHref,
   adminFinanceHref,
   showPartnerNav,
   showAdminNav,
@@ -26,7 +26,7 @@ export function SocialFeedLayout({
   partnerProfileHref?: string;
   partnerIncomeHref?: string;
   adminRegionsHref?: string;
-  adminPeaksHref?: string;
+  adminSalesHref?: string;
   adminFinanceHref?: string;
   showPartnerNav: boolean;
   showAdminNav: boolean;
@@ -46,7 +46,7 @@ export function SocialFeedLayout({
           partnerProfileHref={partnerProfileHref}
           partnerIncomeHref={partnerIncomeHref}
           adminRegionsHref={adminRegionsHref}
-          adminPeaksHref={adminPeaksHref}
+          adminSalesHref={adminSalesHref}
           adminFinanceHref={adminFinanceHref}
           showPartnerNav={showPartnerNav}
           showAdminNav={showAdminNav}

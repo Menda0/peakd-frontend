@@ -7,7 +7,6 @@ import {
   normalizePartnerPayoutsStatus,
   type PartnerEarningsPageDto,
   type PartnerPayoutsStatusDto,
-  type PartnerWithdrawalDto,
 } from "@/lib/partner-payouts";
 
 export type PartnerPayoutsActionResult<T> =
@@ -127,27 +126,6 @@ export async function startPartnerOnboardingAction(): Promise<
     return { ok: true, data: { url: parsed.url } };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Failed to start onboarding";
-    return { ok: false, error: msg };
-  }
-}
-
-export async function requestPartnerWithdrawalAction(
-  amountCents: number,
-): Promise<PartnerPayoutsActionResult<PartnerWithdrawalDto>> {
-  try {
-    const res = await payoutsFetch(`${PARTNER_PAYOUTS_BASE_PATH}/withdraw`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amountCents }),
-    });
-    const text = await res.text();
-    if (!res.ok) {
-      return { ok: false, error: textOrStatus(res, text) };
-    }
-    const parsed = JSON.parse(text) as PartnerWithdrawalDto;
-    return { ok: true, data: parsed };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Withdrawal failed";
     return { ok: false, error: msg };
   }
 }

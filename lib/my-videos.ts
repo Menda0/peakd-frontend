@@ -9,6 +9,7 @@ import {
   formatSessionSummary,
   normalizeDiscoverSession,
 } from "@/lib/discover-feed";
+import { normalizeCurrency } from "@/lib/currencies";
 import { normalizeSurferProfile, type SurferProfile } from "@/lib/surfer-profile";
 
 export type { SurferProfile };
@@ -35,8 +36,9 @@ export type MyVideoItem = {
   isCommercial: boolean;
   snapshotUrls: string[];
   videoUnlockedByViewer: boolean;
-  wavePricePeaks: number | null;
-  buyClaimPricePeaks: number | null;
+  currency: string | null;
+  wavePriceMinor: number | null;
+  buyClaimPriceMinor: number | null;
 };
 
 function normalizeFilmedBy(raw: unknown): FilmedByProfile | null {
@@ -92,10 +94,16 @@ function normalizeMyVideoItem(raw: unknown): MyVideoItem | null {
       ? o.snapshotUrls.filter((u): u is string => typeof u === "string")
       : [],
     videoUnlockedByViewer: o.videoUnlockedByViewer === true,
-    wavePricePeaks:
-      typeof o.wavePricePeaks === "number" ? o.wavePricePeaks : null,
-    buyClaimPricePeaks:
-      typeof o.buyClaimPricePeaks === "number" ? o.buyClaimPricePeaks : null,
+    currency:
+      typeof o.currency === "string" && o.currency.trim()
+        ? normalizeCurrency(o.currency)
+        : null,
+    wavePriceMinor:
+      typeof o.wavePriceMinor === "number" ? Math.round(o.wavePriceMinor) : null,
+    buyClaimPriceMinor:
+      typeof o.buyClaimPriceMinor === "number"
+        ? Math.round(o.buyClaimPriceMinor)
+        : null,
   };
 }
 
@@ -137,9 +145,10 @@ export function myVideoItemToPost(
     isCommercial: item.isCommercial,
     snapshotUrls: item.snapshotUrls,
     videoUnlockedByViewer: item.videoUnlockedByViewer,
-    wavePricePeaks: item.wavePricePeaks,
-    buyClaimPricePeaks: item.buyClaimPricePeaks ?? item.wavePricePeaks,
-    sponsorPricePeaks: item.wavePricePeaks,
+    currency: item.currency,
+    wavePriceMinor: item.wavePriceMinor,
+    buyClaimPriceMinor: item.buyClaimPriceMinor ?? item.wavePriceMinor,
+    sponsorPriceMinor: item.wavePriceMinor,
     canClaim: item.isCommercial && item.claimStatus === "none",
     canBuyClaim: item.isCommercial && !item.videoUnlockedByViewer,
     canSponsor: false,

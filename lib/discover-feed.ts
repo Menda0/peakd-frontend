@@ -1,5 +1,6 @@
 import { getApiBase } from "@/lib/api";
 import { englishCountryLabel } from "@/lib/countries";
+import { normalizeCurrency } from "@/lib/currencies";
 import { normalizeSurferProfile, type SurferProfile } from "@/lib/surfer-profile";
 
 export type DiscoverFeedAuthor = {
@@ -44,9 +45,11 @@ export type DiscoverFeedItem = {
   isCommercial: boolean;
   snapshotUrls: string[];
   videoUnlockedByViewer: boolean;
-  wavePricePeaks: number | null;
-  buyClaimPricePeaks: number | null;
-  sponsorPricePeaks: number | null;
+  /** Uppercase ISO 4217 currency for this wave's partner. */
+  currency: string | null;
+  wavePriceMinor: number | null;
+  buyClaimPriceMinor: number | null;
+  sponsorPriceMinor: number | null;
   canClaim: boolean;
   canBuyClaim: boolean;
   canSponsor: boolean;
@@ -82,9 +85,10 @@ export type DiscoverFeedPost = {
   shares: number;
   isCommercial: boolean;
   videoUnlockedByViewer: boolean;
-  wavePricePeaks: number | null;
-  buyClaimPricePeaks: number | null;
-  sponsorPricePeaks: number | null;
+  currency: string | null;
+  wavePriceMinor: number | null;
+  buyClaimPriceMinor: number | null;
+  sponsorPriceMinor: number | null;
   canClaim: boolean;
   canBuyClaim: boolean;
   canSponsor: boolean;
@@ -166,9 +170,10 @@ export function discoverItemToPost(
     isCommercial: item.isCommercial,
     snapshotUrls: item.snapshotUrls,
     videoUnlockedByViewer: item.videoUnlockedByViewer,
-    wavePricePeaks: item.wavePricePeaks,
-    buyClaimPricePeaks: item.buyClaimPricePeaks,
-    sponsorPricePeaks: item.sponsorPricePeaks,
+    currency: item.currency,
+    wavePriceMinor: item.wavePriceMinor,
+    buyClaimPriceMinor: item.buyClaimPriceMinor,
+    sponsorPriceMinor: item.sponsorPriceMinor,
     canClaim: item.canClaim,
     canBuyClaim: item.canBuyClaim,
     canSponsor: item.canSponsor,
@@ -251,12 +256,20 @@ function normalizeDiscoverItem(raw: unknown): DiscoverFeedItem | null {
       ? o.snapshotUrls.filter((u): u is string => typeof u === "string")
       : [],
     videoUnlockedByViewer: o.videoUnlockedByViewer === true,
-    wavePricePeaks:
-      typeof o.wavePricePeaks === "number" ? o.wavePricePeaks : null,
-    buyClaimPricePeaks:
-      typeof o.buyClaimPricePeaks === "number" ? o.buyClaimPricePeaks : null,
-    sponsorPricePeaks:
-      typeof o.sponsorPricePeaks === "number" ? o.sponsorPricePeaks : null,
+    currency:
+      typeof o.currency === "string" && o.currency.trim()
+        ? normalizeCurrency(o.currency)
+        : null,
+    wavePriceMinor:
+      typeof o.wavePriceMinor === "number" ? Math.round(o.wavePriceMinor) : null,
+    buyClaimPriceMinor:
+      typeof o.buyClaimPriceMinor === "number"
+        ? Math.round(o.buyClaimPriceMinor)
+        : null,
+    sponsorPriceMinor:
+      typeof o.sponsorPriceMinor === "number"
+        ? Math.round(o.sponsorPriceMinor)
+        : null,
     canClaim: o.canClaim === true,
     canBuyClaim: o.canBuyClaim === true,
     canSponsor: o.canSponsor === true,

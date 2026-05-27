@@ -10,7 +10,7 @@ export type SocialFeedNavProps = {
   partnerProfileHref?: string;
   partnerIncomeHref?: string;
   adminRegionsHref?: string;
-  adminPeaksHref?: string;
+  adminSalesHref?: string;
   showPartnerNav: boolean;
   showAdminNav: boolean;
 };
@@ -30,7 +30,7 @@ export async function getSocialFeedNavProps(
     partnerProfileHref: showPartnerNav ? `${prefix}/partner/profile` : undefined,
     partnerIncomeHref: showPartnerNav ? `${prefix}/partner/income` : undefined,
     adminRegionsHref: showAdminNav ? `${prefix}/admin/regions` : undefined,
-    adminPeaksHref: showAdminNav ? `${prefix}/admin/peaks` : undefined,
+    adminSalesHref: showAdminNav ? `${prefix}/admin/sales` : undefined,
     showPartnerNav,
     showAdminNav,
   };

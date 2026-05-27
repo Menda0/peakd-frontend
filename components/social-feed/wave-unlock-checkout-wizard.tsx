@@ -5,8 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { BuyPeaksDialog } from "@/components/peaks/buy-peaks-dialog";
-import { PeakIcon } from "@/components/peaks/peak-icon";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,38 +15,29 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  communityFundLocationLabel,
+  commissionLocationLabel,
   fetchWaveCheckoutContext,
   partnerLocationLabel,
   plainPartnerDescription,
   type WaveCheckoutContext,
 } from "@/lib/commercial-checkout";
-import { buyClaimCartBatch } from "@/lib/commercial-cart";
-import { buyClaimWave, fetchPeaksBalance, sponsorWave } from "@/lib/commercial-wave";
+import { startSingleWaveCheckout } from "@/lib/commercial-cart";
 import {
-  allocateBuyClaimLineBreakdowns,
+  allocateBuyClaimLineBreakdownsMinor,
   formatDiscountSummary,
-  type CheckoutPeaksBreakdown,
+  type CheckoutBreakdownMinor,
 } from "@/lib/commercial-settings";
-import { dispatchWaveClaimedEvent } from "@/lib/claim-wave";
-import {
-  PEAKS_BALANCE_REFRESH_EVENT,
-  fetchWallet,
-  type WalletResponse,
-} from "@/lib/billing";
+import { formatMoney } from "@/lib/currencies";
 import type { SurferProfile } from "@/lib/surfer-profile";
 import {
-  COMMERCIAL_WAVE_UNLOCKED_EVENT,
   formatSessionLocationLabel,
   formatSessionSummary,
   type DiscoverFeedLocation,
 } from "@/lib/discover-feed";
 import {
   addToWaveUnlockCart,
-  removeFromWaveUnlockCart,
   useWaveUnlockCart,
   type WaveUnlockCartIntent,
-  type WaveUnlockCartLine,
 } from "@/lib/wave-unlock-cart";
 import { PostSessionInfo } from "./post-session-info";
 import {
@@ -125,25 +114,19 @@ function PartnerBlock({ ctx }: { ctx: WaveCheckoutContext }) {
 function PriceLineRows({
   breakdown,
   intent,
-  communityFeePercent,
+  currency,
   sessionWaveCount,
-  cartTotals,
 }: {
-  breakdown: CheckoutPeaksBreakdown;
+  breakdown: CheckoutBreakdownMinor;
   intent: WaveUnlockCartIntent;
-  communityFeePercent: number;
+  currency: string;
   sessionWaveCount?: number;
-  cartTotals?: {
-    cartTotalPeaks: number;
-    cartCommunityFeePeaks: number;
-    totalCommunityFeePeaks: number;
-  };
 }) {
   return (
     <>
       <div className="flex justify-between gap-4 text-muted-foreground">
         <dt>List price</dt>
-        <dd>{breakdown.listPricePeaks} Peaks</dd>
+        <dd>{formatMoney(breakdown.listPriceMinor, currency)}</dd>
       </div>
       {intent === "buy_claim" ? (
         <div className="flex justify-between gap-4 text-muted-foreground">
@@ -155,7 +138,7 @@ function PriceLineRows({
           </dt>
           <dd className="text-right text-emerald-400/90">
             {breakdown.discountPercent > 0
-              ? `${breakdown.discountPercent}% (−${breakdown.discountPeaksSaved} Peaks)`
+              ? `${breakdown.discountPercent}% (−${formatMoney(breakdown.discountSavedMinor, currency)})`
               : "None"}
           </dd>
         </div>
@@ -166,33 +149,19 @@ function PriceLineRows({
         </div>
       )}
       <div className="flex justify-between gap-4 text-muted-foreground">
-        <dt>Price after discount</dt>
-        <dd>{breakdown.basePeaks} Peaks</dd>
+        <dt>Partner price</dt>
+        <dd>{formatMoney(breakdown.basePriceMinor, currency)}</dd>
       </div>
-      {breakdown.communityFeePeaks > 0 ? (
+      {breakdown.commissionMinor > 0 ? (
         <div className="flex justify-between gap-4 text-muted-foreground">
-          <dt>Community fund ({communityFeePercent}%)</dt>
-          <dd>{breakdown.communityFeePeaks} Peaks</dd>
+          <dt>Platform commission ({breakdown.commissionPercent}%)</dt>
+          <dd>{formatMoney(breakdown.commissionMinor, currency)}</dd>
         </div>
       ) : null}
       <div className="flex justify-between gap-4 border-t border-border pt-2 font-semibold text-foreground">
-        <dt>Price of this video</dt>
-        <dd>{breakdown.totalPeaks} Peaks</dd>
+        <dt>You pay</dt>
+        <dd>{formatMoney(breakdown.totalMinor, currency)}</dd>
       </div>
-      {cartTotals ? (
-        <>
-          {cartTotals.cartTotalPeaks > 0 ? (
-            <div className="flex justify-between gap-4 font-semibold text-foreground">
-              <dt>Total in cart</dt>
-              <dd>{cartTotals.cartTotalPeaks} Peaks</dd>
-            </div>
-          ) : null}
-          <div className="flex justify-between gap-4 border-t border-border pt-2 font-semibold text-foreground">
-            <dt>Total community fund</dt>
-            <dd>{cartTotals.totalCommunityFeePeaks} Peaks</dd>
-          </div>
-        </>
-      ) : null}
     </>
   );
 }
@@ -200,30 +169,20 @@ function PriceLineRows({
 function CheckoutSummaryPanel({
   intent,
   breakdown,
-  communityFeePercent,
-  communityLocation,
+  currency,
+  commissionLocation,
   videoName,
   sessionLabel,
   sessionWaveCount,
-  cartTotals,
 }: {
   intent: WaveUnlockCartIntent;
-  breakdown: CheckoutPeaksBreakdown;
-  communityFeePercent: number;
-  communityLocation: string;
+  breakdown: CheckoutBreakdownMinor;
+  currency: string;
+  commissionLocation: string;
   videoName: string;
   sessionLabel: string;
   sessionWaveCount: number;
-  cartTotals?: {
-    cartTotalPeaks: number;
-    cartCommunityFeePeaks: number;
-    totalCommunityFeePeaks: number;
-  };
 }) {
-  const communityFeePeaks =
-    cartTotals && cartTotals.cartTotalPeaks > 0
-      ? cartTotals.totalCommunityFeePeaks
-      : breakdown.communityFeePeaks;
   return (
     <dl className="space-y-2 rounded-xl border border-border p-4 text-sm">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -238,30 +197,19 @@ function CheckoutSummaryPanel({
       <PriceLineRows
         breakdown={breakdown}
         intent={intent}
-        communityFeePercent={communityFeePercent}
+        currency={currency}
         sessionWaveCount={sessionWaveCount}
-        cartTotals={cartTotals}
       />
-      {communityFeePeaks > 0 ? (
-        <p className="border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">
-          The {communityFeePercent}% community fund ({communityFeePeaks} Peaks
-          {cartTotals && cartTotals.cartTotalPeaks > 0
-            ? ", including your cart and this video"
-            : ""}
-          ) helps Peakd reward the surf community in{" "}
-          <strong className="text-foreground">{communityLocation}</strong>.
-          {intent === "sponsor"
-            ? " You unlock the video for the surfer on this wave without taking the claim."
-            : " It funds local sessions, spots, and community programs in that area."}
-        </p>
-      ) : (
-        <p className="border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">
-          No community fund contribution is charged when the session location is undisclosed.
-          {intent === "sponsor"
-            ? " You unlock the video for the surfer on this wave without taking the claim."
-            : null}
-        </p>
-      )}
+      <p className="border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">
+        You&apos;ll be redirected to Stripe Checkout to complete payment in{" "}
+        <strong className="text-foreground">{currency}</strong>. The platform
+        commission ({breakdown.commissionPercent}%) is set aside for community
+        programs in{" "}
+        <strong className="text-foreground">{commissionLocation}</strong>.
+        {intent === "sponsor"
+          ? " You unlock the video for the surfer on this wave without taking the claim."
+          : ""}
+      </p>
     </dl>
   );
 }
@@ -269,14 +217,14 @@ function CheckoutSummaryPanel({
 function PriceBreakdown({
   breakdown,
   intent,
-  communityLocation,
-  communityFeePercent,
+  currency,
+  commissionLocation,
   sessionWaveCount,
 }: {
-  breakdown: CheckoutPeaksBreakdown;
+  breakdown: CheckoutBreakdownMinor;
   intent: WaveUnlockCartIntent;
-  communityLocation: string;
-  communityFeePercent: number;
+  currency: string;
+  commissionLocation: string;
   sessionWaveCount?: number;
 }) {
   return (
@@ -288,21 +236,18 @@ function PriceBreakdown({
         <PriceLineRows
           breakdown={breakdown}
           intent={intent}
-          communityFeePercent={communityFeePercent}
+          currency={currency}
           sessionWaveCount={sessionWaveCount}
         />
       </dl>
-      {breakdown.communityFeePeaks > 0 ? (
+      {breakdown.commissionMinor > 0 ? (
         <p className="text-xs leading-relaxed text-muted-foreground">
-          The {communityFeePercent}% community fund ({breakdown.communityFeePeaks} Peaks) helps
-          Peakd reward the surf community in{" "}
-          <strong className="text-foreground">{communityLocation}</strong>.
+          The {breakdown.commissionPercent}% platform commission (
+          {formatMoney(breakdown.commissionMinor, currency)}) supports the surf
+          community in{" "}
+          <strong className="text-foreground">{commissionLocation}</strong>.
         </p>
-      ) : (
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          No community fund contribution is charged when the session location is undisclosed.
-        </p>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -311,8 +256,8 @@ export function WaveUnlockCheckoutWizard({
   open,
   onOpenChange,
   jobId,
-  onPurchased,
-  onClaimed,
+  onPurchased: _onPurchased,
+  onClaimed: _onClaimed,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -327,9 +272,6 @@ export function WaveUnlockCheckoutWizard({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [wallet, setWallet] = useState<WalletResponse | null>(null);
-  const [buyPeaksOpen, setBuyPeaksOpen] = useState(false);
-  const [pendingBuy, setPendingBuy] = useState(false);
 
   const otherWaves = useMemo(
     () => (ctx?.sessionWaves ?? []).filter((w) => !w.isCurrent).slice(0, 3),
@@ -340,12 +282,12 @@ export function WaveUnlockCheckoutWizard({
     ? `/share/sessions/${encodeURIComponent(ctx.shareToken)}`
     : null;
 
-  const { items: cartItems, lines: cartLines } = useWaveUnlockCart();
+  const { items: cartItems } = useWaveUnlockCart();
 
   const steps = useMemo(() => buildUnlockWizardSteps(), []);
 
-  const communityLocation = useMemo(
-    () => (ctx ? communityFundLocationLabel(ctx.location) : ""),
+  const commissionLocation = useMemo(
+    () => (ctx ? commissionLocationLabel(ctx.location) : ""),
     [ctx],
   );
 
@@ -354,14 +296,6 @@ export function WaveUnlockCheckoutWizard({
   const isSummary = currentStep === "summary";
   const isFirst = stepIndex === 0;
   const surferName = ctx?.surfer?.displayName?.trim() || "the surfer on this wave";
-
-  const refreshWallet = useCallback(async () => {
-    try {
-      setWallet(await fetchWallet());
-    } catch {
-      setWallet(null);
-    }
-  }, []);
 
   const loadContext = useCallback(
     async (id: string, options?: { preserveStep?: boolean }) => {
@@ -389,7 +323,6 @@ export function WaveUnlockCheckoutWizard({
     setStepIndex(0);
     setIntent(null);
     setError(null);
-    setPendingBuy(false);
     setActiveJobId(jobId);
   }, [jobId]);
 
@@ -397,8 +330,7 @@ export function WaveUnlockCheckoutWizard({
     if (!open) return;
     reset();
     void loadContext(jobId);
-    void refreshWallet();
-  }, [open, jobId, loadContext, refreshWallet, reset]);
+  }, [open, jobId, loadContext, reset]);
 
   const sessionBuyClaimCount = useMemo(() => {
     if (!ctx || intent !== "buy_claim") return 0;
@@ -411,48 +343,18 @@ export function WaveUnlockCheckoutWizard({
     return inCart + 1;
   }, [ctx, intent, cartItems, activeJobId]);
 
-  const breakdown = useMemo((): CheckoutPeaksBreakdown | null => {
+  const breakdown = useMemo((): CheckoutBreakdownMinor | null => {
     if (!ctx || !intent) return null;
     if (intent === "buy_claim") {
-      const lines = allocateBuyClaimLineBreakdowns(
+      const lines = allocateBuyClaimLineBreakdownsMinor(
         ctx.commercialSettings,
         sessionBuyClaimCount,
+        ctx.platformCommissionPercent,
       );
       return lines[lines.length - 1] ?? ctx.buyClaim;
     }
     return ctx.sponsor;
   }, [ctx, intent, sessionBuyClaimCount]);
-
-  const otherCartLines = useMemo(
-    () => cartLines.filter((line) => line.jobId !== activeJobId),
-    [cartLines, activeJobId],
-  );
-
-  const cartSummary = useMemo(() => {
-    const cartTotalPeaks = otherCartLines.reduce((sum, line) => sum + line.totalPeaks, 0);
-    const cartCommunityFeePeaks = otherCartLines.reduce(
-      (sum, line) => sum + line.communityFeePeaks,
-      0,
-    );
-    const thisCommunityFee = breakdown?.communityFeePeaks ?? 0;
-    const checkoutVideoCount = 1 + otherCartLines.length;
-    const checkoutTotalPeaks = (breakdown?.totalPeaks ?? 0) + cartTotalPeaks;
-    return {
-      cartTotalPeaks,
-      cartItemCount: otherCartLines.length,
-      cartCommunityFeePeaks,
-      totalCommunityFeePeaks: cartCommunityFeePeaks + thisCommunityFee,
-      checkoutVideoCount,
-      checkoutTotalPeaks,
-      cartTotals: breakdown
-        ? {
-            cartTotalPeaks,
-            cartCommunityFeePeaks,
-            totalCommunityFeePeaks: cartCommunityFeePeaks + thisCommunityFee,
-          }
-        : undefined,
-    };
-  }, [otherCartLines, breakdown]);
 
   const activeWaveMeta = useMemo(() => {
     const wave = ctx?.sessionWaves.find((w) => w.jobId === activeJobId);
@@ -503,90 +405,18 @@ export function WaveUnlockCheckoutWizard({
     setStepIndex((i) => Math.max(0, i - 1));
   };
 
-  const runPurchase = async () => {
-    if (!ctx || !intent || !breakdown) return;
+  const runBuyNow = async () => {
+    if (!ctx || !intent) return;
     setError(null);
-    const cost = cartSummary.checkoutTotalPeaks;
-    const balance = wallet?.peaksBalance ?? (await fetchPeaksBalance().catch(() => 0));
-    if (balance < cost) {
-      setPendingBuy(true);
-      setBuyPeaksOpen(true);
-      return;
-    }
     setSubmitting(true);
     try {
-      if (otherCartLines.length === 0) {
-        if (intent === "buy_claim") {
-          const { surfer } = await buyClaimWave(activeJobId, 1);
-          dispatchWaveClaimedEvent();
-          onClaimed(surfer);
-        } else {
-          await sponsorWave(activeJobId);
-        }
-        toast.success(
-          intent === "buy_claim"
-            ? "Wave claimed and video unlocked"
-            : "Video unlocked for the surfer",
-        );
-      } else {
-        const buyClaimBySession = new Map<string, string[]>();
-        const sponsors: WaveUnlockCartLine[] = [];
-
-        for (const line of otherCartLines) {
-          if (line.intent === "sponsor") {
-            sponsors.push(line);
-            continue;
-          }
-          const bucket = buyClaimBySession.get(line.sessionId) ?? [];
-          bucket.push(line.jobId);
-          buyClaimBySession.set(line.sessionId, bucket);
-        }
-
-        if (intent === "buy_claim") {
-          const bucket = buyClaimBySession.get(ctx.sessionId) ?? [];
-          bucket.push(activeJobId);
-          buyClaimBySession.set(ctx.sessionId, bucket);
-        }
-
-        let claimedCurrent = false;
-        for (const [, jobIds] of buyClaimBySession) {
-          await buyClaimCartBatch(jobIds);
-          if (jobIds.includes(activeJobId)) claimedCurrent = true;
-          for (const id of jobIds) removeFromWaveUnlockCart(id);
-          dispatchWaveClaimedEvent();
-        }
-
-        if (intent === "sponsor") {
-          await sponsorWave(activeJobId);
-          removeFromWaveUnlockCart(activeJobId);
-        }
-
-        for (const line of sponsors) {
-          await sponsorWave(line.jobId);
-          removeFromWaveUnlockCart(line.jobId);
-        }
-
-        if (intent === "buy_claim" && claimedCurrent && ctx.surfer) {
-          onClaimed(ctx.surfer);
-        }
-
-        const unlockedCount = cartSummary.checkoutVideoCount;
-        toast.success(
-          unlockedCount === 1
-            ? intent === "buy_claim"
-              ? "Wave claimed and video unlocked"
-              : "Video unlocked for the surfer"
-            : `${unlockedCount} videos unlocked`,
-        );
-      }
-      window.dispatchEvent(new CustomEvent(PEAKS_BALANCE_REFRESH_EVENT));
-      window.dispatchEvent(new CustomEvent(COMMERCIAL_WAVE_UNLOCKED_EVENT));
-      void refreshWallet();
-      onPurchased();
-      close();
+      const { url } = await startSingleWaveCheckout({
+        jobId: activeJobId,
+        intent,
+      });
+      window.location.href = url;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Transaction failed");
-    } finally {
+      setError(e instanceof Error ? e.message : "Could not start checkout");
       setSubmitting(false);
     }
   };
@@ -607,334 +437,321 @@ export function WaveUnlockCheckoutWizard({
     close();
   };
 
-  const retryAfterTopUp = async () => {
-    if (!pendingBuy || !breakdown) return;
-    const balance = await fetchPeaksBalance();
-    if (balance < cartSummary.checkoutTotalPeaks) return;
-    setPendingBuy(false);
-    void runPurchase();
-  };
-
   if (!open) return null;
 
   return (
-    <>
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-        role="presentation"
-        onMouseDown={(e) => {
-          if (e.target === e.currentTarget) close();
-        }}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      role="presentation"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) close();
+      }}
+    >
+      <Card
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="unlock-wizard-title"
+        className="flex max-h-[min(90dvh,720px)] w-full max-w-3xl flex-col gap-0 overflow-hidden border-border bg-popover py-0 text-foreground ring-white/10"
       >
-        <Card
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="unlock-wizard-title"
-          className="flex max-h-[min(90dvh,720px)] w-full max-w-3xl flex-col gap-0 overflow-hidden border-border bg-popover py-0 text-foreground ring-white/10"
-        >
-          <CardHeader className="shrink-0 space-y-3 border-b border-border px-6 pt-6 pb-4">
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">
-                Step {stepIndex + 1} of {steps.length}
-              </p>
-              <CardTitle id="unlock-wizard-title">{stepMeta.title}</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                {stepMeta.description}
-              </CardDescription>
-            </div>
-            {!loading && ctx ? (
-              <WizardProgress steps={steps} stepIndex={stepIndex} />
-            ) : null}
-          </CardHeader>
+        <CardHeader className="shrink-0 space-y-3 border-b border-border px-6 pt-6 pb-4">
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">
+              Step {stepIndex + 1} of {steps.length}
+            </p>
+            <CardTitle id="unlock-wizard-title">{stepMeta.title}</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              {stepMeta.description}
+            </CardDescription>
+          </div>
+          {!loading && ctx ? (
+            <WizardProgress steps={steps} stepIndex={stepIndex} />
+          ) : null}
+        </CardHeader>
 
-          <CardContent className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-            {loading ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">Loading checkout…</p>
-            ) : error && !ctx ? (
-              <p className="py-6 text-center text-sm text-red-400">{error}</p>
-            ) : ctx ? (
-              <div className="space-y-4">
-                {currentStep === "role" ? (
-                  <div className="grid gap-3 sm:grid-cols-2 sm:items-stretch">
-                    <button
-                      type="button"
-                      aria-pressed={intent === "sponsor"}
-                      disabled={!ctx.canSponsor}
-                      onClick={() => setIntent("sponsor")}
-                      className={cn(
-                        "flex h-full flex-col gap-3 rounded-xl border p-4 text-left transition-colors",
-                        intent === "sponsor"
-                          ? "border-primary/50 bg-primary/10 ring-1 ring-primary/30"
-                          : "border-border bg-white/[0.02] hover:border-primary/40",
-                        !ctx.canSponsor && "cursor-not-allowed opacity-50 hover:border-border",
-                      )}
-                    >
-                      <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                        <HeartHandshake className="size-4 text-primary" aria-hidden />
-                        Sponsor
-                      </span>
-                      <span className="text-xs leading-relaxed text-muted-foreground">
-                        {ctx.claimStatus === "claimed"
-                          ? `You pay to unlock the full video for ${surferName}. You are not the surfer on this wave and do not take the claim.`
-                          : "You pay to unlock the full video for yourself without claiming the wave. A surfer can still claim it later."}
-                      </span>
-                      {!ctx.canSponsor ? (
-                        <span className="text-xs text-muted-foreground">
-                          {ctx.claimStatus === "claimed"
-                            ? "You already claimed this wave — choose Claim video to buy and unlock as the surfer."
-                            : "This wave is already unlocked."}
-                        </span>
-                      ) : null}
-                    </button>
-                    <button
-                      type="button"
-                      aria-pressed={intent === "buy_claim"}
-                      disabled={!ctx.canBuyClaim}
-                      onClick={() => setIntent("buy_claim")}
-                      className={cn(
-                        "flex h-full flex-col gap-3 rounded-xl border p-4 text-left transition-colors",
-                        intent === "buy_claim"
-                          ? "border-primary/50 bg-primary/10 ring-1 ring-primary/30"
-                          : "border-border bg-white/[0.02] hover:border-primary/40",
-                        !ctx.canBuyClaim && "cursor-not-allowed opacity-50 hover:border-border",
-                      )}
-                    >
-                      <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                        <User className="size-4 text-primary" aria-hidden />
-                        Claim video
-                      </span>
-                      <span className="text-xs leading-relaxed text-muted-foreground">
-                        You buy the video and claim it for yourself. You are the surfer on this
-                        wave and get full playback in My Videos.
-                      </span>
-                      {!ctx.canBuyClaim ? (
-                        <span className="text-xs text-muted-foreground">
-                          Buy and claim is not available for this wave.
-                        </span>
-                      ) : null}
-                    </button>
-                  </div>
-                ) : null}
-
-                {currentStep === "details" && breakdown && intent ? (
-                  <div className="space-y-4">
-                    <PartnerBlock ctx={ctx} />
-                    <PriceBreakdown
-                      breakdown={breakdown}
-                      intent={intent}
-                      communityLocation={communityLocation}
-                      communityFeePercent={ctx.communityFeePercent}
-                      sessionWaveCount={
-                        intent === "buy_claim" ? sessionBuyClaimCount : undefined
-                      }
-                    />
-                    <div className="rounded-xl border border-dashed border-border p-3">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        Partner pricing for this session
-                      </p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {formatDiscountSummary(ctx.commercialSettings)}
-                      </p>
-                    </div>
-                  </div>
-                ) : null}
-
-                {currentStep === "session" && intent && ctx ? (
-                  <div className="space-y-4">
-                    <PostSessionInfo
-                      sessionSummary={formatSessionSummary(
-                        ctx.location as DiscoverFeedLocation,
-                        ctx.sessionSummary,
-                      )}
-                      session={ctx.sessionSummary}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {formatSessionLocationLabel(ctx.location as DiscoverFeedLocation)}
-                    </p>
-                    {otherWaves.length > 0 ? (
-                      <ul className="grid gap-2 sm:grid-cols-3">
-                        {otherWaves.map((wave) => {
-                          const wavePrice =
-                            intent === "buy_claim"
-                              ? wave.buyClaimTotalPeaks
-                              : wave.sponsorTotalPeaks;
-                          const canUnlock =
-                            intent === "buy_claim"
-                              ? wave.canBuyClaim
-                              : wave.canSponsor;
-                          return (
-                            <li key={wave.jobId}>
-                              <button
-                                type="button"
-                                disabled={!canUnlock}
-                                onClick={() =>
-                                  void loadContext(wave.jobId, { preserveStep: true })
-                                }
-                                className={cn(
-                                  "flex w-full flex-col overflow-hidden rounded-lg border text-left transition-colors",
-                                  wave.jobId === activeJobId
-                                    ? "border-primary/50 ring-1 ring-primary/30"
-                                    : "border-border hover:border-border",
-                                  !canUnlock && "opacity-50",
-                                )}
-                              >
-                                <div className="relative aspect-video bg-secondary">
-                                  {wave.thumbnailUrl ? (
-                                    <Image
-                                      src={wave.thumbnailUrl}
-                                      alt=""
-                                      fill
-                                      className="object-cover"
-                                      sizes="160px"
-                                      unoptimized
-                                    />
-                                  ) : (
-                                    <span className="flex size-full items-center justify-center text-[10px] text-muted-foreground">
-                                      Preview
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="truncate px-2 py-1.5 text-[10px] text-muted-foreground">
-                                  {wave.originalFilename}
-                                  {wavePrice != null ? ` · ${wavePrice} P` : ""}
-                                </span>
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No other unlockable waves in this session right now.
-                      </p>
+        <CardContent className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          {loading ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Loading checkout…
+            </p>
+          ) : error && !ctx ? (
+            <p className="py-6 text-center text-sm text-red-400">{error}</p>
+          ) : ctx ? (
+            <div className="space-y-4">
+              {currentStep === "role" ? (
+                <div className="grid gap-3 sm:grid-cols-2 sm:items-stretch">
+                  <button
+                    type="button"
+                    aria-pressed={intent === "sponsor"}
+                    disabled={!ctx.canSponsor}
+                    onClick={() => setIntent("sponsor")}
+                    className={cn(
+                      "flex h-full flex-col gap-3 rounded-xl border p-4 text-left transition-colors",
+                      intent === "sponsor"
+                        ? "border-primary/50 bg-primary/10 ring-1 ring-primary/30"
+                        : "border-border bg-white/[0.02] hover:border-primary/40",
+                      !ctx.canSponsor &&
+                        "cursor-not-allowed opacity-50 hover:border-border",
                     )}
-                    {sessionViewHref ? (
-                      <Link
-                        href={sessionViewHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-primary/15"
-                      >
-                        View all videos on this session
-                        <ExternalLink className="size-3.5" aria-hidden />
-                      </Link>
+                  >
+                    <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                      <HeartHandshake className="size-4 text-primary" aria-hidden />
+                      Sponsor
+                    </span>
+                    <span className="text-xs leading-relaxed text-muted-foreground">
+                      {ctx.claimStatus === "claimed"
+                        ? `You pay to unlock the full video for ${surferName}. You are not the surfer on this wave and do not take the claim.`
+                        : "You pay to unlock the full video for yourself without claiming the wave. A surfer can still claim it later."}
+                    </span>
+                    {!ctx.canSponsor ? (
+                      <span className="text-xs text-muted-foreground">
+                        {ctx.claimStatus === "claimed"
+                          ? "You already claimed this wave — choose Claim video to buy and unlock as the surfer."
+                          : "This wave is already unlocked."}
+                      </span>
                     ) : null}
-                  </div>
-                ) : null}
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={intent === "buy_claim"}
+                    disabled={!ctx.canBuyClaim}
+                    onClick={() => setIntent("buy_claim")}
+                    className={cn(
+                      "flex h-full flex-col gap-3 rounded-xl border p-4 text-left transition-colors",
+                      intent === "buy_claim"
+                        ? "border-primary/50 bg-primary/10 ring-1 ring-primary/30"
+                        : "border-border bg-white/[0.02] hover:border-primary/40",
+                      !ctx.canBuyClaim &&
+                        "cursor-not-allowed opacity-50 hover:border-border",
+                    )}
+                  >
+                    <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                      <User className="size-4 text-primary" aria-hidden />
+                      Claim video
+                    </span>
+                    <span className="text-xs leading-relaxed text-muted-foreground">
+                      You buy the video and claim it for yourself. You are the
+                      surfer on this wave and get full playback in My Videos.
+                    </span>
+                    {!ctx.canBuyClaim ? (
+                      <span className="text-xs text-muted-foreground">
+                        Buy and claim is not available for this wave.
+                      </span>
+                    ) : null}
+                  </button>
+                </div>
+              ) : null}
 
-                {currentStep === "summary" && breakdown && intent ? (
-                  <CheckoutSummaryPanel
-                    intent={intent}
+              {currentStep === "details" && breakdown && intent ? (
+                <div className="space-y-4">
+                  <PartnerBlock ctx={ctx} />
+                  <PriceBreakdown
                     breakdown={breakdown}
-                    communityFeePercent={ctx.communityFeePercent}
-                    communityLocation={communityLocation}
-                    videoName={activeWaveMeta.videoName}
-                    sessionLabel={activeWaveMeta.sessionLabel}
+                    intent={intent}
+                    currency={ctx.currency}
+                    commissionLocation={commissionLocation}
                     sessionWaveCount={
-                      intent === "buy_claim" ? sessionBuyClaimCount : 1
+                      intent === "buy_claim" ? sessionBuyClaimCount : undefined
                     }
-                    cartTotals={cartSummary.cartTotals}
                   />
-                ) : null}
-              </div>
-            ) : null}
-          </CardContent>
+                  <div className="rounded-xl border border-dashed border-border p-3">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Partner pricing for this session
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {formatDiscountSummary(ctx.commercialSettings)}
+                    </p>
+                  </div>
+                </div>
+              ) : null}
 
-          <CardFooter className="shrink-0 flex-col items-stretch gap-3 border-border bg-popover px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            {error ? (
-              <p className="text-sm text-red-400 sm:min-w-0 sm:flex-1 sm:pr-4">{error}</p>
-            ) : (
-              <span className="hidden sm:block sm:flex-1" aria-hidden />
-            )}
-            <div className="flex shrink-0 flex-wrap justify-end gap-2">
+              {currentStep === "session" && intent && ctx ? (
+                <div className="space-y-4">
+                  <PostSessionInfo
+                    sessionSummary={formatSessionSummary(
+                      ctx.location as DiscoverFeedLocation,
+                      ctx.sessionSummary,
+                    )}
+                    session={ctx.sessionSummary}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {formatSessionLocationLabel(
+                      ctx.location as DiscoverFeedLocation,
+                    )}
+                  </p>
+                  {otherWaves.length > 0 ? (
+                    <ul className="grid gap-2 sm:grid-cols-3">
+                      {otherWaves.map((wave) => {
+                        const wavePrice =
+                          intent === "buy_claim"
+                            ? wave.buyClaimTotalMinor
+                            : wave.sponsorTotalMinor;
+                        const canUnlock =
+                          intent === "buy_claim"
+                            ? wave.canBuyClaim
+                            : wave.canSponsor;
+                        return (
+                          <li key={wave.jobId}>
+                            <button
+                              type="button"
+                              disabled={!canUnlock}
+                              onClick={() =>
+                                void loadContext(wave.jobId, {
+                                  preserveStep: true,
+                                })
+                              }
+                              className={cn(
+                                "flex w-full flex-col overflow-hidden rounded-lg border text-left transition-colors",
+                                wave.jobId === activeJobId
+                                  ? "border-primary/50 ring-1 ring-primary/30"
+                                  : "border-border hover:border-border",
+                                !canUnlock && "opacity-50",
+                              )}
+                            >
+                              <div className="relative aspect-video bg-secondary">
+                                {wave.thumbnailUrl ? (
+                                  <Image
+                                    src={wave.thumbnailUrl}
+                                    alt=""
+                                    fill
+                                    className="object-cover"
+                                    sizes="160px"
+                                    unoptimized
+                                  />
+                                ) : (
+                                  <span className="flex size-full items-center justify-center text-[10px] text-muted-foreground">
+                                    Preview
+                                  </span>
+                                )}
+                              </div>
+                              <span className="truncate px-2 py-1.5 text-[10px] text-muted-foreground">
+                                {wave.originalFilename}
+                                {wavePrice != null
+                                  ? ` · ${formatMoney(wavePrice, ctx.currency)}`
+                                  : ""}
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No other unlockable waves in this session right now.
+                    </p>
+                  )}
+                  {sessionViewHref ? (
+                    <Link
+                      href={sessionViewHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-primary/15"
+                    >
+                      View all videos on this session
+                      <ExternalLink className="size-3.5" aria-hidden />
+                    </Link>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {currentStep === "summary" && breakdown && intent ? (
+                <CheckoutSummaryPanel
+                  intent={intent}
+                  breakdown={breakdown}
+                  currency={ctx.currency}
+                  commissionLocation={commissionLocation}
+                  videoName={activeWaveMeta.videoName}
+                  sessionLabel={activeWaveMeta.sessionLabel}
+                  sessionWaveCount={
+                    intent === "buy_claim" ? sessionBuyClaimCount : 1
+                  }
+                />
+              ) : null}
+            </div>
+          ) : null}
+        </CardContent>
+
+        <CardFooter className="shrink-0 flex-col items-stretch gap-3 border-border bg-popover px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          {error ? (
+            <p className="text-sm text-red-400 sm:min-w-0 sm:flex-1 sm:pr-4">
+              {error}
+            </p>
+          ) : (
+            <span className="hidden sm:block sm:flex-1" aria-hidden />
+          )}
+          <div className="flex shrink-0 flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-border bg-transparent text-foreground"
+              disabled={submitting}
+              onClick={close}
+            >
+              Cancel
+            </Button>
+            {!isFirst ? (
               <Button
                 type="button"
                 variant="outline"
                 className="border-border bg-transparent text-foreground"
-                disabled={submitting}
-                onClick={close}
+                disabled={submitting || loading}
+                onClick={goBack}
               >
-                Cancel
+                Back
               </Button>
-              {!isFirst ? (
+            ) : null}
+            {isSummary ? (
+              <>
                 <Button
                   type="button"
                   variant="outline"
                   className="border-border bg-transparent text-foreground"
-                  disabled={submitting || loading}
-                  onClick={goBack}
+                  disabled={submitting || !intent}
+                  onClick={handleAddToCart}
                 >
-                  Back
+                  Add to cart
                 </Button>
-              ) : null}
-              {isSummary ? (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-border bg-transparent text-foreground"
-                    disabled={submitting || !intent}
-                    onClick={handleAddToCart}
-                  >
-                    Add to cart
-                  </Button>
-                  <Button
-                    type="button"
-                    className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
-                    disabled={submitting || !intent}
-                    onClick={() => void runPurchase()}
-                  >
-                    {submitting ? (
-                      "Processing…"
-                    ) : (
-                      <>
-                        Buy {cartSummary.checkoutVideoCount}{" "}
-                        {cartSummary.checkoutVideoCount === 1 ? "video" : "videos"}{" "}
-                        now
-                        <PeakIcon size={18} className="size-[18px]" />
-                        <span className="tabular-nums">
-                          {cartSummary.checkoutTotalPeaks}
-                        </span>
-                      </>
-                    )}
-                  </Button>
-                </>
-              ) : (
                 <Button
                   type="button"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
-                  disabled={
-                    loading ||
-                    !ctx ||
-                    (currentStep === "role" &&
-                      (intent !== "buy_claim" && intent !== "sponsor")) ||
-                    (currentStep === "role" &&
-                      intent === "buy_claim" &&
-                      !ctx.canBuyClaim) ||
-                    (currentStep === "role" &&
-                      intent === "sponsor" &&
-                      !ctx.canSponsor) ||
-                    ((currentStep === "details" || currentStep === "session") && !intent)
-                  }
-                  onClick={goNext}
+                  className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+                  disabled={submitting || !intent || !breakdown}
+                  onClick={() => void runBuyNow()}
                 >
-                  Next
+                  {submitting
+                    ? "Redirecting…"
+                    : `Buy now · ${
+                        breakdown
+                          ? formatMoney(breakdown.totalMinor, ctx?.currency ?? "EUR")
+                          : "—"
+                      }`}
                 </Button>
-              )}
-            </div>
-          </CardFooter>
-        </Card>
-      </div>
-
-      <BuyPeaksDialog
-        open={buyPeaksOpen}
-        onOpenChange={(o) => {
-          setBuyPeaksOpen(o);
-          if (!o && pendingBuy) void retryAfterTopUp();
-        }}
-        wallet={wallet}
-        onWalletRefresh={refreshWallet}
-      />
-    </>
+              </>
+            ) : (
+              <Button
+                type="button"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                disabled={
+                  loading ||
+                  !ctx ||
+                  (currentStep === "role" &&
+                    intent !== "buy_claim" &&
+                    intent !== "sponsor") ||
+                  (currentStep === "role" &&
+                    intent === "buy_claim" &&
+                    !ctx.canBuyClaim) ||
+                  (currentStep === "role" &&
+                    intent === "sponsor" &&
+                    !ctx.canSponsor) ||
+                  ((currentStep === "details" || currentStep === "session") &&
+                    !intent)
+                }
+                onClick={goNext}
+              >
+                Next
+              </Button>
+            )}
+          </div>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
