@@ -128,9 +128,6 @@ export function FeedGeoSearchInput({
         onValueChange={handleValueChange}
         onInputValueChange={(next) => {
           setQuery(next);
-          if (!next.trim()) {
-            onValueChange(null);
-          }
         }}
         itemToStringLabel={(item) => buildGeoSearchLabel(item)}
         isItemEqualToValue={itemsEqual}
