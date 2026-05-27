@@ -1,14 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ArrowDownToLineIcon,
   CheckCircle2Icon,
   ExternalLinkIcon,
   ImageOffIcon,
   Loader2Icon,
-  XCircleIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,21 +16,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { formatEur } from "@/lib/billing";
+import { formatMoney } from "@/lib/currencies";
 import {
   type PartnerEarningRowDto,
   type PartnerEarningsPageDto,
+  type PartnerEarningsTotalDto,
   type PartnerOnboardingStatus,
   type PartnerPayoutsStatusDto,
-  type PartnerWithdrawalDto,
-  type PartnerWithdrawalStatus,
 } from "@/lib/partner-payouts";
 import {
   type PartnerPayoutsActionResult,
   getPartnerPayoutsStatusAction,
   listPartnerEarningsAction,
-  requestPartnerWithdrawalAction,
   startPartnerOnboardingAction,
 } from "@/app/[userSub]/(social)/partner/income/actions";
 
@@ -53,7 +48,7 @@ const ONBOARDING_BADGES: Record<PartnerOnboardingStatus, StatusBadge> = {
   not_started: {
     label: "Not connected",
     className: "border-amber-500/30 bg-amber-500/10 text-amber-300",
-    icon: <ArrowDownToLineIcon className="size-3.5" aria-hidden />,
+    icon: null,
   },
   pending: {
     label: "Onboarding incomplete",
@@ -61,27 +56,9 @@ const ONBOARDING_BADGES: Record<PartnerOnboardingStatus, StatusBadge> = {
     icon: <Loader2Icon className="size-3.5 animate-spin" aria-hidden />,
   },
   enabled: {
-    label: "Bank connected",
+    label: "Stripe connected",
     className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
     icon: <CheckCircle2Icon className="size-3.5" aria-hidden />,
-  },
-};
-
-const WITHDRAWAL_BADGES: Record<PartnerWithdrawalStatus, StatusBadge> = {
-  pending: {
-    label: "Pending",
-    className: "border-amber-500/30 bg-amber-500/10 text-amber-300",
-    icon: <Loader2Icon className="size-3.5 animate-spin" aria-hidden />,
-  },
-  completed: {
-    label: "Completed",
-    className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
-    icon: <CheckCircle2Icon className="size-3.5" aria-hidden />,
-  },
-  failed: {
-    label: "Failed",
-    className: "border-red-500/30 bg-red-500/10 text-red-300",
-    icon: <XCircleIcon className="size-3.5" aria-hidden />,
   },
 };
 
@@ -105,20 +82,6 @@ function formatDate(iso: string): string {
   }
 }
 
-/**
- * Parses a user-entered EUR amount (e.g. "12", "12.50", "12,5") into cents,
- * returning null when the input is empty or not a valid positive amount.
- * Caps fractional digits at 2 to avoid sub-cent values like €0.005.
- */
-function parseEurInputToCents(raw: string): number | null {
-  const trimmed = raw.trim().replace(",", ".");
-  if (!trimmed) return null;
-  if (!/^\d+(?:\.\d{0,2})?$/.test(trimmed)) return null;
-  const n = Number.parseFloat(trimmed);
-  if (!Number.isFinite(n) || n <= 0) return null;
-  return Math.round(n * 100);
-}
-
 export function PartnerIncomeDashboard({
   initialStatus,
   initialEarnings,
@@ -126,8 +89,6 @@ export function PartnerIncomeDashboard({
 }: {
   initialStatus: PartnerPayoutsActionResult<PartnerPayoutsStatusDto>;
   initialEarnings: PartnerPayoutsActionResult<PartnerEarningsPageDto>;
-  /** URL prefix for the signed-in user (e.g. "/auth0%7C123"), used to
-   *  build links to the video details page from each earnings row. */
   userPathPrefix: string;
 }) {
   const [status, setStatus] = useState<PartnerPayoutsStatusDto | null>(
@@ -142,12 +103,8 @@ export function PartnerIncomeDashboard({
   const [earningsError, setEarningsError] = useState<string | null>(
     initialEarnings.ok ? null : initialEarnings.error,
   );
-  const [amountText, setAmountText] = useState("");
-  const [submitting, setSubmitting] = useState<
-    "withdraw" | "onboarding" | null
-  >(null);
+  const [onboardingBusy, setOnboardingBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   const refreshStatus = useCallback(async () => {
     const res = await getPartnerPayoutsStatusAction();
@@ -171,12 +128,6 @@ export function PartnerIncomeDashboard({
 
   const didMountRefreshRef = useRef(false);
   useEffect(() => {
-    // Stripe sends the user to `return_url` (no query string) on success and
-    // to `refresh_url` (`?refresh=1`) when the account link expires. In both
-    // cases the cached onboarding state may still be `pending` because the
-    // `account.updated` webhook hasn't arrived yet. If we mount and aren't
-    // fully `enabled`, refresh once now and once shortly after — the server
-    // action reconciles live against Stripe.
     if (typeof window === "undefined") return;
     if (didMountRefreshRef.current) return;
     if (status?.onboardingStatus === "enabled") return;
@@ -196,63 +147,20 @@ export function PartnerIncomeDashboard({
 
   const onConnect = useCallback(async () => {
     setActionError(null);
-    setActionSuccess(null);
-    setSubmitting("onboarding");
+    setOnboardingBusy(true);
     try {
       const res = await startPartnerOnboardingAction();
       if (!res.ok) {
         setActionError(res.error);
-        setSubmitting(null);
         return;
       }
       window.location.href = res.data.url;
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "Onboarding failed");
-      setSubmitting(null);
+    } finally {
+      setOnboardingBusy(false);
     }
   }, []);
-
-  const amountCents = useMemo(() => parseEurInputToCents(amountText), [
-    amountText,
-  ]);
-
-  const onWithdraw = useCallback(async () => {
-    if (!status || amountCents == null) return;
-    setActionError(null);
-    setActionSuccess(null);
-    if (amountCents > status.withdrawableAmountCents) {
-      setActionError("Amount exceeds available balance");
-      return;
-    }
-    if (amountCents < status.minWithdrawalAmountCents) {
-      setActionError(
-        `Minimum withdrawal is ${formatEur(status.minWithdrawalAmountCents)}`,
-      );
-      return;
-    }
-    setSubmitting("withdraw");
-    try {
-      const res = await requestPartnerWithdrawalAction(amountCents);
-      if (!res.ok) {
-        setActionError(res.error);
-        return;
-      }
-      setActionSuccess(
-        `Sent ${formatEur(res.data.amountCents)} to your bank account.`,
-      );
-      setAmountText("");
-      await Promise.all([refreshStatus(), refreshEarnings()]);
-    } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Withdrawal failed");
-    } finally {
-      setSubmitting(null);
-    }
-  }, [amountCents, refreshEarnings, refreshStatus, status]);
-
-  const onMaxClick = useCallback(() => {
-    if (!status) return;
-    setAmountText((status.withdrawableAmountCents / 100).toFixed(2));
-  }, [status]);
 
   if (!status) {
     return (
@@ -260,8 +168,10 @@ export function PartnerIncomeDashboard({
         <h1 className="font-heading text-2xl font-semibold">Income</h1>
         <Card>
           <CardHeader>
-            <CardTitle>We couldn’t load your earnings</CardTitle>
-            <CardDescription>{statusError ?? "Try again later."}</CardDescription>
+            <CardTitle>We couldn&rsquo;t load your earnings</CardTitle>
+            <CardDescription>
+              {statusError ?? "Try again later."}
+            </CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -269,194 +179,127 @@ export function PartnerIncomeDashboard({
   }
 
   const onboardingBadge = ONBOARDING_BADGES[status.onboardingStatus];
-  const canWithdraw =
-    status.onboardingStatus === "enabled" &&
-    status.withdrawableAmountCents >= status.minWithdrawalAmountCents;
 
   return (
     <div className="space-y-6">
       <header className="space-y-1">
         <h1 className="font-heading text-2xl font-semibold">Income</h1>
         <p className="text-sm text-muted-foreground">
-          Cash out the money you earned from commercial wave unlocks straight to
-          your bank account via Stripe.
+          When a surfer unlocks your wave, Stripe routes your share directly to
+          your connected account. There is no manual withdrawal step — Stripe
+          pays out to your bank on its normal schedule.
         </p>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Withdrawable balance</CardDescription>
-            <CardTitle className="text-2xl">
-              {formatEur(status.withdrawableAmountCents)}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Minimum withdrawal: {formatEur(status.minWithdrawalAmountCents)}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Bank account</CardDescription>
-            <CardTitle className="flex items-center justify-between text-base">
-              <span>Stripe Connect</span>
-              <StatusBadgeChip badge={onboardingBadge} />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {status.onboardingStatus === "enabled" ? (
-              <p className="text-sm text-muted-foreground">
-                You’re all set. Withdrawals are sent to your connected bank account.
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {status.onboardingStatus === "not_started"
-                  ? "Connect a bank account to enable withdrawals."
-                  : "Finish Stripe onboarding to unlock withdrawals."}
-              </p>
-            )}
-            {status.requirementsDue.length > 0 ? (
-              <ul className="list-disc space-y-1 pl-5 text-xs text-muted-foreground">
-                {status.requirementsDue.slice(0, 5).map((req) => (
-                  <li key={req}>{req}</li>
-                ))}
-                {status.requirementsDue.length > 5 ? (
-                  <li>…and {status.requirementsDue.length - 5} more</li>
-                ) : null}
-              </ul>
-            ) : null}
-            <Button
-              type="button"
-              variant={
-                status.onboardingStatus === "enabled" ? "outline" : "default"
-              }
-              onClick={onConnect}
-              disabled={submitting === "onboarding"}
-            >
-              {submitting === "onboarding" ? (
-                <Loader2Icon className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <ExternalLinkIcon className="size-4" aria-hidden />
-              )}
-              {status.onboardingStatus === "enabled"
-                ? "Update bank details"
-                : status.onboardingStatus === "pending"
-                  ? "Continue onboarding"
-                  : "Connect bank account"}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Withdraw</CardTitle>
-          <CardDescription>
-            Funds are transferred to your Stripe Connect account; Stripe pays out
-            to your bank on its standard schedule.
-          </CardDescription>
+        <CardHeader className="pb-2">
+          <CardDescription>Stripe Connect</CardDescription>
+          <CardTitle className="flex items-center justify-between text-base">
+            <span>Payment account</span>
+            <StatusBadgeChip badge={onboardingBadge} />
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <label className="block text-sm">
-              <span className="mb-1 block text-muted-foreground">
-                Amount (EUR)
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">€</span>
-                <Input
-                  inputMode="decimal"
-                  value={amountText}
-                  onChange={(e) =>
-                    setAmountText(e.target.value.replace(/[^0-9.,]/g, ""))
-                  }
-                  placeholder={(status.minWithdrawalAmountCents / 100).toFixed(
-                    2,
-                  )}
-                  className="w-40"
-                  disabled={!canWithdraw || submitting === "withdraw"}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onMaxClick}
-                  disabled={!canWithdraw || submitting === "withdraw"}
-                >
-                  Max
-                </Button>
-              </div>
-            </label>
-            <Button
-              type="button"
-              onClick={onWithdraw}
-              disabled={
-                !canWithdraw || amountCents == null || submitting === "withdraw"
-              }
-              className="sm:ml-auto"
-            >
-              {submitting === "withdraw" ? (
-                <Loader2Icon className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <ArrowDownToLineIcon className="size-4" aria-hidden />
-              )}
-              Withdraw to bank
-            </Button>
-          </div>
+          {status.onboardingStatus === "enabled" ? (
+            <p className="text-sm text-muted-foreground">
+              Buyers pay through Peakd checkout; your earnings land in Stripe
+              immediately after each sale. Manage payouts and tax forms in your
+              Stripe Express dashboard.
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Connect Stripe before selling commercial waves. Surfers cannot
+              unlock your content until onboarding is complete.
+            </p>
+          )}
+          {status.requirementsDue.length > 0 ? (
+            <ul className="list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+              {status.requirementsDue.slice(0, 5).map((req) => (
+                <li key={req}>{req}</li>
+              ))}
+              {status.requirementsDue.length > 5 ? (
+                <li>&hellip;and {status.requirementsDue.length - 5} more</li>
+              ) : null}
+            </ul>
+          ) : null}
+          <Button
+            type="button"
+            variant={
+              status.onboardingStatus === "enabled" ? "outline" : "default"
+            }
+            onClick={onConnect}
+            disabled={onboardingBusy}
+          >
+            {onboardingBusy ? (
+              <Loader2Icon className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <ExternalLinkIcon className="size-4" aria-hidden />
+            )}
+            {status.onboardingStatus === "enabled"
+              ? "Open Stripe dashboard"
+              : status.onboardingStatus === "pending"
+                ? "Continue onboarding"
+                : "Connect Stripe"}
+          </Button>
           {actionError ? (
             <p className="text-sm text-red-400">{actionError}</p>
-          ) : null}
-          {actionSuccess ? (
-            <p className="text-sm text-emerald-400">{actionSuccess}</p>
           ) : null}
         </CardContent>
       </Card>
 
-      <WithdrawalsHistory withdrawals={status.recentWithdrawals} />
+      <EarningsTotalsCard totals={status.earningsTotalsByCurrency} />
+
       <EarningsHistory
         earnings={earnings}
         error={earningsError}
         userPathPrefix={userPathPrefix}
+        onRefresh={() => void refreshEarnings()}
       />
     </div>
   );
 }
 
-function WithdrawalsHistory({
-  withdrawals,
+function EarningsTotalsCard({
+  totals,
 }: {
-  withdrawals: PartnerWithdrawalDto[];
+  totals: PartnerEarningsTotalDto[];
 }) {
+  if (totals.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Lifetime earnings</CardTitle>
+          <CardDescription>
+            Completed unlock sales will appear here once buyers start paying for
+            your waves.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Recent withdrawals</CardTitle>
+        <CardTitle className="text-base">Lifetime earnings</CardTitle>
+        <CardDescription>
+          Your share from completed sales, paid directly via Stripe.
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        {withdrawals.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No withdrawals yet.</p>
-        ) : (
-          <ul className="divide-y divide-border text-sm">
-            {withdrawals.map((w) => (
-              <li
-                key={w.id}
-                className="flex items-center justify-between py-2"
-              >
-                <div className="space-y-0.5">
-                  <p className="font-medium">{formatEur(w.amountCents)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDate(w.createdAt)}
-                    {w.failureReason ? ` · ${w.failureReason}` : ""}
-                  </p>
-                </div>
-                <StatusBadgeChip badge={WITHDRAWAL_BADGES[w.status]} />
-              </li>
-            ))}
-          </ul>
-        )}
+        <ul className="divide-y divide-border">
+          {totals.map((row) => (
+            <li
+              key={row.currency}
+              className="flex items-center justify-between py-2 text-sm"
+            >
+              <span className="text-muted-foreground">{row.currency}</span>
+              <span className="font-semibold text-foreground">
+                {formatMoney(row.totalMinor, row.currency)}
+              </span>
+            </li>
+          ))}
+        </ul>
       </CardContent>
     </Card>
   );
@@ -466,24 +309,31 @@ function EarningsHistory({
   earnings,
   error,
   userPathPrefix,
+  onRefresh,
 }: {
   earnings: PartnerEarningsPageDto | null;
   error: string | null;
   userPathPrefix: string;
+  onRefresh: () => void;
 }) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Recent earnings</CardTitle>
-        <CardDescription>
-          Each line is a wave unlock that credited your withdrawable balance.
-        </CardDescription>
+      <CardHeader className="flex flex-row items-start justify-between gap-4">
+        <div>
+          <CardTitle className="text-base">Recent sales</CardTitle>
+          <CardDescription>
+            Each line is a wave unlock paid to your Stripe account.
+          </CardDescription>
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={onRefresh}>
+          Refresh
+        </Button>
       </CardHeader>
       <CardContent>
         {error ? (
           <p className="text-sm text-red-400">{error}</p>
         ) : !earnings || earnings.items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No earnings yet.</p>
+          <p className="text-sm text-muted-foreground">No sales yet.</p>
         ) : (
           <ul className="divide-y divide-border">
             {earnings.items.map((row) => (
@@ -508,7 +358,10 @@ function EarningsRow({
   userPathPrefix: string;
 }) {
   const buyerName = row.buyer.displayName?.trim() || "Unknown user";
-  const videoHref = `${userPathPrefix}/studio/${encodeURIComponent(row.jobId)}`;
+  const firstJobId = row.jobIds[0] ?? "";
+  const videoHref = firstJobId
+    ? `${userPathPrefix}/studio/${encodeURIComponent(firstJobId)}`
+    : userPathPrefix;
 
   return (
     <li className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -532,19 +385,20 @@ function EarningsRow({
           <p className="truncate text-sm font-medium">
             {buyerName}{" "}
             <span className="text-muted-foreground">
-              {row.type === "buy_claim" ? "bought & claimed" : "sponsored"}
+              {row.intent === "buy_claim" ? "bought & claimed" : "sponsored"}
+              {row.jobIds.length > 1 ? ` · ${row.jobIds.length} videos` : ""}
             </span>
           </p>
           <p className="text-xs text-muted-foreground">
-            +{formatEur(row.amountCents)} · {row.countryCode || "??"} ·{" "}
-            {formatDate(row.createdAt)}
+            +{formatMoney(row.amountMinor, row.currency)} ·{" "}
+            {row.countryCode || "??"} · {formatDate(row.createdAt)}
           </p>
         </div>
       </div>
       <EarningsRowPreviews
         videoHref={videoHref}
         thumbnails={row.previewThumbnailUrls}
-        jobId={row.jobId}
+        jobId={firstJobId}
       />
     </li>
   );
@@ -560,7 +414,9 @@ function EarningsRowPreviews({
   jobId: string;
 }) {
   const previews = thumbnails.slice(0, 3);
-  const ariaLabel = `Open video ${jobId.slice(0, 10)}…`;
+  const ariaLabel = jobId
+    ? `Open video ${jobId.slice(0, 10)}…`
+    : "Open video";
 
   if (previews.length === 0) {
     return (

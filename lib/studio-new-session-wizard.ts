@@ -21,7 +21,7 @@ export const WIZARD_STEP_META: Record<
   type: {
     title: "Session type",
     description:
-      "Choose how this session will appear on Discover and whether surfers pay Peaks.",
+      "Choose how this session will appear on Discover and whether surfers pay to unlock.",
   },
   "region-date": {
     title: "Region & date",
@@ -35,7 +35,7 @@ export const WIZARD_STEP_META: Record<
   commercial: {
     title: "Commercial pricing",
     description:
-      "Use your partner defaults or set custom Peaks pricing for this session.",
+      "Use your partner defaults or set custom pricing in your settlement currency for this session.",
   },
   summary: {
     title: "Summary",

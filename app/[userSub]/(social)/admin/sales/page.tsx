@@ -5,9 +5,9 @@ import { sessionHasAdminRole } from "@/lib/auth0-admin";
 import { getSocialFeedNavProps } from "@/lib/social-feed-nav";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
 import { SocialFeedLayout } from "@/components/social-feed/social-feed-layout";
-import { AdminPeaksDashboard } from "@/components/admin/admin-peaks-dashboard";
+import { AdminSalesDashboard } from "@/components/admin/admin-sales-dashboard";
 
-export default async function AdminPeaksPage({
+export default async function AdminSalesPage({
   params,
 }: {
   params: Promise<{ userSub: string }>;
@@ -30,15 +30,15 @@ export default async function AdminPeaksPage({
     <SocialFeedLayout
       {...nav}
       adminRegionsHref={`${prefix}/admin/regions`}
-      adminPeaksHref={`${prefix}/admin/peaks`}
+      adminSalesHref={`${prefix}/admin/sales`}
       adminFinanceHref={`${prefix}/admin/finance`}
       showAdminNav
       userPicture={session.user.picture}
       userName={session.user.name}
       userEmail={session.user.email}
     >
-      <Suspense fallback={<p className="text-sm text-zinc-400">Loading Peaks…</p>}>
-        <AdminPeaksDashboard />
+      <Suspense fallback={<p className="text-sm text-zinc-400">Loading sales…</p>}>
+        <AdminSalesDashboard />
       </Suspense>
     </SocialFeedLayout>
   );

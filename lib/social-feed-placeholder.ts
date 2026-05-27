@@ -5,9 +5,9 @@ import {
   ClapperboardIcon,
   CompassIcon,
   LandmarkIcon,
-  MountainIcon,
   MapPinIcon,
   NewspaperIcon,
+  ReceiptIcon,
   SquarePlayIcon,
   UserRoundIcon,
   UsersIcon,
@@ -51,7 +51,7 @@ export const PARTNER_NAV_ITEMS: NavItemConfig[] = [
 
 export const ADMIN_NAV_ITEMS: NavItemConfig[] = [
   { id: "regions", label: "Regions", icon: MapPinIcon },
-  { id: "peaks", label: "Peaks", icon: MountainIcon },
+  { id: "sales", label: "Sales", icon: ReceiptIcon },
   { id: "finance", label: "Finance", icon: LandmarkIcon },
 ];
 
