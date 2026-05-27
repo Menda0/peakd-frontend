@@ -69,7 +69,7 @@ export default async function SharedSessionPage({
           partnerProfileHref: nav.partnerProfileHref,
           partnerIncomeHref: nav.partnerIncomeHref,
           adminRegionsHref: nav.adminRegionsHref,
-          adminPeaksHref: nav.adminPeaksHref,
+          adminSalesHref: nav.adminSalesHref,
           showPartnerNav: nav.showPartnerNav,
           showAdminNav: nav.showAdminNav,
         }}
