@@ -125,7 +125,7 @@ export function SearchSessionsPanel() {
   if (!params) return null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 px-4 sm:px-0">
       <div>
         <h2 className="text-lg font-semibold text-foreground">Sessions</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -138,18 +138,31 @@ export function SearchSessionsPanel() {
           {[1, 2, 3].map((i) => (
             <Card
               key={i}
-              className="animate-pulse border-border bg-card"
+              className="animate-pulse overflow-hidden border-border bg-card"
             >
-              <CardContent className="h-28 p-4" />
+              <CardContent className="flex flex-col gap-3 p-4">
+                <div className="space-y-2">
+                  <div className="h-4 w-2/3 rounded bg-muted" />
+                  <div className="h-3 w-1/2 rounded bg-muted/80" />
+                </div>
+                <div className="flex justify-center gap-1.5">
+                  {[0, 1, 2].map((j) => (
+                    <div
+                      key={j}
+                      className="size-[4.5rem] rounded-lg bg-muted/80 sm:size-20"
+                    />
+                  ))}
+                </div>
+              </CardContent>
             </Card>
           ))}
         </div>
       ) : error ? (
-        <Card className="border-red-500/20 bg-red-500/5 text-foreground">
+        <Card className="overflow-hidden border-red-500/20 bg-red-500/5 text-foreground">
           <CardContent className="p-4 text-sm text-red-500 dark:text-red-300">{error}</CardContent>
         </Card>
       ) : sessions.length === 0 ? (
-        <Card className="border-border bg-card text-foreground">
+        <Card className="overflow-hidden border-border bg-card text-foreground">
           <CardContent className="p-6 text-center text-sm text-muted-foreground">
             {params.sessionDate
               ? "No published sessions for this location on this day."
@@ -158,7 +171,7 @@ export function SearchSessionsPanel() {
         </Card>
       ) : (
         <>
-          <ul className="space-y-3">
+          <ul className="flex flex-col gap-3">
             {sessions.map((session) => (
               <li key={session.sessionId}>
                 <SearchSessionCard session={session} />

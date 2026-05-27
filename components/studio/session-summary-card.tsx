@@ -47,14 +47,14 @@ export function SessionPreviewThumbs({
         className,
       )}
     >
-      <div className="flex items-stretch justify-center gap-1.5">
+      <div className="flex max-w-full items-stretch justify-center gap-1.5 overflow-x-auto pb-0.5">
         {slots.map((i) => {
           const url = urls[i];
           return (
             <div
               key={i}
               className={cn(
-                "relative h-[4.5rem] w-[4.5rem] overflow-hidden rounded-lg border border-border bg-muted sm:h-20 sm:w-[4.75rem]",
+                "relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-muted sm:h-20 sm:w-[4.75rem]",
                 i === 0 && videoCount > 0 && !url && "animate-pulse",
               )}
             >
@@ -134,44 +134,46 @@ export function SessionSummaryCard({
   return (
     <Card
       className={cn(
-        "border-border bg-card text-foreground",
+        "overflow-hidden border-border bg-card text-foreground",
         className,
       )}
     >
-      <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-stretch sm:gap-4">
-        <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <span className="font-medium text-foreground">
-                {session.spotName ?? "Spot"}
-              </span>
-              {session.status === "closed" ? (
-                <span className="rounded-md border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Published
+      <CardContent className="flex flex-col gap-3 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="space-y-1">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span className="font-medium text-foreground">
+                  {session.spotName ?? "Spot"}
                 </span>
-              ) : null}
-              <span className="text-sm text-muted-foreground">
+                {session.status === "closed" ? (
+                  <span className="rounded-md border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Published
+                  </span>
+                ) : null}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {session.regionName ?? "Region"} · {session.countryCode} ·{" "}
+                {formatDurationMinutes(session.durationMinutes ?? 120)}
+              </p>
+              <p className="text-xs text-muted-foreground">
                 {session.sessionDate} · {session.sessionTime}
-              </span>
+              </p>
             </div>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {session.regionName ?? "Region"} · {session.countryCode} ·{" "}
-              {formatDurationMinutes(session.durationMinutes ?? 120)}
-            </p>
+
+            <SessionTagsRow
+              conditionsRating={session.conditionsRating}
+              waveLabels={waveLabels}
+            />
           </div>
 
-          <SessionTagsRow
-            conditionsRating={session.conditionsRating}
-            waveLabels={waveLabels}
+          <SessionPreviewThumbs
+            urls={session.previewThumbnailUrls}
+            videoCount={session.videoCount}
+            slotCount={previewSlotCount}
+            className="w-full shrink-0 sm:w-auto"
           />
         </div>
-
-        <SessionPreviewThumbs
-          urls={session.previewThumbnailUrls}
-          videoCount={session.videoCount}
-          slotCount={previewSlotCount}
-          className="w-full sm:w-auto sm:items-end"
-        />
       </CardContent>
     </Card>
   );

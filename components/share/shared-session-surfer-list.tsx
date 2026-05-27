@@ -11,7 +11,7 @@ import type { SurferProfile } from "@/lib/surfer-profile";
 import type { SurfLevel } from "@/lib/user-profile";
 import { cn } from "@/lib/utils";
 
-const MAX_VISIBLE_SURFERS = 8;
+const MAX_VISIBLE_SURFERS = 5;
 
 function collectUniqueSurfers(surfers: SurferProfile[]): SurferProfile[] {
   const byId = new Map<string, SurferProfile>();
@@ -45,6 +45,12 @@ function surfLevelLabel(level: SurfLevel | null): string | null {
   return labels[level];
 }
 
+const surferAvatarClassName =
+  "size-7 shrink-0 rounded-full object-cover ring-2 ring-card sm:size-8";
+
+const surferAvatarFallbackClassName =
+  "flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-foreground ring-2 ring-card sm:size-8 sm:text-xs";
+
 function SurferAvatar({
   surfer,
   className,
@@ -58,19 +64,10 @@ function SurferAvatar({
     <img
       src={surfer.avatarUrl}
       alt=""
-      className={cn(
-        "size-9 shrink-0 rounded-full object-cover ring-2 ring-card",
-        className,
-      )}
+      className={cn(surferAvatarClassName, className)}
     />
   ) : (
-    <div
-      className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground ring-2 ring-card",
-        className,
-      )}
-      aria-hidden
-    >
+    <div className={cn(surferAvatarFallbackClassName, className)} aria-hidden>
       {name.charAt(0).toUpperCase()}
     </div>
   );
@@ -155,24 +152,32 @@ function SurferOverflowTooltipList({ surfers }: { surfers: SurferProfile[] }) {
 export function SharedSessionSurferList({
   surfers,
   className,
+  variant = "standalone",
 }: {
   surfers: SurferProfile[];
   className?: string;
+  variant?: "standalone" | "inline";
 }) {
   const unique = collectUniqueSurfers(surfers);
   if (unique.length === 0) return null;
 
   const visible = unique.slice(0, MAX_VISIBLE_SURFERS);
   const overflow = unique.slice(MAX_VISIBLE_SURFERS);
+  const inline = variant === "inline";
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className={cn("space-y-2", className)}>
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Surfers in this session
-        </p>
-        <div className="flex items-center">
-          <div className="flex items-center -space-x-2">
+      <div
+        className={cn(inline ? "shrink-0" : "space-y-1.5", className)}
+        aria-label={`${unique.length} surfer${unique.length === 1 ? "" : "s"} in this session`}
+      >
+        {!inline ? (
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:text-xs">
+            Surfers in this session
+          </p>
+        ) : null}
+        <div className="flex items-center justify-end">
+          <div className="flex items-center -space-x-1.5 sm:-space-x-2">
             {visible.map((surfer) => (
               <SurferWithTooltip key={surfer.userId} surfer={surfer}>
                 <button
@@ -190,7 +195,7 @@ export function SharedSessionSurferList({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  className="relative z-10 -ml-2 flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-semibold text-foreground ring-2 ring-card outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary/60"
+                  className="relative z-10 -ml-1.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-[10px] font-semibold text-foreground ring-2 ring-card outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary/60 sm:-ml-2 sm:size-8 sm:text-xs"
                   aria-label={`${overflow.length} more surfers`}
                 >
                   +{overflow.length}

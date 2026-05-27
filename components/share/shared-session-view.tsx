@@ -452,33 +452,43 @@ export function SharedSessionView({
     <div className="mx-auto flex w-full max-w-xl flex-col gap-8 sm:max-w-3xl sm:py-10">
       <header className="space-y-4">
         <ShareBackButton />
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-center gap-3">
-            {data.partnerAvatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={data.partnerAvatarUrl}
-                alt=""
-                className="size-12 shrink-0 rounded-full border border-border object-cover"
-              />
-            ) : (
-              <div
-                className="size-12 shrink-0 rounded-full border border-border bg-muted/50"
-                aria-hidden
-              />
-            )}
-            <div>
-              <p className="text-sm text-muted-foreground">Shared session</p>
-              <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                {partnerName}
-              </h1>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+              {data.partnerAvatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={data.partnerAvatarUrl}
+                  alt=""
+                  className="size-10 shrink-0 rounded-full border border-border object-cover sm:size-12"
+                />
+              ) : (
+                <div
+                  className="size-10 shrink-0 rounded-full border border-border bg-muted/50 sm:size-12"
+                  aria-hidden
+                />
+              )}
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground sm:text-sm">
+                  Shared session
+                </p>
+                <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-2xl">
+                  {partnerName}
+                </h1>
+              </div>
             </div>
+            {sessionSurfers.length > 0 ? (
+              <SharedSessionSurferList
+                surfers={sessionSurfers}
+                variant="inline"
+              />
+            ) : null}
           </div>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="shrink-0 border-border bg-transparent text-foreground"
+            className="w-full shrink-0 border-border bg-transparent text-foreground sm:w-auto sm:self-end"
             disabled={!zipReady}
             title={
               zipReady
@@ -494,19 +504,19 @@ export function SharedSessionView({
             }}
           >
             <Download className="size-4" aria-hidden />
-            <span className="ml-2">
+            <span className="ml-2 text-xs sm:text-sm">
               {zipReady ? "Download session ZIP" : "ZIP preparing…"}
             </span>
           </Button>
         </div>
 
         <Card className="border-border bg-card text-foreground sm:shadow-sm">
-          <CardContent className="space-y-3 p-4 sm:p-4">
+          <CardContent className="space-y-2.5 p-3 sm:space-y-3 sm:p-4">
             <div>
-              <p className="font-medium text-foreground">
+              <p className="text-sm font-medium text-foreground sm:text-base">
                 {data.session.sessionDate} · {data.session.sessionTime}
               </p>
-              <p className="mt-0.5 text-sm text-muted-foreground">
+              <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
                 {sessionLocationLabel(data)} ·{" "}
                 {formatDurationMinutes(data.session.durationMinutes)}
               </p>
@@ -517,8 +527,6 @@ export function SharedSessionView({
             />
           </CardContent>
         </Card>
-
-        <SharedSessionSurferList surfers={sessionSurfers} />
       </header>
 
       <section className="space-y-4">
