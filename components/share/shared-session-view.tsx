@@ -449,7 +449,7 @@ export function SharedSessionView({
   }, [data.waves, claimOverrides]);
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-8 py-6 sm:max-w-3xl sm:px-6 sm:py-10">
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-8 sm:max-w-3xl sm:py-10">
       <header className="space-y-4">
         <ShareBackButton />
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

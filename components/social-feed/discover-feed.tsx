@@ -262,7 +262,7 @@ export function DiscoverFeed() {
   }, [hasMore, loadMore]);
 
   const toolbar = (
-    <div className="px-4 pt-4 sm:mt-4 sm:px-0">
+    <div className="px-4 sm:mt-4 sm:px-0">
       <FeedToolbar
         tabs={tabs}
         activeTabId={activeTabId}
