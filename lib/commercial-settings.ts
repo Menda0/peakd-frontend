@@ -72,10 +72,18 @@ export function normalizeCommercialSettings(
 
 /** Default platform commission percent charged on top of the partner's price. */
 export const PLATFORM_COMMISSION_PERCENT_DEFAULT = 20;
+export const STRIPE_PROCESSING_FEE_PERCENT_DEFAULT = 2.9;
+export const STRIPE_PROCESSING_FEE_FIXED_MINOR_DEFAULT = 30;
+
+export type StripeProcessingFeeConfig = {
+  stripeProcessingFeePercent?: number;
+  stripeProcessingFeeFixedMinor?: number;
+};
 
 export type CheckoutBreakdownMinor = {
   basePriceMinor: number;
   commissionMinor: number;
+  stripeProcessingFeeMinor: number;
   totalMinor: number;
   commissionPercent: number;
   listPriceMinor: number;
@@ -129,15 +137,45 @@ function splitIntegerTotal(total: number, parts: number): number[] {
 export function computeCheckoutTotalMinor(
   basePriceMinor: number,
   commissionPercent: number = PLATFORM_COMMISSION_PERCENT_DEFAULT,
+  stripeConfig?: StripeProcessingFeeConfig,
 ): CheckoutBreakdownMinor {
   const base = Math.max(0, Math.round(basePriceMinor));
   const pct = Math.max(0, commissionPercent);
+  const stripePct = Math.max(
+    0,
+    stripeConfig?.stripeProcessingFeePercent ??
+      STRIPE_PROCESSING_FEE_PERCENT_DEFAULT,
+  );
+  const stripeFixed = Math.max(
+    0,
+    Math.round(
+      stripeConfig?.stripeProcessingFeeFixedMinor ??
+        STRIPE_PROCESSING_FEE_FIXED_MINOR_DEFAULT,
+    ),
+  );
   const commissionMinor =
     base > 0 ? Math.max(1, Math.round((base * pct) / 100)) : 0;
+  const targetNet = base + commissionMinor;
+  const stripeFeeForTotal = (amountMinor: number): number => {
+    if (amountMinor <= 0) return 0;
+    return Math.max(
+      0,
+      Math.round((amountMinor * stripePct) / 100) + stripeFixed,
+    );
+  };
+  let total = targetNet;
+  for (let i = 0; i < 8; i += 1) {
+    const fee = stripeFeeForTotal(total);
+    const next = targetNet + fee;
+    if (next <= total) break;
+    total = next;
+  }
+  const stripeProcessingFeeMinor = Math.max(0, total - targetNet);
   return {
     basePriceMinor: base,
     commissionMinor,
-    totalMinor: base + commissionMinor,
+    stripeProcessingFeeMinor,
+    totalMinor: total,
     commissionPercent: pct,
     listPriceMinor: base,
     discountPercent: 0,
@@ -145,10 +183,27 @@ export function computeCheckoutTotalMinor(
   };
 }
 
+/** Payment processing fee for display (matches backend gross-up). */
+export function paymentProcessingFeeMinor(
+  breakdown: Pick<
+    CheckoutBreakdownMinor,
+    "basePriceMinor" | "commissionMinor" | "stripeProcessingFeeMinor" | "totalMinor"
+  >,
+): number {
+  if (breakdown.stripeProcessingFeeMinor > 0) {
+    return breakdown.stripeProcessingFeeMinor;
+  }
+  return Math.max(
+    0,
+    breakdown.totalMinor - breakdown.basePriceMinor - breakdown.commissionMinor,
+  );
+}
+
 export function allocateBuyClaimLineBreakdownsMinor(
   settings: CommercialSettings,
   waveCount: number,
   commissionPercent: number = PLATFORM_COMMISSION_PERCENT_DEFAULT,
+  stripeConfig?: StripeProcessingFeeConfig,
 ): CheckoutBreakdownMinor[] {
   const q = Math.max(1, Math.floor(waveCount));
   const {
@@ -161,6 +216,7 @@ export function allocateBuyClaimLineBreakdownsMinor(
     const checkout = computeCheckoutTotalMinor(
       basePriceMinor,
       commissionPercent,
+      stripeConfig,
     );
     return {
       ...checkout,

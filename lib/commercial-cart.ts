@@ -17,6 +17,7 @@ export type UnlockCartQuoteLine = {
   discountSavedMinor: number;
   basePriceMinor: number;
   commissionMinor: number;
+  stripeProcessingFeeMinor: number;
   totalMinor: number;
   commissionPercent: number;
 };
@@ -29,6 +30,7 @@ export type UnlockCartQuoteGroup = {
   lines: UnlockCartQuoteLine[];
   partnerSubtotalMinor: number;
   platformCommissionMinor: number;
+  stripeProcessingFeeMinor: number;
   totalAmountMinor: number;
 };
 
@@ -68,6 +70,7 @@ function parseLine(
     discountSavedMinor: num(r.discountSavedMinor),
     basePriceMinor: num(r.basePriceMinor),
     commissionMinor: num(r.commissionMinor),
+    stripeProcessingFeeMinor: num(r.stripeProcessingFeeMinor),
     totalMinor: num(r.totalMinor),
     commissionPercent: num(r.commissionPercent, 20),
   };
@@ -91,6 +94,7 @@ function parseGroup(raw: unknown): UnlockCartQuoteGroup | null {
     lines,
     partnerSubtotalMinor: num(r.partnerSubtotalMinor),
     platformCommissionMinor: num(r.platformCommissionMinor),
+    stripeProcessingFeeMinor: num(r.stripeProcessingFeeMinor),
     totalAmountMinor: num(r.totalAmountMinor),
   };
 }

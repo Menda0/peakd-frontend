@@ -135,16 +135,27 @@ export function OrderReturnPanel({
     );
   }
 
-  const renderTotals = (dto: WaveOrderStatusDto) => (
-    <dl className="grid gap-2 rounded-lg border border-border bg-white/[0.02] p-4 text-sm">
-      <div className="flex justify-between gap-4">
-        <dt className="text-muted-foreground">Partner amount</dt>
-        <dd>{formatMoney(dto.partnerSubtotalMinor, dto.currency)}</dd>
-      </div>
-      <div className="flex justify-between gap-4">
-        <dt className="text-muted-foreground">Platform commission</dt>
-        <dd>{formatMoney(dto.platformCommissionMinor, dto.currency)}</dd>
-      </div>
+  const renderTotals = (dto: WaveOrderStatusDto) => {
+    const paymentProcessingFeeMinor = Math.max(
+      0,
+      dto.totalAmountMinor - dto.partnerSubtotalMinor - dto.platformCommissionMinor,
+    );
+    return (
+      <dl className="grid gap-2 rounded-lg border border-border bg-white/[0.02] p-4 text-sm">
+        <div className="flex justify-between gap-4">
+          <dt className="text-muted-foreground">Partner amount</dt>
+          <dd>{formatMoney(dto.partnerSubtotalMinor, dto.currency)}</dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt className="text-muted-foreground">Platform commission</dt>
+          <dd>{formatMoney(dto.platformCommissionMinor, dto.currency)}</dd>
+        </div>
+        {paymentProcessingFeeMinor > 0 ? (
+          <div className="flex justify-between gap-4">
+            <dt className="text-muted-foreground">Payment processing fee</dt>
+            <dd>{formatMoney(paymentProcessingFeeMinor, dto.currency)}</dd>
+          </div>
+        ) : null}
       <div className="flex justify-between gap-4 border-t border-border pt-2 font-semibold">
         <dt>Total charged</dt>
         <dd>{formatMoney(dto.totalAmountMinor, dto.currency)}</dd>
@@ -153,8 +164,9 @@ export function OrderReturnPanel({
         <dt>Videos unlocked</dt>
         <dd>{dto.jobIds.length}</dd>
       </div>
-    </dl>
-  );
+      </dl>
+    );
+  };
 
   if (status?.status === "completed") {
     return (

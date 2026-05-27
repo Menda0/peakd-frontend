@@ -15,7 +15,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  commissionLocationLabel,
   fetchWaveCheckoutContext,
   partnerLocationLabel,
   plainPartnerDescription,
@@ -25,6 +24,7 @@ import { startSingleWaveCheckout } from "@/lib/commercial-cart";
 import {
   allocateBuyClaimLineBreakdownsMinor,
   formatDiscountSummary,
+  paymentProcessingFeeMinor,
   type CheckoutBreakdownMinor,
 } from "@/lib/commercial-settings";
 import { formatMoney } from "@/lib/currencies";
@@ -122,6 +122,7 @@ function PriceLineRows({
   currency: string;
   sessionWaveCount?: number;
 }) {
+  const processingFeeMinor = paymentProcessingFeeMinor(breakdown);
   return (
     <>
       <div className="flex justify-between gap-4 text-muted-foreground">
@@ -158,6 +159,12 @@ function PriceLineRows({
           <dd>{formatMoney(breakdown.commissionMinor, currency)}</dd>
         </div>
       ) : null}
+      {processingFeeMinor > 0 ? (
+        <div className="flex justify-between gap-4 text-muted-foreground">
+          <dt>Payment processing fee</dt>
+          <dd>{formatMoney(processingFeeMinor, currency)}</dd>
+        </div>
+      ) : null}
       <div className="flex justify-between gap-4 border-t border-border pt-2 font-semibold text-foreground">
         <dt>You pay</dt>
         <dd>{formatMoney(breakdown.totalMinor, currency)}</dd>
@@ -170,7 +177,6 @@ function CheckoutSummaryPanel({
   intent,
   breakdown,
   currency,
-  commissionLocation,
   videoName,
   sessionLabel,
   sessionWaveCount,
@@ -178,7 +184,6 @@ function CheckoutSummaryPanel({
   intent: WaveUnlockCartIntent;
   breakdown: CheckoutBreakdownMinor;
   currency: string;
-  commissionLocation: string;
   videoName: string;
   sessionLabel: string;
   sessionWaveCount: number;
@@ -202,10 +207,9 @@ function CheckoutSummaryPanel({
       />
       <p className="border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">
         You&apos;ll be redirected to Stripe Checkout to complete payment in{" "}
-        <strong className="text-foreground">{currency}</strong>. The platform
-        commission ({breakdown.commissionPercent}%) is set aside for community
-        programs in{" "}
-        <strong className="text-foreground">{commissionLocation}</strong>.
+        <strong className="text-foreground">{currency}</strong>. This checkout
+        includes the partner price, platform commission, and a payment
+        processing fee.
         {intent === "sponsor"
           ? " You unlock the video for the surfer on this wave without taking the claim."
           : ""}
@@ -218,13 +222,11 @@ function PriceBreakdown({
   breakdown,
   intent,
   currency,
-  commissionLocation,
   sessionWaveCount,
 }: {
   breakdown: CheckoutBreakdownMinor;
   intent: WaveUnlockCartIntent;
   currency: string;
-  commissionLocation: string;
   sessionWaveCount?: number;
 }) {
   return (
@@ -240,14 +242,10 @@ function PriceBreakdown({
           sessionWaveCount={sessionWaveCount}
         />
       </dl>
-      {breakdown.commissionMinor > 0 ? (
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          The {breakdown.commissionPercent}% platform commission (
-          {formatMoney(breakdown.commissionMinor, currency)}) supports the surf
-          community in{" "}
-          <strong className="text-foreground">{commissionLocation}</strong>.
-        </p>
-      ) : null}
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        Checkout includes partner price, platform commission, and payment
+        processing fee.
+      </p>
     </div>
   );
 }
@@ -285,11 +283,6 @@ export function WaveUnlockCheckoutWizard({
   const { items: cartItems } = useWaveUnlockCart();
 
   const steps = useMemo(() => buildUnlockWizardSteps(), []);
-
-  const commissionLocation = useMemo(
-    () => (ctx ? commissionLocationLabel(ctx.location) : ""),
-    [ctx],
-  );
 
   const currentStep = steps[stepIndex] ?? steps[0];
   const stepMeta = WAVE_UNLOCK_STEP_META[currentStep];
@@ -346,6 +339,9 @@ export function WaveUnlockCheckoutWizard({
   const breakdown = useMemo((): CheckoutBreakdownMinor | null => {
     if (!ctx || !intent) return null;
     if (intent === "buy_claim") {
+      if (sessionBuyClaimCount <= 1) {
+        return ctx.buyClaim;
+      }
       const lines = allocateBuyClaimLineBreakdownsMinor(
         ctx.commercialSettings,
         sessionBuyClaimCount,
@@ -548,7 +544,6 @@ export function WaveUnlockCheckoutWizard({
                     breakdown={breakdown}
                     intent={intent}
                     currency={ctx.currency}
-                    commissionLocation={commissionLocation}
                     sessionWaveCount={
                       intent === "buy_claim" ? sessionBuyClaimCount : undefined
                     }
@@ -658,7 +653,6 @@ export function WaveUnlockCheckoutWizard({
                   intent={intent}
                   breakdown={breakdown}
                   currency={ctx.currency}
-                  commissionLocation={commissionLocation}
                   videoName={activeWaveMeta.videoName}
                   sessionLabel={activeWaveMeta.sessionLabel}
                   sessionWaveCount={

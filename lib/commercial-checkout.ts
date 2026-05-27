@@ -57,6 +57,7 @@ function normalizeBreakdown(raw: unknown): CheckoutBreakdownMinor | null {
   const basePriceMinor = Number(o.basePriceMinor);
   const commissionMinor = Number(o.commissionMinor);
   const totalMinor = Number(o.totalMinor);
+  const stripeProcessingFeeMinor = Number(o.stripeProcessingFeeMinor);
   const commissionPercent = Number(o.commissionPercent);
   const listPriceMinor = Number(o.listPriceMinor);
   const discountPercent = Number(o.discountPercent);
@@ -73,6 +74,9 @@ function normalizeBreakdown(raw: unknown): CheckoutBreakdownMinor | null {
   return {
     basePriceMinor: base,
     commissionMinor: Math.round(commissionMinor),
+    stripeProcessingFeeMinor: Number.isFinite(stripeProcessingFeeMinor)
+      ? Math.round(stripeProcessingFeeMinor)
+      : 0,
     totalMinor: Math.round(totalMinor),
     commissionPercent: Number.isFinite(commissionPercent)
       ? Math.round(commissionPercent)

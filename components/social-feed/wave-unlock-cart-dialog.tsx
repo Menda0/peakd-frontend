@@ -133,6 +133,10 @@ function CartGroupCard({
           <dt>Platform commission</dt>
           <dd>{formatMoney(group.platformCommissionMinor, group.currency)}</dd>
         </div>
+        <div className="flex justify-between text-muted-foreground">
+          <dt>Payment processing fee</dt>
+          <dd>{formatMoney(group.stripeProcessingFeeMinor, group.currency)}</dd>
+        </div>
         <div className="flex justify-between border-t border-border pt-2 font-semibold text-foreground">
           <dt>You pay</dt>
           <dd>{formatMoney(group.totalAmountMinor, group.currency)}</dd>
