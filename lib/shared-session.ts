@@ -3,6 +3,7 @@ import { readApiErrorMessage } from "@/lib/api-error";
 import type { DiscoverFeedPost } from "@/lib/discover-feed";
 import {
   formatLocationLabel,
+  formatSessionLocationLabel,
   formatSessionSummary,
   type DiscoverFeedLocation,
   type DiscoverFeedSession,
@@ -227,6 +228,7 @@ export function sharedSessionWaveToDiscoverPost(
     authorAvatarUrl: ctx.partnerAvatarUrl,
     isPartnerUpload: true,
     location: formatLocationLabel(ctx.location),
+    sessionLocation: formatSessionLocationLabel(ctx.location),
     sessionSummary: formatSessionSummary(ctx.location, ctx.feedSession),
     timeAgo,
     createdAt: wave.createdAt,

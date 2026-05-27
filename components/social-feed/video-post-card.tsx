@@ -69,6 +69,7 @@ function DiscoverVideoPostCard({
           authorAvatarUrl={post.authorAvatarUrl}
           partnerUpload={post.isPartnerUpload}
           timeAgo={timeLabel}
+          location={post.sessionLocation}
         />
       </div>
       {isProcessing ? (
@@ -139,7 +140,7 @@ function DiscoverVideoPostCard({
         />
       )}
       <div className={cn(feedPostMetaClass, "pb-4 sm:pb-0")}>
-        <PostSessionInfo sessionSummary={post.sessionSummary} session={post.session} />
+        <PostSessionInfo session={post.session} />
         <PostActionsBar
           jobId={post.id}
           shakaCount={post.shakaCount}

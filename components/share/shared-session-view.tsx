@@ -2,7 +2,8 @@
 
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Star } from "lucide-react";
+import { Download } from "lucide-react";
+import { SessionTagsRow } from "@/components/conditions/session-tags-row";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CommercialWaveActions } from "@/components/social-feed/commercial-wave-actions";
@@ -33,34 +34,6 @@ import type { SurferProfile } from "@/lib/surfer-profile";
 import { cn } from "@/lib/utils";
 
 type ViewTab = "feed" | "files";
-
-function ConditionsStars({ rating }: { rating: number | null }) {
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs text-muted-foreground">Conditions</span>
-      <div
-        className="flex items-center gap-0.5"
-        role="img"
-        aria-label={
-          rating != null ? `${rating} out of 5 stars` : "Conditions not rated"
-        }
-      >
-        {([1, 2, 3, 4, 5] as const).map((n) => (
-          <Star
-            key={n}
-            className={cn(
-              "size-3.5 shrink-0",
-              rating != null && n <= rating
-                ? "fill-amber-400 text-amber-400"
-                : "fill-transparent text-muted-foreground",
-            )}
-            aria-hidden
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function sessionLocationLabel(data: PublicSharedSession): string {
   const { session } = data;
@@ -174,6 +147,7 @@ function SharedSessionFeedTab({
               authorAvatarUrl={data.partnerAvatarUrl}
               partnerUpload
               timeAgo={wave.createdAtLabel ?? wave.createdAt}
+              location={location}
             />
             <PostMedia
               thumbnailUrl={wave.thumbnailUrl}
@@ -516,21 +490,10 @@ export function SharedSessionView({
                 {formatDurationMinutes(data.session.durationMinutes)}
               </p>
             </div>
-            <ConditionsStars rating={data.session.conditionsRating} />
-            <div className="flex flex-wrap items-center gap-1.5">
-              {waveLabels.length > 0 ? (
-                waveLabels.map((label) => (
-                  <span
-                    key={label}
-                    className="inline-flex max-w-full items-center truncate rounded-md border border-border bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground"
-                  >
-                    {label}
-                  </span>
-                ))
-              ) : (
-                <span className="text-xs text-muted-foreground">No wave types</span>
-              )}
-            </div>
+            <SessionTagsRow
+              conditionsRating={data.session.conditionsRating}
+              waveLabels={waveLabels}
+            />
           </CardContent>
         </Card>
 
