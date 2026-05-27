@@ -46,7 +46,7 @@ export function SocialFeedLayout({
           partnerProfileHref,
           partnerIncomeHref,
           adminRegionsHref,
-          adminPeaksHref,
+          adminSalesHref,
           adminFinanceHref,
           showPartnerNav,
           showAdminNav,
