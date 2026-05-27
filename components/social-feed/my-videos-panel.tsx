@@ -91,7 +91,7 @@ export function MyVideosPanel() {
 
   if (error) {
     return (
-      <div className="mx-4 mt-4 rounded-2xl border border-red-500/30 bg-red-950/20 px-4 py-6 text-center text-sm text-red-300 sm:mx-0 sm:mt-0">
+      <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-950/20 px-4 py-6 text-center text-sm text-red-300 sm:mt-0">
         <p>{error}</p>
         <button
           type="button"
@@ -109,7 +109,7 @@ export function MyVideosPanel() {
 
   if (videos.length === 0) {
     return (
-      <div className="mx-4 mt-4 rounded-2xl border border-border bg-card px-4 py-12 text-center sm:mx-0 sm:mt-0">
+      <div className="mt-4 rounded-2xl border border-border bg-card px-4 py-12 text-center sm:mt-0">
         <p className="text-sm font-medium text-foreground">No videos yet</p>
         <p className="mt-2 text-sm text-muted-foreground">
           Upload a video from the top bar, or claim a partner upload from your feed. Personal
