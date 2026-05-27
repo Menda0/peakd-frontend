@@ -22,6 +22,7 @@ export type SurfSessionSummary = {
   previewThumbnailUrls: string[];
 };
 
+export const SESSION_PREVIEW_SLOTS_MOBILE = 5;
 export const SESSION_PREVIEW_SLOTS_LIST = 3;
 export const SESSION_PREVIEW_SLOTS_DETAIL = 4;
 export const VIDEO_JOB_THUMBNAIL_SLOTS = 4;
@@ -30,31 +31,35 @@ export function SessionPreviewThumbs({
   urls,
   videoCount,
   slotCount = SESSION_PREVIEW_SLOTS_LIST,
+  mobileSlotCount = SESSION_PREVIEW_SLOTS_MOBILE,
   className,
 }: {
   urls: string[];
   videoCount: number;
   slotCount?: number;
+  mobileSlotCount?: number;
   className?: string;
 }) {
-  const slots = Array.from({ length: slotCount }, (_, i) => i);
+  const totalSlots = Math.max(slotCount, mobileSlotCount);
+  const slots = Array.from({ length: totalSlots }, (_, i) => i);
   const videoLabel = videoCount === 1 ? "1 wave" : `${videoCount} waves`;
 
   return (
     <div
       className={cn(
-        "flex shrink-0 flex-col items-center justify-center gap-2",
+        "flex shrink-0 flex-col items-center justify-center gap-1.5 sm:gap-2",
         className,
       )}
     >
-      <div className="flex max-w-full items-stretch justify-center gap-1.5 overflow-x-auto pb-0.5">
+      <div className="flex max-w-full items-stretch justify-center gap-1 overflow-x-auto pb-0.5 sm:gap-1.5">
         {slots.map((i) => {
           const url = urls[i];
           return (
             <div
               key={i}
               className={cn(
-                "relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-muted sm:h-20 sm:w-[4.75rem]",
+                "relative h-[3.25rem] w-[3.25rem] shrink-0 overflow-hidden rounded-lg border border-border bg-muted sm:h-20 sm:w-[4.75rem]",
+                i >= slotCount && "sm:hidden",
                 i === 0 && videoCount > 0 && !url && "animate-pulse",
               )}
             >

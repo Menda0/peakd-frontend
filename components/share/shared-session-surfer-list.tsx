@@ -11,7 +11,7 @@ import type { SurferProfile } from "@/lib/surfer-profile";
 import type { SurfLevel } from "@/lib/user-profile";
 import { cn } from "@/lib/utils";
 
-const MAX_VISIBLE_SURFERS = 5;
+const MAX_VISIBLE_SURFERS = 3;
 
 function collectUniqueSurfers(surfers: SurferProfile[]): SurferProfile[] {
   const byId = new Map<string, SurferProfile>();

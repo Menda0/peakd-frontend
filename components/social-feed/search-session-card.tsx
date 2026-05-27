@@ -23,7 +23,7 @@ import {
 } from "@/components/studio/session-summary-card";
 import { formatDurationMinutes, waveTypeTitle } from "@/lib/surf-session-waves";
 
-const SURFER_AVATARS_VISIBLE = 5;
+const SURFER_AVATARS_VISIBLE = 3;
 
 function SurferAvatarStack({ surfers }: { surfers: SearchSessionSurfer[] }) {
   if (surfers.length === 0) return null;
