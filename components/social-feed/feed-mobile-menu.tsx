@@ -32,7 +32,7 @@ export function FeedMobileMenu({
   partnerProfileHref,
   partnerIncomeHref,
   adminRegionsHref,
-  adminPeaksHref,
+  adminSalesHref,
   adminFinanceHref,
   showPartnerNav,
   showAdminNav,
@@ -46,7 +46,7 @@ export function FeedMobileMenu({
   partnerProfileHref?: string;
   partnerIncomeHref?: string;
   adminRegionsHref?: string;
-  adminPeaksHref?: string;
+  adminSalesHref?: string;
   adminFinanceHref?: string;
   showPartnerNav: boolean;
   showAdminNav: boolean;
@@ -75,7 +75,7 @@ export function FeedMobileMenu({
   });
   const adminItems = resolveAdminNavItems(pathname, {
     adminRegionsHref,
-    adminPeaksHref,
+    adminSalesHref,
     adminFinanceHref,
   });
 
