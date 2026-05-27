@@ -7,6 +7,7 @@ import { SessionTagsRow } from "@/components/conditions/session-tags-row";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CommercialWaveActions } from "@/components/social-feed/commercial-wave-actions";
+import { feedPostMetaClass } from "@/components/social-feed/feed-post-layout";
 import { FeedList } from "@/components/social-feed/feed-list";
 import { PostSurferBadge } from "@/components/social-feed/post-surfer-badge";
 import { VideoPostCard } from "@/components/social-feed/video-post-card";
@@ -63,7 +64,7 @@ function OriginalAvailableTag() {
 
 function SharedSessionWaveFooter({ wave }: { wave: PublicSharedSessionWave }) {
   return (
-    <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+    <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:border-0 sm:pt-0">
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <span
           className="min-w-0 truncate text-xs font-medium text-foreground sm:text-sm"
@@ -231,7 +232,7 @@ function SharedSessionFilesTab({
   commercialPostsByJobId: Map<string, DiscoverFeedPost>;
 }) {
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className={cn("flex flex-col gap-3", feedPostMetaClass)}>
       {data.waves.map((wave) => {
         const waveState = resolveWave(wave);
         const isActive = activeJobId === wave.jobId;
@@ -449,8 +450,8 @@ export function SharedSessionView({
   }, [data.waves, claimOverrides]);
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-8 sm:max-w-3xl sm:py-10">
-      <header className="space-y-4">
+    <div className="mx-auto flex w-full flex-col sm:max-w-xl">
+      <header className={cn(feedPostMetaClass, "space-y-4 pb-4 sm:pb-6")}>
         <ShareBackButton />
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 sm:gap-3">
@@ -529,8 +530,13 @@ export function SharedSessionView({
         </Card>
       </header>
 
-      <section className="space-y-4">
-        <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <section className="flex flex-col">
+        <div
+          className={cn(
+            feedPostMetaClass,
+            "flex flex-col items-center gap-3 pb-4 sm:flex-row sm:items-center sm:justify-between sm:pb-6",
+          )}
+        >
           <h2 className="w-full text-center text-lg font-semibold tracking-tight text-foreground sm:w-auto sm:text-left">
             {waveCountLabel}
           </h2>
@@ -565,7 +571,9 @@ export function SharedSessionView({
         </div>
 
         {waveCount === 0 ? (
-          <p className="text-sm text-muted-foreground">No waves in this session yet.</p>
+          <p className={cn(feedPostMetaClass, "pb-4 text-sm text-muted-foreground sm:pb-0")}>
+            No waves in this session yet.
+          </p>
         ) : tab === "feed" && data.isCommercial ? (
           <SharedSessionCommercialFeedTab
             posts={commercialPosts}
