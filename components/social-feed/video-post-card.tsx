@@ -27,12 +27,14 @@ function DiscoverVideoPostCard({
   post,
   footer,
   hideActionsBar = false,
+  headerActions,
   onCommercialClaimed,
   onCommercialPurchased,
 }: {
   post: DiscoverFeedPost;
   footer?: ReactNode;
   hideActionsBar?: boolean;
+  headerActions?: ReactNode;
   onCommercialClaimed?: (surfer: SurferProfile) => void;
   onCommercialPurchased?: () => void;
 }) {
@@ -68,13 +70,20 @@ function DiscoverVideoPostCard({
   return (
     <article className={feedPostArticleClass}>
       <div className={cn(feedPostMetaClass, feedPostHeaderClass)}>
-        <PostHeader
-          authorName={post.authorName}
-          authorAvatarUrl={post.authorAvatarUrl}
-          partnerUpload={post.isPartnerUpload}
-          timeAgo={timeLabel}
-          location={post.sessionLocation}
-        />
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <PostHeader
+              authorName={post.authorName}
+              authorAvatarUrl={post.authorAvatarUrl}
+              partnerUpload={post.isPartnerUpload}
+              timeAgo={timeLabel}
+              location={post.sessionLocation}
+            />
+          </div>
+          {headerActions ? (
+            <div className="shrink-0 pt-0.5">{headerActions}</div>
+          ) : null}
+        </div>
       </div>
       {isProcessing ? (
         <div className={feedPostMediaShellClass}>
@@ -163,6 +172,7 @@ export function VideoPostCard({
   placeholder,
   footer,
   hideActionsBar,
+  headerActions,
   onCommercialClaimed,
   onCommercialPurchased,
 }: {
@@ -170,6 +180,7 @@ export function VideoPostCard({
   placeholder?: PlaceholderPost;
   footer?: ReactNode;
   hideActionsBar?: boolean;
+  headerActions?: ReactNode;
   onCommercialClaimed?: (surfer: SurferProfile) => void;
   onCommercialPurchased?: () => void;
 }) {
@@ -179,6 +190,7 @@ export function VideoPostCard({
         post={post}
         footer={footer}
         hideActionsBar={hideActionsBar}
+        headerActions={headerActions}
         onCommercialClaimed={onCommercialClaimed}
         onCommercialPurchased={onCommercialPurchased}
       />

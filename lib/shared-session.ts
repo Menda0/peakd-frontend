@@ -1,3 +1,4 @@
+import { format, formatDistanceToNow, isValid, parseISO } from "date-fns";
 import { getApiBase } from "@/lib/api";
 import { readApiErrorMessage } from "@/lib/api-error";
 import type { DiscoverFeedPost } from "@/lib/discover-feed";
@@ -5,9 +6,11 @@ import {
   formatLocationLabel,
   formatSessionLocationLabel,
   formatSessionSummary,
+  formatSessionTimeRange,
   type DiscoverFeedLocation,
   type DiscoverFeedSession,
 } from "@/lib/discover-feed";
+import { enrichSharedSessionViewData } from "@/lib/format-datetime";
 import { normalizeCurrency } from "@/lib/currencies";
 import {
   normalizeSurferProfile,
@@ -81,6 +84,38 @@ export function sharedSessionZipDownloadPath(shareToken: string): string {
 }
 
 /** Trigger browser download for a presigned URL (processed or original clip). */
+/** Relative upload time, matching the discover feed (`2 hours ago`, etc.). */
+export function formatWaveUploadTimeAgo(createdAt: string): string {
+  try {
+    const d = new Date(createdAt);
+    if (!isValid(d)) return createdAt;
+    return formatDistanceToNow(d, { addSuffix: true });
+  } catch {
+    return createdAt;
+  }
+}
+
+export function formatSharedSessionDateLine(session: {
+  sessionDate: string;
+  sessionTime: string;
+  durationMinutes: number;
+}): string {
+  let dateLabel = session.sessionDate;
+  try {
+    const parsed = parseISO(session.sessionDate);
+    if (isValid(parsed)) {
+      dateLabel = format(parsed, "MMM d, yyyy");
+    }
+  } catch {
+    /* keep raw */
+  }
+  const timeRange = formatSessionTimeRange(
+    session.sessionTime,
+    session.durationMinutes,
+  );
+  return `${dateLabel} · ${timeRange}`;
+}
+
 export function downloadFromUrl(url: string, filename: string): void {
   const anchor = document.createElement("a");
   anchor.href = url;
@@ -131,7 +166,7 @@ export async function fetchAuthenticatedSharedSession(
     );
   }
   const raw = (await res.json()) as PublicSharedSession;
-  return normalizePublicSharedSession(raw);
+  return enrichSharedSessionViewData(normalizePublicSharedSession(raw));
 }
 
 function normalizePublicSharedSession(raw: PublicSharedSession): PublicSharedSession {
@@ -221,7 +256,7 @@ export function sharedSessionWaveToDiscoverPost(
     feedSession: DiscoverFeedSession;
   },
 ): DiscoverFeedPost {
-  const timeAgo = wave.createdAtLabel ?? wave.createdAt;
+  const timeAgo = formatWaveUploadTimeAgo(wave.createdAt);
   return {
     id: wave.jobId,
     authorName: ctx.partnerName,
