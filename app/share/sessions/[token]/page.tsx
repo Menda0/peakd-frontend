@@ -60,7 +60,20 @@ export default async function SharedSessionPage({
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
-      <FeedAppBar homeHref={nav.homeHref} />
+      <FeedAppBar
+        homeHref={nav.homeHref}
+        mobileMenu={{
+          homeHref: nav.homeHref,
+          myVideosHref: nav.myVideosHref,
+          studioHref: nav.studioHref,
+          partnerProfileHref: nav.partnerProfileHref,
+          partnerIncomeHref: nav.partnerIncomeHref,
+          adminRegionsHref: nav.adminRegionsHref,
+          adminPeaksHref: nav.adminPeaksHref,
+          showPartnerNav: nav.showPartnerNav,
+          showAdminNav: nav.showAdminNav,
+        }}
+      />
       <main className="min-h-0 flex-1 overflow-y-auto">
         <SharedSessionView
           data={enrichSharedSessionViewData(data)}
