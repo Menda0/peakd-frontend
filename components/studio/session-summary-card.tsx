@@ -24,7 +24,7 @@ export type SurfSessionSummary = {
 
 export const SESSION_PREVIEW_SLOTS_MOBILE = 5;
 export const SESSION_PREVIEW_SLOTS_LIST = 3;
-export const SESSION_PREVIEW_SLOTS_DETAIL = 4;
+export const SESSION_PREVIEW_SLOTS_DETAIL = 5;
 export const VIDEO_JOB_THUMBNAIL_SLOTS = 4;
 
 export function SessionPreviewThumbs({
@@ -59,7 +59,8 @@ export function SessionPreviewThumbs({
               key={i}
               className={cn(
                 "relative h-[3.25rem] w-[3.25rem] shrink-0 overflow-hidden rounded-lg border border-border bg-muted sm:h-20 sm:w-[4.75rem]",
-                i >= slotCount && "sm:hidden",
+                i >= mobileSlotCount && "hidden",
+                i >= slotCount && i < mobileSlotCount && "lg:hidden",
                 i === 0 && videoCount > 0 && !url && "animate-pulse",
               )}
             >
@@ -176,6 +177,7 @@ export function SessionSummaryCard({
             urls={session.previewThumbnailUrls}
             videoCount={session.videoCount}
             slotCount={previewSlotCount}
+            mobileSlotCount={SESSION_PREVIEW_SLOTS_MOBILE}
             className="w-full shrink-0 sm:w-auto"
           />
         </div>

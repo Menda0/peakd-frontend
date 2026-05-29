@@ -18,6 +18,18 @@ export async function middleware(request: NextRequest) {
     return authRes;
   }
 
+  const publicProfileMatch = pathname.match(/^\/@([a-z0-9][a-z0-9_-]{2,29})\/?$/i);
+  if (publicProfileMatch) {
+    const handle = publicProfileMatch[1]!.toLowerCase();
+    const url = request.nextUrl.clone();
+    url.pathname = `/profile/${handle}`;
+    return NextResponse.rewrite(url, authRes);
+  }
+
+  if (pathname.startsWith("/profile/")) {
+    return authRes;
+  }
+
   // Next internals and public files must not be session-redirected. The image optimizer
   // fetches /logos/* (and similar) server-side; treating the first segment as userSub breaks that.
   if (

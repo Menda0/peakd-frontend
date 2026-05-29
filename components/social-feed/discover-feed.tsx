@@ -16,6 +16,7 @@ import {
   EMPTY_FEED_FILTERS,
   type FeedFiltersState,
 } from "./feed-filters-popover";
+import { DiscoveryCompactPanel } from "./discovery-sidebar";
 import { FeedList } from "./feed-list";
 import type { FeedTabId, FeedTabItem } from "./feed-tabs";
 import { FeedToolbar } from "./feed-toolbar";
@@ -276,9 +277,12 @@ export function DiscoverFeed() {
     </div>
   );
 
+  const compactDiscovery = <DiscoveryCompactPanel />;
+
   if (loading) {
     return (
       <>
+        {compactDiscovery}
         {toolbar}
         <FeedSkeleton />
       </>
@@ -288,6 +292,7 @@ export function DiscoverFeed() {
   if (error && posts.length === 0) {
     return (
       <>
+        {compactDiscovery}
         {toolbar}
         <div className="mx-4 mt-4 rounded-2xl border border-red-500/30 bg-red-950/20 px-4 py-6 text-center text-sm text-red-300 sm:mx-0">
           <p>{error}</p>
@@ -306,6 +311,7 @@ export function DiscoverFeed() {
   if (posts.length === 0) {
     return (
       <>
+        {compactDiscovery}
         {toolbar}
         <div className="mx-4 mt-4 rounded-2xl border border-border bg-card px-4 py-12 text-center sm:mx-0">
           <p className="text-sm font-medium text-foreground">
@@ -323,6 +329,7 @@ export function DiscoverFeed() {
 
   return (
     <>
+      {compactDiscovery}
       {toolbar}
       <FeedList
         posts={posts}

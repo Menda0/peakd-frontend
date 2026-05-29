@@ -2,10 +2,16 @@
 
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { Download, Film } from "lucide-react";
 import { SessionTagsRow } from "@/components/conditions/session-tags-row";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { CommercialWaveActions } from "@/components/social-feed/commercial-wave-actions";
 import { feedPostMetaClass } from "@/components/social-feed/feed-post-layout";
 import { PostSurferBadge } from "@/components/social-feed/post-surfer-badge";
@@ -51,30 +57,82 @@ function sessionLocationLabel(data: PublicSharedSession): string {
   return parts.join(" · ");
 }
 
-function OriginalAvailableTag() {
-  return (
-    <span className="inline-flex shrink-0 items-center rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-200/90">
-      Original available
-    </span>
-  );
-}
+const ORIGINAL_AVAILABLE_TOOLTIP =
+  "The unprocessed camera file is available. Open the download menu to get the original.";
 
-function SharedSessionWaveFooter({ wave }: { wave: PublicSharedSessionWave }) {
+function OriginalAvailableIndicator() {
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3 sm:border-0 sm:pt-0">
-      <span
-        className="min-w-0 truncate text-xs font-medium text-foreground sm:text-sm"
-        title={wave.originalFilename}
-      >
-        {wave.originalFilename}
-      </span>
-      {wave.hasOriginal ? <OriginalAvailableTag /> : null}
-    </div>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className="inline-flex size-5 shrink-0 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-200/90"
+          aria-label={ORIGINAL_AVAILABLE_TOOLTIP}
+        >
+          <Film className="size-3" aria-hidden />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6}>
+        <p className="max-w-[14rem] text-xs">{ORIGINAL_AVAILABLE_TOOLTIP}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
 function formatWaveListedAt(createdAt: string): string {
   return formatWaveUploadTimeAgo(createdAt);
+}
+
+function formatSurferLocation(surfer: SurferProfile): string | null {
+  const region = surfer.regionName?.trim() || null;
+  const countryCode = surfer.countryCode?.trim().toUpperCase() || null;
+  const parts = [region, countryCode].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : null;
+}
+
+function SharedSessionFileSurferAvatar({
+  surfer,
+  name,
+}: {
+  surfer: SurferProfile;
+  name: string;
+}) {
+  if (surfer.avatarUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={surfer.avatarUrl}
+        alt=""
+        className="size-7 shrink-0 rounded-full border border-border object-cover sm:size-8"
+      />
+    );
+  }
+  return (
+    <div
+      className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-[10px] font-semibold text-foreground sm:size-8 sm:text-xs"
+      aria-hidden
+    >
+      {name.charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
+function SharedSessionFileSurferCell({ surfer }: { surfer: SurferProfile }) {
+  const name = surfer.displayName?.trim() || "Surfer";
+  const locationLine = formatSurferLocation(surfer);
+
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <SharedSessionFileSurferAvatar surfer={surfer} name={name} />
+      <div className="min-w-0">
+        <p className="truncate text-xs font-medium text-foreground sm:text-sm">{name}</p>
+        {locationLine ? (
+          <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
+            {locationLine}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
 }
 
 function sharedSessionWavePost(
@@ -138,9 +196,7 @@ function SharedSessionFeedTab({
           <VideoPostCard
             key={wave.jobId}
             post={post}
-            hideActionsBar
             headerActions={<SharedSessionWaveDownloadMenu wave={wave} />}
-            footer={<SharedSessionWaveFooter wave={wave} />}
             onCommercialPurchased={onUnlockChanged}
             onCommercialClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
           />
@@ -174,7 +230,8 @@ function SharedSessionFilesTab({
   commercialPostsByJobId: Map<string, DiscoverFeedPost>;
 }) {
   return (
-    <ul className={cn("flex flex-col gap-3", feedPostMetaClass)}>
+    <TooltipProvider delayDuration={200}>
+      <ul className={cn("flex flex-col gap-3", feedPostMetaClass)}>
       {data.waves.map((wave) => {
         const waveState = resolveWave(wave);
         const isActive = activeJobId === wave.jobId;
@@ -186,40 +243,33 @@ function SharedSessionFilesTab({
                 isActive && "ring-1 ring-primary/40",
               )}
             >
-              <CardContent className="flex flex-col gap-4 p-4">
-                <div className="flex min-w-0 items-start gap-2">
-                  <button
-                    type="button"
-                    className="flex min-w-0 flex-1 flex-col gap-3 text-left transition-opacity hover:opacity-90 sm:flex-row sm:items-center sm:gap-4"
-                    onClick={() => onToggleWave(wave.jobId)}
-                  >
-                    <VideoThumbnailStrip
-                      urls={wave.thumbnailUrls}
-                      emptyLabel="Wave"
-                    />
-                    <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="truncate font-medium text-foreground">
-                          {wave.originalFilename}
-                        </span>
-                        {wave.hasOriginal ? <OriginalAvailableTag /> : null}
-                      </div>
+              <CardContent className="flex flex-col gap-3 p-4">
+                <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="text-xs text-muted-foreground">
                         {formatWaveListedAt(wave.createdAt)}
                       </span>
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {wave.originalFilename}
+                        </span>
+                        {wave.hasOriginal ? <OriginalAvailableIndicator /> : null}
+                      </div>
                     </div>
-                  </button>
-                  <div className="flex shrink-0 flex-col items-end gap-2 pt-0.5">
-                    <SharedSessionWaveDownloadMenu wave={wave} />
-                    <SharedSessionWaveClaim
-                      variant="inline"
-                      wave={waveState}
-                      partnerName={partnerName}
-                      location={location}
-                      onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
-                    />
-                  </div>
+                    <div className="flex shrink-0 items-center justify-end">
+                      <SharedSessionWaveDownloadMenu wave={wave} />
+                    </div>
                 </div>
+                <button
+                  type="button"
+                  className="w-fit text-left transition-opacity hover:opacity-90"
+                  onClick={() => onToggleWave(wave.jobId)}
+                >
+                  <VideoThumbnailStrip
+                    urls={wave.thumbnailUrls}
+                    emptyLabel="Wave"
+                  />
+                </button>
                 {isActive ? (
                   data.isCommercial ? (
                     <div className="relative overflow-hidden rounded-xl border border-border bg-black">
@@ -241,11 +291,6 @@ function SharedSessionFilesTab({
                           }
                         />
                       )}
-                      {waveState.surfer ? (
-                        <div className="absolute top-3 left-3 z-10">
-                          <PostSurferBadge surfer={waveState.surfer} />
-                        </div>
-                      ) : null}
                       {commercialPostsByJobId.has(wave.jobId) ? (
                         <CommercialWaveActions
                           post={commercialPostsByJobId.get(wave.jobId)!}
@@ -265,26 +310,29 @@ function SharedSessionFilesTab({
                         preload="metadata"
                         src={wave.videoUrl ?? undefined}
                       />
-                      {waveState.surfer ? (
-                        <PostSurferBadge surfer={waveState.surfer} />
-                      ) : (
-                        <SharedSessionWaveClaim
-                          variant="overlay"
-                          wave={waveState}
-                          partnerName={partnerName}
-                          location={location}
-                          onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
-                        />
-                      )}
                     </div>
                   )
                 ) : null}
+                <div className="mt-3">
+                  {waveState.surfer ? (
+                    <SharedSessionFileSurferCell surfer={waveState.surfer} />
+                  ) : (
+                    <SharedSessionWaveClaim
+                      variant="inline"
+                      wave={waveState}
+                      partnerName={partnerName}
+                      location={location}
+                      onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
+                    />
+                  )}
+                </div>
               </CardContent>
             </Card>
           </li>
         );
       })}
-    </ul>
+      </ul>
+    </TooltipProvider>
   );
 }
 

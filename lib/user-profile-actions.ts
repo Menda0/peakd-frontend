@@ -81,6 +81,7 @@ export async function getUserProfileAction(): Promise<UserProfileActionResult<Us
 export type PatchUserProfileInput = {
   displayName?: string | null;
   nickname?: string | null;
+  handle?: string | null;
   countryCode?: string | null;
   homeRegionId?: string | null;
   surfLevel?: string | null;

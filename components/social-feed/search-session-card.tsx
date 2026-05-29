@@ -20,6 +20,7 @@ import {
 import {
   SessionPreviewThumbs,
   SESSION_PREVIEW_SLOTS_LIST,
+  SESSION_PREVIEW_SLOTS_MOBILE,
 } from "@/components/studio/session-summary-card";
 import { formatDurationMinutes, waveTypeTitle } from "@/lib/surf-session-waves";
 
@@ -202,6 +203,7 @@ function SearchSessionCardBody({
             urls={session.previewThumbnailUrls}
             videoCount={session.videoCount}
             slotCount={SESSION_PREVIEW_SLOTS_LIST}
+            mobileSlotCount={SESSION_PREVIEW_SLOTS_MOBILE}
             className="w-full shrink-0 sm:w-auto"
           />
         </div>

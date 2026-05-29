@@ -13,8 +13,10 @@ import {
 import { englishCountryLabel } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 
-const LATEST_SESSIONS_LIMIT = 5;
-const LATEST_WAVES_LIMIT = 4;
+const LATEST_SESSIONS_LIMIT_XL = 5;
+const LATEST_WAVES_LIMIT_XL = 3;
+const LATEST_SESSIONS_LIMIT_COMPACT = 3;
+const LATEST_WAVES_LIMIT_COMPACT = 3;
 
 function formatSessionDate(isoDate: string): string {
   try {
@@ -192,17 +194,23 @@ function SkeletonItem({ thumbSize }: { thumbSize: "sm" | "md" }) {
   );
 }
 
-function LatestSessionsSection() {
+function LatestSessionsSection({
+  limit,
+  headingClassName,
+}: {
+  limit: number;
+  headingClassName?: string;
+}) {
   const [sessions, setSessions] = useState<SearchSessionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetchLatestSessions({ limit: LATEST_SESSIONS_LIMIT })
+    fetchLatestSessions({ limit })
       .then((items) => {
         if (cancelled) return;
-        setSessions(items);
+        setSessions(items.slice(0, limit));
         setLoading(false);
       })
       .catch((e) => {
@@ -215,16 +223,21 @@ function LatestSessionsSection() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [limit]);
 
   return (
     <section>
-      <h2 className="sticky top-0 z-10 -mx-2 mb-3 bg-sidebar px-2 py-1 text-sm font-semibold text-foreground">
+      <h2
+        className={cn(
+          "mb-3 text-sm font-semibold text-foreground",
+          headingClassName,
+        )}
+      >
         Latest sessions
       </h2>
       {loading ? (
         <div className="flex flex-col gap-1">
-          {Array.from({ length: LATEST_SESSIONS_LIMIT }).map((_, i) => (
+          {Array.from({ length: limit }).map((_, i) => (
             <SkeletonItem key={i} thumbSize="md" />
           ))}
         </div>
@@ -247,17 +260,23 @@ function LatestSessionsSection() {
   );
 }
 
-function LatestWavesSection() {
+function LatestWavesSection({
+  limit,
+  headingClassName,
+}: {
+  limit: number;
+  headingClassName?: string;
+}) {
   const [waves, setWaves] = useState<LatestWaveItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetchLatestWaves({ limit: LATEST_WAVES_LIMIT })
+    fetchLatestWaves({ limit })
       .then((items) => {
         if (cancelled) return;
-        setWaves(items);
+        setWaves(items.slice(0, limit));
         setLoading(false);
       })
       .catch((e) => {
@@ -270,16 +289,21 @@ function LatestWavesSection() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [limit]);
 
   return (
     <section>
-      <h2 className="sticky top-0 z-10 -mx-2 mb-3 bg-sidebar px-2 py-1 text-sm font-semibold text-foreground">
+      <h2
+        className={cn(
+          "mb-3 text-sm font-semibold text-foreground",
+          headingClassName,
+        )}
+      >
         Latest waves
       </h2>
       {loading ? (
         <div className="flex flex-col gap-1">
-          {Array.from({ length: LATEST_WAVES_LIMIT }).map((_, i) => (
+          {Array.from({ length: limit }).map((_, i) => (
             <SkeletonItem key={i} thumbSize="sm" />
           ))}
         </div>
@@ -302,12 +326,36 @@ function LatestWavesSection() {
   );
 }
 
+const SIDEBAR_HEADING_CLASS =
+  "sticky top-0 z-10 -mx-2 bg-sidebar px-2 py-1";
+
+export function DiscoveryCompactPanel() {
+  return (
+    <div className="mb-4 flex flex-col gap-5 px-4 sm:px-0 xl:hidden">
+      <LatestSessionsSection
+        limit={LATEST_SESSIONS_LIMIT_COMPACT}
+        headingClassName="px-0"
+      />
+      <LatestWavesSection
+        limit={LATEST_WAVES_LIMIT_COMPACT}
+        headingClassName="px-0"
+      />
+    </div>
+  );
+}
+
 export function DiscoverySidebar() {
   return (
     <aside className="sticky top-[4.25rem] z-10 hidden h-[calc(100dvh-4.25rem)] w-72 shrink-0 flex-col border-l border-sidebar-border bg-sidebar sm:top-[4.5rem] sm:h-[calc(100dvh-4.5rem)] xl:flex">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto py-6 pl-3 pr-3">
-        <LatestSessionsSection />
-        <LatestWavesSection />
+        <LatestSessionsSection
+          limit={LATEST_SESSIONS_LIMIT_XL}
+          headingClassName={SIDEBAR_HEADING_CLASS}
+        />
+        <LatestWavesSection
+          limit={LATEST_WAVES_LIMIT_XL}
+          headingClassName={SIDEBAR_HEADING_CLASS}
+        />
       </div>
     </aside>
   );

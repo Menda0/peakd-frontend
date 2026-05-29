@@ -27,6 +27,8 @@ import { formInputLgClassName, formSelectClassName } from "@/lib/form-styles";
 import { patchUserProfileAction, uploadUserAvatarAction } from "@/lib/user-profile-actions";
 import {
   auth0DisplayNameHint,
+  isValidHandleFormat,
+  normalizeHandleInput,
   type SurfLevel,
   type UserProfileDto,
 } from "@/lib/user-profile";
@@ -70,6 +72,7 @@ export function UserProfileModal({
 
   const [displayName, setDisplayName] = useState("");
   const [nickname, setNickname] = useState("");
+  const [handle, setHandle] = useState("");
   const [countryCode, setCountryCode] = useState<string | null>(null);
   const [regionId, setRegionId] = useState<string | null>(null);
   const [surfLevel, setSurfLevel] = useState<SurfLevel | "">("");
@@ -92,6 +95,7 @@ export function UserProfileModal({
         profile.displayName?.trim() || auth0DisplayNameHint(auth0User) || "",
       );
       setNickname(profile.nickname?.trim() ?? "");
+      setHandle(profile.handle?.trim() ?? "");
       setCountryCode(profile.countryCode?.trim() ? profile.countryCode : null);
       setRegionId(profile.homeRegionId?.trim() ? profile.homeRegionId : null);
       setSurfLevel(profile.surfLevel ?? "");
@@ -147,11 +151,23 @@ export function UserProfileModal({
       setSubmitError("Country is required.");
       return;
     }
+    const h = normalizeHandleInput(handle);
+    if (!h) {
+      setSubmitError("Handle is required.");
+      return;
+    }
+    if (!isValidHandleFormat(h)) {
+      setSubmitError(
+        "Handle must be 3–30 characters, start with a letter or number, and use only lowercase letters, numbers, underscores, or hyphens.",
+      );
+      return;
+    }
     setSaving(true);
     try {
       const res = await patchUserProfileAction({
         displayName: dn,
         nickname: nickname.trim() === "" ? null : nickname.trim(),
+        handle: h,
         countryCode,
         homeRegionId: regionId,
         surfLevel: surfLevel === "" ? null : surfLevel,
@@ -170,7 +186,7 @@ export function UserProfileModal({
     } finally {
       setSaving(false);
     }
-  }, [countryCode, displayName, nickname, onSaved, regionId, surfLevel]);
+  }, [countryCode, displayName, handle, nickname, onSaved, regionId, surfLevel]);
 
   const displayPicture =
     avatarUrl?.trim() ||
@@ -282,6 +298,26 @@ export function UserProfileModal({
                   className={formInputLgClassName}
                   autoComplete="name"
                 />
+              </FormField>
+              <FormField
+                label="Handle"
+                htmlFor="user-profile-handle"
+                description="Your public profile: peakd.com/@… — you can change this anytime."
+              >
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    @
+                  </span>
+                  <Input
+                    id="user-profile-handle"
+                    value={handle}
+                    onChange={(e) => setHandle(normalizeHandleInput(e.target.value))}
+                    disabled={saving}
+                    className={cn(formInputLgClassName, "pl-7")}
+                    autoComplete="username"
+                    placeholder="your_handle"
+                  />
+                </div>
               </FormField>
               <FormField
                 label={

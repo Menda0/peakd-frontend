@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronUpIcon, LogOut, UserIcon } from "lucide-react";
+import { ChevronUpIcon, ExternalLinkIcon, LinkIcon, LogOut, UserIcon } from "lucide-react";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useUserProfileModal } from "@/components/user-profile/user-profile-provider";
 import { englishCountryLabel } from "@/lib/countries";
+import { publicProfilePagePath } from "@/lib/public-profile";
 import { auth0DisplayNameHint } from "@/lib/user-profile";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +61,22 @@ export function FeedUserMenu({
 
   const countryLabel = englishCountryLabel(profile?.countryCode ?? null);
   const initials = initialsFromDisplayName(displayName, email);
+  const handle = profile?.handle?.trim() ?? null;
+  const profilePath = handle ? publicProfilePagePath(handle) : null;
+
+  const copyProfileLink = async () => {
+    if (!profilePath) {
+      void openProfileSettings().catch(() => {});
+      return;
+    }
+    const url = `${window.location.origin}${profilePath}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Profile link copied");
+    } catch {
+      toast.error("Could not copy link");
+    }
+  };
 
   return (
     <DropdownMenu modal={false}>
@@ -89,7 +107,11 @@ export function FeedUserMenu({
           <span className="truncate text-sm font-medium leading-tight text-sidebar-foreground">
             {displayName || "Signed in"}
           </span>
-          {email || countryLabel ? (
+          {handle ? (
+            <span className="truncate text-xs leading-tight text-muted-foreground">
+              @{handle}
+            </span>
+          ) : email || countryLabel ? (
             <span className="truncate text-xs leading-tight text-muted-foreground">
               {email ?? countryLabel}
             </span>
@@ -117,6 +139,9 @@ export function FeedUserMenu({
                   {email}
                 </span>
               ) : null}
+              {handle ? (
+                <span className="truncate text-xs text-muted-foreground">@{handle}</span>
+              ) : null}
               {countryLabel ? (
                 <span className="truncate text-xs text-muted-foreground">
                   {countryLabel}
@@ -127,6 +152,26 @@ export function FeedUserMenu({
         </DropdownMenuGroup>
         <DropdownMenuSeparator className="bg-border" />
         <DropdownMenuGroup>
+          {profilePath ? (
+            <DropdownMenuItem
+              className="cursor-pointer text-foreground focus:bg-accent focus:text-foreground"
+              onClick={() => {
+                window.open(profilePath, "_blank", "noopener,noreferrer");
+              }}
+            >
+              <ExternalLinkIcon className="size-4 opacity-80" aria-hidden />
+              View public profile
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem
+            className="cursor-pointer text-foreground focus:bg-accent focus:text-foreground"
+            onClick={() => {
+              void copyProfileLink();
+            }}
+          >
+            <LinkIcon className="size-4 opacity-80" aria-hidden />
+            {profilePath ? "Copy profile link" : "Set up profile link"}
+          </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer text-foreground focus:bg-accent focus:text-foreground"
             onClick={() => {
