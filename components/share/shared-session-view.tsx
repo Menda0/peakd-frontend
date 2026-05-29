@@ -63,6 +63,44 @@ function formatWaveListedAt(createdAt: string): string {
   return formatWaveUploadTimeAgo(createdAt);
 }
 
+function formatSurferLocation(surfer: SurferProfile): string | null {
+  const region = surfer.regionName?.trim() || null;
+  const countryCode = surfer.countryCode?.trim().toUpperCase() || null;
+  const parts = [region, countryCode].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : null;
+}
+
+function SharedSessionFileClaimedBy({ surfer }: { surfer: SurferProfile }) {
+  const name = surfer.displayName?.trim() || "Surfer";
+  const locationLine = formatSurferLocation(surfer);
+
+  return (
+    <div className="flex items-center gap-2.5">
+      {surfer.avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={surfer.avatarUrl}
+          alt=""
+          className="size-9 shrink-0 rounded-full border border-border object-cover sm:size-10"
+        />
+      ) : (
+        <div
+          className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-semibold text-foreground sm:size-10 sm:text-sm"
+          aria-hidden
+        >
+          {name.charAt(0).toUpperCase()}
+        </div>
+      )}
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium text-foreground">{name}</p>
+        {locationLine ? (
+          <p className="truncate text-xs text-muted-foreground">{locationLine}</p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function sharedSessionWavePost(
   wave: PublicSharedSessionWave,
   waveState: SharedSessionWaveClaimState,
@@ -172,16 +210,29 @@ function SharedSessionFilesTab({
             >
               <CardContent className="flex flex-col gap-4 p-4">
                 <div className="flex min-w-0 items-start gap-2">
-                  <button
-                    type="button"
-                    className="flex min-w-0 flex-1 flex-col gap-3 text-left transition-opacity hover:opacity-90 sm:flex-row sm:items-center sm:gap-4"
-                    onClick={() => onToggleWave(wave.jobId)}
-                  >
-                    <VideoThumbnailStrip
-                      urls={wave.thumbnailUrls}
-                      emptyLabel="Wave"
-                    />
-                    <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
+                  <div className="flex min-w-0 flex-1 flex-col gap-3">
+                    <button
+                      type="button"
+                      className="w-fit text-left transition-opacity hover:opacity-90"
+                      onClick={() => onToggleWave(wave.jobId)}
+                    >
+                      <VideoThumbnailStrip
+                        urls={wave.thumbnailUrls}
+                        emptyLabel="Wave"
+                      />
+                    </button>
+                    {waveState.surfer ? (
+                      <SharedSessionFileClaimedBy surfer={waveState.surfer} />
+                    ) : (
+                      <SharedSessionWaveClaim
+                        variant="inline"
+                        wave={waveState}
+                        partnerName={partnerName}
+                        location={location}
+                        onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
+                      />
+                    )}
+                    <div className="flex flex-col gap-1.5">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="truncate font-medium text-foreground">
                           {wave.originalFilename}
@@ -192,16 +243,9 @@ function SharedSessionFilesTab({
                         {formatWaveListedAt(wave.createdAt)}
                       </span>
                     </div>
-                  </button>
-                  <div className="flex shrink-0 flex-col items-end gap-2 pt-0.5">
+                  </div>
+                  <div className="shrink-0 pt-0.5">
                     <SharedSessionWaveDownloadMenu wave={wave} />
-                    <SharedSessionWaveClaim
-                      variant="inline"
-                      wave={waveState}
-                      partnerName={partnerName}
-                      location={location}
-                      onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
-                    />
                   </div>
                 </div>
                 {isActive ? (
