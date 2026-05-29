@@ -42,6 +42,8 @@ export type PublicSharedSessionWave = {
   canBuyClaim: boolean;
   canSponsor: boolean;
   claimedByViewer: boolean;
+  shakaCount: number;
+  shakaedByViewer: boolean;
 };
 
 export type PublicSharedSession = {
@@ -221,6 +223,11 @@ function normalizePublicSharedSessionWave(
       typeof wave.sponsorPriceMinor === "number"
         ? Math.round(wave.sponsorPriceMinor)
         : null,
+    shakaCount:
+      typeof wave.shakaCount === "number" && Number.isFinite(wave.shakaCount)
+        ? Math.max(0, Math.round(wave.shakaCount))
+        : 0,
+    shakaedByViewer: wave.shakaedByViewer === true,
   };
 }
 
@@ -279,8 +286,8 @@ export function sharedSessionWaveToDiscoverPost(
     claimedByViewer: wave.claimedByViewer,
     isOwnUpload: false,
     surfer: wave.surfer,
-    shakaCount: 0,
-    shakaedByViewer: false,
+    shakaCount: wave.shakaCount,
+    shakaedByViewer: wave.shakaedByViewer,
     comments: 0,
     shares: 0,
     isCommercial: wave.isCommercial,

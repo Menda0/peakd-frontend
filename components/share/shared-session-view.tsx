@@ -59,20 +59,6 @@ function OriginalAvailableTag() {
   );
 }
 
-function SharedSessionWaveFooter({ wave }: { wave: PublicSharedSessionWave }) {
-  return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3 sm:border-0 sm:pt-0">
-      <span
-        className="min-w-0 truncate text-xs font-medium text-foreground sm:text-sm"
-        title={wave.originalFilename}
-      >
-        {wave.originalFilename}
-      </span>
-      {wave.hasOriginal ? <OriginalAvailableTag /> : null}
-    </div>
-  );
-}
-
 function formatWaveListedAt(createdAt: string): string {
   return formatWaveUploadTimeAgo(createdAt);
 }
@@ -138,9 +124,7 @@ function SharedSessionFeedTab({
           <VideoPostCard
             key={wave.jobId}
             post={post}
-            hideActionsBar
             headerActions={<SharedSessionWaveDownloadMenu wave={wave} />}
-            footer={<SharedSessionWaveFooter wave={wave} />}
             onCommercialPurchased={onUnlockChanged}
             onCommercialClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
           />
