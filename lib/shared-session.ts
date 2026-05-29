@@ -16,6 +16,10 @@ import {
   normalizeSurferProfile,
   type SurferProfile,
 } from "@/lib/surfer-profile";
+import {
+  normalizeSocialVideoVariants,
+  type SocialVideoVariant,
+} from "@/lib/social-video-variant";
 
 export type PublicSharedSessionWave = {
   jobId: string;
@@ -28,6 +32,7 @@ export type PublicSharedSessionWave = {
   snapshotUrls: string[];
   videoUrl: string | null;
   processedDownloadUrl: string | null;
+  socialVariants: SocialVideoVariant[];
   hasOriginal: boolean;
   originalDownloadUrl: string | null;
   claimStatus: "none" | "claimed" | "auto";
@@ -201,6 +206,7 @@ function normalizePublicSharedSessionWave(
       typeof wave.processedDownloadUrl === "string"
         ? wave.processedDownloadUrl
         : null,
+    socialVariants: normalizeSocialVideoVariants(wave.socialVariants),
     surfer: normalizeSurferProfile(wave.surfer),
     isCommercial: wave.isCommercial === true,
     videoUnlockedByViewer: wave.videoUnlockedByViewer === true,

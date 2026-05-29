@@ -19,7 +19,9 @@ function downloadFilename(base: string, suffix: string): string {
 
 function waveHasDownloads(wave: PublicSharedSessionWave): boolean {
   return Boolean(
-    wave.processedDownloadUrl || (wave.hasOriginal && wave.originalDownloadUrl),
+    wave.processedDownloadUrl ||
+      (wave.hasOriginal && wave.originalDownloadUrl) ||
+      wave.socialVariants.some((variant) => variant.downloadUrl),
   );
 }
 
@@ -70,6 +72,26 @@ export function SharedSessionWaveDownloadMenu({
             Download processed
           </DropdownMenuItem>
         ) : null}
+        {wave.socialVariants
+          .filter((variant) => variant.downloadUrl)
+          .map((variant) => (
+            <DropdownMenuItem
+              key={variant.kind}
+              className="cursor-pointer gap-2 text-foreground focus:bg-accent focus:text-foreground"
+              onClick={() =>
+                downloadFromUrl(
+                  variant.downloadUrl!,
+                  downloadFilename(
+                    wave.originalFilename,
+                    `-${variant.kind}.mp4`,
+                  ),
+                )
+              }
+            >
+              <Download className="size-4 opacity-80" aria-hidden />
+              Download {variant.label}
+            </DropdownMenuItem>
+          ))}
         {wave.hasOriginal && wave.originalDownloadUrl ? (
           <DropdownMenuItem
             className="cursor-pointer gap-2 text-foreground focus:bg-accent focus:text-foreground"

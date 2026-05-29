@@ -13,7 +13,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getApiBase } from "@/lib/api";
+import {
+  normalizeSocialVideoVariants,
+  type SocialVideoVariant,
+} from "@/lib/social-video-variant";
 import { userSubToPathSegment } from "@/lib/user-sub-path";
+import { SocialVideoPreview } from "@/components/studio/social-video-preview";
 
 type JobDetail = {
   jobId: string;
@@ -24,6 +29,7 @@ type JobDetail = {
   processedKey?: string;
   videoUrl?: string;
   snapshots: Array<{ key: string; url: string }>;
+  socialVariants?: SocialVideoVariant[];
   surfSessionId?: string | null;
 };
 
@@ -60,7 +66,11 @@ export function StudioJobDetail() {
     if (!res.ok) {
       throw new Error(await res.text().catch(() => res.statusText));
     }
-    return (await res.json()) as JobDetail;
+    const data = (await res.json()) as JobDetail;
+    return {
+      ...data,
+      socialVariants: normalizeSocialVideoVariants(data.socialVariants),
+    };
   }, [jobId]);
 
   useEffect(() => {
@@ -209,6 +219,9 @@ export function StudioJobDetail() {
               <Card className="border-border bg-card text-foreground">
                 <CardHeader>
                   <CardTitle className="text-base">Processed video</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Master clip used in the feed (WebM).
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-hidden rounded-xl border border-border bg-black">
@@ -223,6 +236,25 @@ export function StudioJobDetail() {
                       Your browser does not support the video tag.
                     </video>
                   </div>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {detail.status === "completed" &&
+            (detail.socialVariants?.length ?? 0) > 0 ? (
+              <Card className="border-border bg-card text-foreground">
+                <CardHeader>
+                  <CardTitle className="text-base">Social edits</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    MP4 exports for Reels, Stories, and posts — ready to download
+                    and share.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SocialVideoPreview
+                    variants={detail.socialVariants ?? []}
+                    originalFilename={detail.originalFilename}
+                  />
                 </CardContent>
               </Card>
             ) : null}
