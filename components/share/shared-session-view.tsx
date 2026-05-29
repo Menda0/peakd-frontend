@@ -89,31 +89,46 @@ function formatSurferLocation(surfer: SurferProfile): string | null {
   return parts.length > 0 ? parts.join(", ") : null;
 }
 
-function SharedSessionFileClaimedBy({ surfer }: { surfer: SurferProfile }) {
+function SharedSessionFileSurferAvatar({
+  surfer,
+  name,
+}: {
+  surfer: SurferProfile;
+  name: string;
+}) {
+  if (surfer.avatarUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={surfer.avatarUrl}
+        alt=""
+        className="size-7 shrink-0 rounded-full border border-border object-cover sm:size-8"
+      />
+    );
+  }
+  return (
+    <div
+      className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-[10px] font-semibold text-foreground sm:size-8 sm:text-xs"
+      aria-hidden
+    >
+      {name.charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
+function SharedSessionFileSurferCell({ surfer }: { surfer: SurferProfile }) {
   const name = surfer.displayName?.trim() || "Surfer";
   const locationLine = formatSurferLocation(surfer);
 
   return (
-    <div className="flex items-center gap-2.5">
-      {surfer.avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={surfer.avatarUrl}
-          alt=""
-          className="size-9 shrink-0 rounded-full border border-border object-cover sm:size-10"
-        />
-      ) : (
-        <div
-          className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-semibold text-foreground sm:size-10 sm:text-sm"
-          aria-hidden
-        >
-          {name.charAt(0).toUpperCase()}
-        </div>
-      )}
+    <div className="flex min-w-0 items-center gap-2">
+      <SharedSessionFileSurferAvatar surfer={surfer} name={name} />
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-foreground">{name}</p>
+        <p className="truncate text-xs font-medium text-foreground sm:text-sm">{name}</p>
         {locationLine ? (
-          <p className="truncate text-xs text-muted-foreground">{locationLine}</p>
+          <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
+            {locationLine}
+          </p>
         ) : null}
       </div>
     </div>
@@ -228,46 +243,33 @@ function SharedSessionFilesTab({
                 isActive && "ring-1 ring-primary/40",
               )}
             >
-              <CardContent className="flex flex-col gap-4 p-4">
-                <div className="flex min-w-0 items-start gap-2">
-                  <div className="flex min-w-0 flex-1 flex-col gap-3">
-                    <button
-                      type="button"
-                      className="w-fit text-left transition-opacity hover:opacity-90"
-                      onClick={() => onToggleWave(wave.jobId)}
-                    >
-                      <VideoThumbnailStrip
-                        urls={wave.thumbnailUrls}
-                        emptyLabel="Wave"
-                      />
-                    </button>
-                    {waveState.surfer ? (
-                      <SharedSessionFileClaimedBy surfer={waveState.surfer} />
-                    ) : (
-                      <SharedSessionWaveClaim
-                        variant="inline"
-                        wave={waveState}
-                        partnerName={partnerName}
-                        location={location}
-                        onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
-                      />
-                    )}
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="truncate font-medium text-foreground">
+              <CardContent className="flex flex-col gap-3 p-4">
+                <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="text-xs text-muted-foreground">
+                        {formatWaveListedAt(wave.createdAt)}
+                      </span>
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <span className="truncate text-sm font-medium text-foreground">
                           {wave.originalFilename}
                         </span>
                         {wave.hasOriginal ? <OriginalAvailableIndicator /> : null}
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        {formatWaveListedAt(wave.createdAt)}
-                      </span>
                     </div>
-                  </div>
-                  <div className="shrink-0 pt-0.5">
-                    <SharedSessionWaveDownloadMenu wave={wave} />
-                  </div>
+                    <div className="flex shrink-0 items-center justify-end">
+                      <SharedSessionWaveDownloadMenu wave={wave} />
+                    </div>
                 </div>
+                <button
+                  type="button"
+                  className="w-fit text-left transition-opacity hover:opacity-90"
+                  onClick={() => onToggleWave(wave.jobId)}
+                >
+                  <VideoThumbnailStrip
+                    urls={wave.thumbnailUrls}
+                    emptyLabel="Wave"
+                  />
+                </button>
                 {isActive ? (
                   data.isCommercial ? (
                     <div className="relative overflow-hidden rounded-xl border border-border bg-black">
@@ -289,11 +291,6 @@ function SharedSessionFilesTab({
                           }
                         />
                       )}
-                      {waveState.surfer ? (
-                        <div className="absolute top-3 left-3 z-10">
-                          <PostSurferBadge surfer={waveState.surfer} />
-                        </div>
-                      ) : null}
                       {commercialPostsByJobId.has(wave.jobId) ? (
                         <CommercialWaveActions
                           post={commercialPostsByJobId.get(wave.jobId)!}
@@ -313,20 +310,22 @@ function SharedSessionFilesTab({
                         preload="metadata"
                         src={wave.videoUrl ?? undefined}
                       />
-                      {waveState.surfer ? (
-                        <PostSurferBadge surfer={waveState.surfer} />
-                      ) : (
-                        <SharedSessionWaveClaim
-                          variant="overlay"
-                          wave={waveState}
-                          partnerName={partnerName}
-                          location={location}
-                          onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
-                        />
-                      )}
                     </div>
                   )
                 ) : null}
+                <div className="mt-3">
+                  {waveState.surfer ? (
+                    <SharedSessionFileSurferCell surfer={waveState.surfer} />
+                  ) : (
+                    <SharedSessionWaveClaim
+                      variant="inline"
+                      wave={waveState}
+                      partnerName={partnerName}
+                      location={location}
+                      onClaimed={(surfer) => onWaveClaimed(wave.jobId, surfer)}
+                    />
+                  )}
+                </div>
               </CardContent>
             </Card>
           </li>
