@@ -8,7 +8,6 @@ import { FeedUserMenu } from "@/components/social-feed/feed-user-menu";
 import { MainNav } from "@/components/social-feed/main-nav";
 import { PartnerNav } from "@/components/social-feed/partner-nav";
 import { UploadVideoModal } from "@/components/social-feed/upload-video-modal";
-import { PeaksBalanceBar } from "@/components/peaks/peaks-balance-bar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -111,9 +110,6 @@ export function FeedMobileMenu({
             </div>
             <Separator />
             <div className="flex flex-col gap-3 px-4 py-4">
-              <div className="[&_button]:max-w-none">
-                <PeaksBalanceBar />
-              </div>
               <Button
                 type="button"
                 className="w-full justify-center gap-2"

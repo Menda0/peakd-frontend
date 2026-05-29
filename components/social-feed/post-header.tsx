@@ -1,18 +1,21 @@
 import { IconCalendar } from "@tabler/icons-react";
+import { PartnerUploadIndicator } from "./partner-upload-indicator";
 
 export function PostHeader({
   authorName,
   authorAvatarUrl,
   partnerUpload,
   timeAgo,
+  location,
 }: {
   authorName: string;
   authorAvatarUrl?: string | null;
   partnerUpload?: boolean;
   timeAgo: string;
+  location?: string | null;
 }) {
   return (
-    <div className="flex items-start gap-3">
+    <div className="mb-2 flex items-start gap-3 sm:mb-0">
       {authorAvatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -26,15 +29,19 @@ export function PostHeader({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="font-semibold text-foreground">{authorName}</span>
-          {partnerUpload ? (
-            <span className="rounded-md border border-cyan-500/25 bg-cyan-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-cyan-300/90">
-              Partner upload
-            </span>
-          ) : null}
+          {partnerUpload ? <PartnerUploadIndicator /> : null}
         </div>
-        <p className="flex items-center gap-1 text-xs text-muted-foreground">
-          <IconCalendar className="size-3.5 shrink-0 opacity-80" aria-hidden />
-          <span>{timeAgo}</span>
+        <p className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-muted-foreground">
+          <span className="inline-flex shrink-0 items-center gap-1">
+            <IconCalendar className="size-3.5 shrink-0 opacity-80" aria-hidden />
+            <span>{timeAgo}</span>
+          </span>
+          {location ? (
+            <>
+              <span aria-hidden>·</span>
+              <span className="min-w-0">{location}</span>
+            </>
+          ) : null}
         </p>
       </div>
     </div>

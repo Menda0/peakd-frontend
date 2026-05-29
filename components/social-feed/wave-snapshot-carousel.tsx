@@ -8,9 +8,11 @@ import { cn } from "@/lib/utils";
 export function WaveSnapshotCarousel({
   urls,
   className,
+  mediaClassName,
 }: {
   urls: string[];
   className?: string;
+  mediaClassName?: string;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
@@ -32,6 +34,7 @@ export function WaveSnapshotCarousel({
       <div
         className={cn(
           "flex aspect-video w-full items-center justify-center rounded-2xl border border-border bg-secondary/80 text-sm text-muted-foreground",
+          mediaClassName,
           className,
         )}
       >
@@ -44,7 +47,10 @@ export function WaveSnapshotCarousel({
     <div className={cn("relative", className)}>
       <div
         ref={scrollRef}
-        className="flex aspect-video snap-x snap-mandatory overflow-x-auto rounded-2xl border border-border bg-secondary/80 scrollbar-none"
+        className={cn(
+          "flex aspect-video snap-x snap-mandatory overflow-x-auto rounded-2xl border border-border bg-secondary/80 scrollbar-none",
+          mediaClassName,
+        )}
         onScroll={() => {
           const el = scrollRef.current;
           if (!el || slides.length === 0) return;

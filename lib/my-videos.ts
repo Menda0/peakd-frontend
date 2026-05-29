@@ -6,6 +6,7 @@ import type {
 } from "@/lib/discover-feed";
 import {
   formatLocationLabel,
+  formatSessionLocationLabel,
   formatSessionSummary,
   normalizeDiscoverSession,
 } from "@/lib/discover-feed";
@@ -127,6 +128,7 @@ export function myVideoItemToPost(
     authorAvatarUrl,
     isPartnerUpload: isPartnerClaim,
     location: formatLocationLabel(item.location),
+    sessionLocation: formatSessionLocationLabel(item.location),
     sessionSummary: formatSessionSummary(item.location, item.session),
     timeAgo,
     createdAt: item.createdAt,

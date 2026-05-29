@@ -23,9 +23,9 @@ export function PostSurferBadge({
   return (
     <div
       className={cn(
-        "flex max-w-[min(100%,14rem)] items-center gap-2 rounded-lg border border-white/15 bg-black/75 px-2 py-1.5 text-white shadow-lg backdrop-blur-sm",
+        "flex max-w-[min(100%,11rem)] items-center gap-1.5 rounded-md border border-white/15 bg-black/75 px-1.5 py-1 text-white shadow-lg backdrop-blur-sm sm:max-w-[min(100%,14rem)] sm:gap-2 sm:rounded-lg sm:px-2 sm:py-1.5",
         variant === "overlay" &&
-          "pointer-events-none absolute bottom-3 right-3 z-10 max-w-[min(100%-1.5rem,14rem)]",
+          "pointer-events-none absolute bottom-2 right-2 z-10 max-w-[min(100%-1rem,11rem)] sm:bottom-3 sm:right-3 sm:max-w-[min(100%-1.5rem,14rem)]",
         className,
       )}
       aria-label={`Surfer: ${name}${locationLine ? `, ${locationLine}` : ""}`}
@@ -35,20 +35,24 @@ export function PostSurferBadge({
         <img
           src={surfer.avatarUrl}
           alt=""
-          className="size-9 shrink-0 rounded-full object-cover ring-1 ring-white/20"
+          className="size-6 shrink-0 rounded-full object-cover ring-1 ring-white/20 sm:size-9"
         />
       ) : (
         <div
-          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-xs font-semibold text-white ring-1 ring-white/20"
+          className="flex size-6 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-[10px] font-semibold text-white ring-1 ring-white/20 sm:size-9 sm:text-xs"
           aria-hidden
         >
           {name.charAt(0).toUpperCase()}
         </div>
       )}
       <div className="min-w-0 text-left">
-        <p className="truncate text-xs font-semibold leading-tight text-white">{name}</p>
+        <p className="truncate text-[10px] font-semibold leading-tight text-white sm:text-xs">
+          {name}
+        </p>
         {locationLine ? (
-          <p className="truncate text-[10px] leading-tight text-white/70">{locationLine}</p>
+          <p className="truncate text-[9px] leading-tight text-white/70 sm:text-[10px]">
+            {locationLine}
+          </p>
         ) : null}
       </div>
     </div>

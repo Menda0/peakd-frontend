@@ -61,7 +61,17 @@ export function PostMedia({
     const video = videoRef.current;
     if (!video) return;
     video.muted = !audioOnRef.current;
-    void video.play().catch(() => {});
+    const attemptPlay = () => {
+      void video.play().catch(() => {
+        video.muted = true;
+        void video.play().catch(() => {});
+      });
+    };
+    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      attemptPlay();
+      return;
+    }
+    video.addEventListener("canplay", attemptPlay, { once: true });
   }, []);
 
   const pauseVideo = useCallback(() => {
@@ -255,7 +265,7 @@ export function PostMedia({
           playsInline
           loop
           muted
-          preload="metadata"
+          preload={autoPlayInView ? "auto" : "metadata"}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
         />
