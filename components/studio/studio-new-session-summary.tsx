@@ -7,6 +7,7 @@ import {
   type CommercialSettings,
 } from "@/lib/commercial-settings";
 import { undisclosedRegionId } from "@/lib/geo-undisclosed";
+import { surflineConditionsLabel } from "@/lib/surfline-conditions";
 import { formatDurationMinutes, waveTypeTitle } from "@/lib/surf-session-waves";
 import type { StudioSessionFormValues } from "@/components/studio/studio-session-form-fields";
 import type { StudioSessionMode } from "@/components/studio/studio-session-mode-choice";
@@ -96,9 +97,7 @@ export function StudioNewSessionSummary({
       : "Free Surf";
 
   const conditionsLabel =
-    values.conditionsRating == null
-      ? "No rating"
-      : `${values.conditionsRating} / 5`;
+    surflineConditionsLabel(values.conditionsRating) ?? "No rating";
 
   const waveLabel =
     values.waveTypes.length > 0

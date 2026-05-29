@@ -62,14 +62,18 @@ export function FeedSearchBar({ homeHref }: { homeHref: string }) {
 
   const handleGeoChange = useCallback(
     (next: GeoSearchSelection | null) => {
-      setGeo(next);
       if (!next) {
-        router.push(homeHref);
+        if (urlSearch) {
+          router.push(homeHref);
+        } else {
+          setGeo(null);
+        }
         return;
       }
+      setGeo(next);
       applySearch(next, null);
     },
-    [applySearch, homeHref, router],
+    [applySearch, homeHref, router, urlSearch],
   );
 
   const handleDateChange = useCallback(

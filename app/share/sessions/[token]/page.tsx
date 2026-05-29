@@ -74,7 +74,7 @@ export default async function SharedSessionPage({
           showAdminNav: nav.showAdminNav,
         }}
       />
-      <main className="min-h-0 flex-1 overflow-y-auto">
+      <main className="min-h-0 flex-1 overflow-y-auto px-0 py-8 sm:px-6 sm:py-6">
         <SharedSessionView
           data={enrichSharedSessionViewData(data)}
           shareToken={token}

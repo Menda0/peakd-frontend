@@ -26,7 +26,7 @@ export function FeedToolbar({
   homeRegionName: string | null;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
       <FeedTabs tabs={tabs} activeId={activeTabId} onChange={onTabChange} />
       <div className="flex items-center gap-2">
         <FeedFiltersPopover

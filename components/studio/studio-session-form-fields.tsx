@@ -1,5 +1,6 @@
 "use client";
 
+import { ConditionsRatingPicker } from "@/components/conditions/conditions-rating-picker";
 import { CountryPicker } from "@/components/pickers/country-picker";
 import { RegionPicker } from "@/components/pickers/region-picker";
 import { SpotPicker } from "@/components/pickers/spot-picker";
@@ -164,43 +165,14 @@ export function StudioSessionConditionsFields({
   return (
     <div className="flex flex-col gap-5">
       <Field>
-        <FieldLabel className={formLabelClassName}>Conditions rating</FieldLabel>
+        <FieldLabel className={formLabelClassName}>Conditions</FieldLabel>
         <FieldDescription className="text-muted-foreground">
-          Optional. How good were the overall conditions?
+          Optional. Surfline scale for overall session conditions.
         </FieldDescription>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={cn(
-              "border-border",
-              values.conditionsRating === null
-                ? "bg-primary/20 text-foreground"
-                : "bg-transparent text-muted-foreground",
-            )}
-            onClick={() => onChange({ conditionsRating: null })}
-          >
-            No rating
-          </Button>
-          {([1, 2, 3, 4, 5] as const).map((n) => (
-            <Button
-              key={n}
-              type="button"
-              variant="outline"
-              size="sm"
-              className={cn(
-                "min-w-9 border-border",
-                values.conditionsRating === n
-                  ? "bg-primary/25 text-primary"
-                  : "bg-transparent text-muted-foreground",
-              )}
-              onClick={() => onChange({ conditionsRating: n })}
-            >
-              {n}
-            </Button>
-          ))}
-        </div>
+        <ConditionsRatingPicker
+          value={values.conditionsRating}
+          onChange={(conditionsRating) => onChange({ conditionsRating })}
+        />
       </Field>
 
       <FieldSet>

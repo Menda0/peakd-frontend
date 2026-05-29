@@ -9,8 +9,10 @@ export function FeedLogo({ href }: { href: string }) {
       className="flex shrink-0 items-center"
       aria-label="Peakd home"
     >
-      <PeakIcon size={36} className="size-9 sm:hidden" priority />
-      <span className="hidden sm:block">
+      <span className="inline-flex sm:hidden">
+        <PeakIcon size={36} className="size-9" priority />
+      </span>
+      <span className="hidden sm:inline-flex">
         <PeakdLogo className="h-14" priority />
       </span>
     </Link>
