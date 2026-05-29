@@ -86,26 +86,47 @@ function OriginalAvailableTag() {
 }
 
 function WaveDownloadActions({ wave }: { wave: PublicSharedSessionWave }) {
-  if (!wave.processedDownloadUrl) {
+  const socialDownloads = wave.socialVariants.filter((v) => v.downloadUrl);
+  if (!wave.processedDownloadUrl && socialDownloads.length === 0) {
     return null;
   }
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="h-8 border-border bg-transparent text-foreground"
-        onClick={() =>
-          downloadFromUrl(
-            wave.processedDownloadUrl!,
-            downloadFilename(wave.originalFilename, ".webm"),
-          )
-        }
-      >
-        <Download className="size-3.5" aria-hidden />
-        <span className="ml-1.5">Processed</span>
-      </Button>
+      {wave.processedDownloadUrl ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 border-border bg-transparent text-foreground"
+          onClick={() =>
+            downloadFromUrl(
+              wave.processedDownloadUrl!,
+              downloadFilename(wave.originalFilename, ".webm"),
+            )
+          }
+        >
+          <Download className="size-3.5" aria-hidden />
+          <span className="ml-1.5">Processed</span>
+        </Button>
+      ) : null}
+      {socialDownloads.map((variant) => (
+        <Button
+          key={variant.kind}
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 border-border bg-transparent text-foreground"
+          onClick={() =>
+            downloadFromUrl(
+              variant.downloadUrl!,
+              downloadFilename(wave.originalFilename, `-${variant.kind}.mp4`),
+            )
+          }
+        >
+          <Download className="size-3.5" aria-hidden />
+          <span className="ml-1.5">{variant.label}</span>
+        </Button>
+      ))}
       {wave.hasOriginal && wave.originalDownloadUrl ? (
         <Button
           type="button"
