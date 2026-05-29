@@ -11,20 +11,23 @@ function isDiscoverPost(post: FeedPost): post is DiscoverFeedPost {
 
 export function FeedList({
   posts,
+  hideActionsBar,
   onCommercialPurchased,
   onCommercialClaimed,
 }: {
   posts: FeedPost[];
+  hideActionsBar?: boolean;
   onCommercialPurchased?: () => void;
   onCommercialClaimed?: (surfer: SurferProfile) => void;
 }) {
   return (
-    <div className="flex flex-col gap-6 pt-4">
+    <div className="flex flex-col gap-0 pt-0 sm:gap-6 sm:pt-4">
       {posts.map((post) => (
         <VideoPostCard
-          key={post.id}
+          key={isDiscoverPost(post) ? post.id : `placeholder-${post.authorName}`}
           post={isDiscoverPost(post) ? post : undefined}
           placeholder={isDiscoverPost(post) ? undefined : post}
+          hideActionsBar={hideActionsBar}
           onCommercialPurchased={onCommercialPurchased}
           onCommercialClaimed={onCommercialClaimed}
         />

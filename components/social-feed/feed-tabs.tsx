@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export type FeedTabId = "all" | "country" | "region";
 
@@ -21,36 +21,26 @@ export function FeedTabs({
   onChange: (id: FeedTabId) => void;
 }) {
   return (
-    <div className="flex gap-6">
-      {tabs.map((tab) => {
-        const isActive = tab.id === activeId;
-        const isDisabled = tab.disabled === true;
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            disabled={isDisabled}
-            title={isDisabled ? tab.disabledHint : undefined}
-            onClick={() => {
-              if (isDisabled || isActive) return;
-              onChange(tab.id);
-            }}
-            className={cn(
-              "relative max-w-[14ch] truncate pb-2 text-sm font-medium transition",
-              isActive
-                ? "text-primary"
-                : isDisabled
-                  ? "cursor-not-allowed text-muted-foreground/50"
-                  : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {tab.label}
-            {isActive ? (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-primary" />
-            ) : null}
-          </button>
-        );
-      })}
-    </div>
+    <Tabs
+      value={activeId}
+      onValueChange={(value) => onChange(value as FeedTabId)}
+      className="min-w-0 gap-0"
+    >
+      <div className="max-w-full overflow-x-auto overflow-y-hidden overscroll-x-contain">
+        <TabsList className="h-auto w-max">
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.id}
+              value={tab.id}
+              disabled={tab.disabled}
+              title={tab.disabled ? tab.disabledHint : undefined}
+              className="h-8 w-auto flex-none shrink-0 px-4"
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
+    </Tabs>
   );
 }

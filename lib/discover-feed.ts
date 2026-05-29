@@ -67,6 +67,8 @@ export type DiscoverFeedPost = {
   authorAvatarUrl: string | null;
   isPartnerUpload: boolean;
   location: string;
+  /** Spot and region only (below video). */
+  sessionLocation: string;
   sessionSummary: string;
   timeAgo: string;
   createdAt: string;
@@ -152,6 +154,7 @@ export function discoverItemToPost(
     authorAvatarUrl: item.author.avatarUrl,
     isPartnerUpload: item.uploadSource === "studio",
     location: formatLocationLabel(item.location),
+    sessionLocation: formatSessionLocationLabel(item.location),
     sessionSummary: formatSessionSummary(item.location, item.session),
     timeAgo,
     createdAt: item.createdAt,
