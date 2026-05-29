@@ -6,6 +6,7 @@ export type SurfLevel = (typeof SURF_LEVELS)[number];
 export type UserProfileDto = {
   displayName: string | null;
   nickname: string | null;
+  handle: string | null;
   countryCode: string | null;
   homeRegionId: string | null;
   homeRegionName: string | null;
@@ -32,6 +33,7 @@ export function normalizeUserProfileDto(raw: unknown): UserProfileDto | null {
   return {
     displayName: o.displayName == null ? null : String(o.displayName),
     nickname: o.nickname == null ? null : String(o.nickname),
+    handle: o.handle == null ? null : String(o.handle).trim().toLowerCase() || null,
     countryCode: o.countryCode == null ? null : String(o.countryCode),
     homeRegionId: o.homeRegionId == null ? null : String(o.homeRegionId),
     homeRegionName: o.homeRegionName == null ? null : String(o.homeRegionName),
@@ -57,6 +59,18 @@ export function auth0HasDisplayName(user: {
   return auth0DisplayNameHint(user).length > 0;
 }
 
+export const HANDLE_PATTERN = /^[a-z0-9][a-z0-9_-]{2,29}$/;
+
+export function normalizeHandleInput(raw: string): string {
+  let s = raw.trim().toLowerCase();
+  if (s.startsWith("@")) s = s.slice(1);
+  return s;
+}
+
+export function isValidHandleFormat(handle: string): boolean {
+  return HANDLE_PATTERN.test(handle);
+}
+
 export function needsUserProfileOnboarding(
   profile: UserProfileDto,
   auth0User: { name?: string | null; given_name?: string | null },
@@ -64,5 +78,6 @@ export function needsUserProfileOnboarding(
   const countryOk = Boolean(profile.countryCode?.trim());
   const nameOk =
     Boolean(profile.displayName?.trim()) || auth0HasDisplayName(auth0User);
-  return !countryOk || !nameOk;
+  const handleOk = Boolean(profile.handle?.trim());
+  return !countryOk || !nameOk || !handleOk;
 }

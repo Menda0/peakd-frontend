@@ -1,7 +1,7 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DiscoverFeedPost } from "@/lib/discover-feed";
 import { WAVE_CLAIMED_EVENT } from "@/lib/claim-wave";
 import {
@@ -9,7 +9,9 @@ import {
   PERSONAL_UPLOAD_EVENT,
 } from "@/lib/discover-feed";
 import { fetchMyVideos, myVideoItemToPost } from "@/lib/my-videos";
+import { fetchPinnedWaveIds } from "@/lib/pinned-waves";
 import { FeedList } from "./feed-list";
+import { PinWaveButton } from "./pin-wave-button";
 
 function MyVideosSkeleton() {
   return (
@@ -35,12 +37,18 @@ function MyVideosSkeleton() {
 
 export function MyVideosPanel() {
   const [videos, setVideos] = useState<DiscoverFeedPost[]>([]);
+  const [pinnedJobIds, setPinnedJobIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const pinnedSet = useMemo(() => new Set(pinnedJobIds), [pinnedJobIds]);
+
   const load = useCallback(async () => {
     try {
-      const items = await fetchMyVideos();
+      const [items, pins] = await Promise.all([
+        fetchMyVideos(),
+        fetchPinnedWaveIds().catch(() => [] as string[]),
+      ]);
       setVideos(
         items.map((item) =>
           myVideoItemToPost(
@@ -49,6 +57,7 @@ export function MyVideosPanel() {
           ),
         ),
       );
+      setPinnedJobIds(pins);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load videos");
@@ -119,5 +128,18 @@ export function MyVideosPanel() {
     );
   }
 
-  return <FeedList posts={videos} />;
+  return (
+    <FeedList
+      posts={videos}
+      getHeaderActions={(post) =>
+        post.status === "completed" ? (
+          <PinWaveButton
+            jobId={post.id}
+            pinned={pinnedSet.has(post.id)}
+            onPinnedChange={setPinnedJobIds}
+          />
+        ) : null
+      }
+    />
+  );
 }
