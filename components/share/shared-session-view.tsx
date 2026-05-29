@@ -2,10 +2,16 @@
 
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { Download, Film } from "lucide-react";
 import { SessionTagsRow } from "@/components/conditions/session-tags-row";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { CommercialWaveActions } from "@/components/social-feed/commercial-wave-actions";
 import { feedPostMetaClass } from "@/components/social-feed/feed-post-layout";
 import { PostSurferBadge } from "@/components/social-feed/post-surfer-badge";
@@ -51,11 +57,24 @@ function sessionLocationLabel(data: PublicSharedSession): string {
   return parts.join(" · ");
 }
 
-function OriginalAvailableTag() {
+const ORIGINAL_AVAILABLE_TOOLTIP =
+  "The unprocessed camera file is available. Open the download menu to get the original.";
+
+function OriginalAvailableIndicator() {
   return (
-    <span className="inline-flex shrink-0 items-center rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-200/90">
-      Original available
-    </span>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className="inline-flex size-5 shrink-0 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-200/90"
+          aria-label={ORIGINAL_AVAILABLE_TOOLTIP}
+        >
+          <Film className="size-3" aria-hidden />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6}>
+        <p className="max-w-[14rem] text-xs">{ORIGINAL_AVAILABLE_TOOLTIP}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -196,7 +215,8 @@ function SharedSessionFilesTab({
   commercialPostsByJobId: Map<string, DiscoverFeedPost>;
 }) {
   return (
-    <ul className={cn("flex flex-col gap-3", feedPostMetaClass)}>
+    <TooltipProvider delayDuration={200}>
+      <ul className={cn("flex flex-col gap-3", feedPostMetaClass)}>
       {data.waves.map((wave) => {
         const waveState = resolveWave(wave);
         const isActive = activeJobId === wave.jobId;
@@ -237,7 +257,7 @@ function SharedSessionFilesTab({
                         <span className="truncate font-medium text-foreground">
                           {wave.originalFilename}
                         </span>
-                        {wave.hasOriginal ? <OriginalAvailableTag /> : null}
+                        {wave.hasOriginal ? <OriginalAvailableIndicator /> : null}
                       </div>
                       <span className="text-xs text-muted-foreground">
                         {formatWaveListedAt(wave.createdAt)}
@@ -312,7 +332,8 @@ function SharedSessionFilesTab({
           </li>
         );
       })}
-    </ul>
+      </ul>
+    </TooltipProvider>
   );
 }
 
