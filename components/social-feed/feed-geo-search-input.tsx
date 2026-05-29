@@ -121,34 +121,42 @@ export function FeedGeoSearchInput({
   );
 
   return (
-    <Combobox
-      items={items}
-      value={value}
-      onValueChange={handleValueChange}
-      onInputValueChange={(next) => {
-        setQuery(next);
-        if (!next.trim()) {
-          onValueChange(null);
-        }
-      }}
-      itemToStringLabel={(item) => buildGeoSearchLabel(item)}
-      isItemEqualToValue={itemsEqual}
-      autoHighlight
-    >
-      <ComboboxInput
-        placeholder="Search country, region, or spot…"
-        showTrigger={false}
-        showClear={Boolean(value || query.trim())}
-        className={cn(
-          "h-11 min-h-11 rounded-full border-border bg-card py-2 pl-11 pr-3 text-sm text-foreground placeholder:text-muted-foreground",
-          "focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/25",
-          className,
-        )}
-      />
-      <ComboboxContent
-        className="border-border"
-        positionerClassName="z-50"
+    <div className="w-full min-w-0">
+      <Combobox
+        items={items}
+        value={value}
+        onValueChange={handleValueChange}
+        onInputValueChange={(next) => {
+          setQuery(next);
+        }}
+        itemToStringLabel={(item) => buildGeoSearchLabel(item)}
+        isItemEqualToValue={itemsEqual}
+        autoHighlight
       >
+        <ComboboxInput
+          placeholder="Search country, region, or spot…"
+          showTrigger={false}
+          showClear={Boolean(value || query.trim())}
+          className={cn(
+            "h-11 min-h-11 w-full rounded-full border-border bg-card py-2 pl-11 pr-3 text-sm text-foreground placeholder:text-muted-foreground",
+            "focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/25",
+            className,
+          )}
+        />
+        <ComboboxContent
+          align="start"
+          sideOffset={12}
+          className={cn(
+            "border-border",
+            "max-sm:!w-full max-sm:!min-w-0 max-sm:!max-w-none",
+            "sm:!w-(--anchor-width) sm:!min-w-(--anchor-width) sm:!max-w-(--anchor-width)",
+          )}
+          positionerClassName={cn(
+            "z-50",
+            "max-sm:!left-4 max-sm:!w-[calc(100vw-2rem)] max-sm:!min-w-[calc(100vw-2rem)] max-sm:!max-w-[calc(100vw-2rem)]",
+            "sm:!w-(--anchor-width) sm:!min-w-(--anchor-width) sm:!max-w-(--anchor-width)",
+          )}
+        >
         <ComboboxList>
           {loading && items.length === 0 ? (
             <div className="px-3 py-2 text-sm text-muted-foreground">Searching…</div>
@@ -170,7 +178,8 @@ export function FeedGeoSearchInput({
             {query.trim() ? "No verified locations found." : "Type to search…"}
           </ComboboxEmpty>
         </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
+        </ComboboxContent>
+      </Combobox>
+    </div>
   );
 }

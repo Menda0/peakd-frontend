@@ -561,18 +561,7 @@ export function WaveUnlockCheckoutWizard({
 
               {currentStep === "session" && intent && ctx ? (
                 <div className="space-y-4">
-                  <PostSessionInfo
-                    sessionSummary={formatSessionSummary(
-                      ctx.location as DiscoverFeedLocation,
-                      ctx.sessionSummary,
-                    )}
-                    session={ctx.sessionSummary}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {formatSessionLocationLabel(
-                      ctx.location as DiscoverFeedLocation,
-                    )}
-                  </p>
+                  <PostSessionInfo session={ctx.sessionSummary} />
                   {otherWaves.length > 0 ? (
                     <ul className="grid gap-2 sm:grid-cols-3">
                       {otherWaves.map((wave) => {
