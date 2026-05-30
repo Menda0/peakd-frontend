@@ -33,6 +33,7 @@ export function PostMedia({
   className,
   playbackId: playbackIdProp,
   autoPlayInView = false,
+  surferBadgeSize = "default",
 }: {
   duration?: string;
   thumbnailUrl?: string | null;
@@ -43,6 +44,7 @@ export function PostMedia({
   className?: string;
   playbackId?: string;
   autoPlayInView?: boolean;
+  surferBadgeSize?: "default" | "compact";
 }) {
   const fallbackId = useId();
   const playbackId = playbackIdProp ?? fallbackId;
@@ -289,7 +291,7 @@ export function PostMedia({
           )}
         </button>
         {surfer ? (
-          <PostSurferBadge surfer={surfer} />
+          <PostSurferBadge surfer={surfer} size={surferBadgeSize} />
         ) : claimWave ? (
           claimWave
         ) : null}

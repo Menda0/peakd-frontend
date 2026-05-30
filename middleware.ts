@@ -30,6 +30,10 @@ export async function middleware(request: NextRequest) {
     return authRes;
   }
 
+  if (pathname === "/") {
+    return authRes;
+  }
+
   // Next internals and public files must not be session-redirected. The image optimizer
   // fetches /logos/* (and similar) server-side; treating the first segment as userSub breaks that.
   if (
