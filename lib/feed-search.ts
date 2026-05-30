@@ -124,7 +124,7 @@ function normalizeGeoSuggestItem(raw: unknown): GeoSearchSelection | null {
   };
 }
 
-function normalizeSearchSession(raw: unknown): SearchSessionItem | null {
+export function normalizeSearchSession(raw: unknown): SearchSessionItem | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
   const sessionId = typeof o.sessionId === "string" ? o.sessionId.trim() : "";

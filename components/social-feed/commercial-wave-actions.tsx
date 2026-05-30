@@ -59,9 +59,7 @@ export function CommercialWaveActions({
     if (overlay) return null;
     return (
       <p className="text-xs font-medium text-primary">
-        {post.isOwnUpload
-          ? "Video unlocked"
-          : "Video unlocked — watch in My Videos"}
+        Video unlocked — watch in My Videos
       </p>
     );
   }
